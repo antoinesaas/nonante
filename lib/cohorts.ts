@@ -21,6 +21,7 @@ export async function getNextOpenCohort(): Promise<PublicCohort | null> {
     .from("cohorts")
     .select(PUBLIC_COHORT_COLUMNS)
     .eq("enroll_open", true)
+    .eq("is_test", false)
     .gt("start_date", todayParis())
     .order("start_date", { ascending: true })
     .limit(1)

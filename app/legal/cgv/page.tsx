@@ -49,8 +49,8 @@ export default function CgvPage() {
 
       <h2>Classement</h2>
       <p>
-        Le classement ne donne lieu à aucune récompense en argent ni en lots. Il ne rapporte que des
-        points, des succès et des œuvres d&apos;art à afficher sur son profil.
+        Le classement ne rapporte que des points, des succès et des œuvres d&apos;art à afficher sur
+        son profil.
       </p>
 
       <h2>Mise sur soi</h2>

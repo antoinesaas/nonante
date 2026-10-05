@@ -103,14 +103,13 @@ export default async function Home() {
         </section>
 
         <section className="border-t border-line py-16">
-          <h2 className="font-serif text-4xl leading-tight">Un classement. Aucun lot.</h2>
+          <h2 className="font-serif text-4xl leading-tight">Un classement.</h2>
           <p className="mt-5 leading-relaxed">
             Tu gagnes des points en prouvant, tu en perds en ratant, tu en perds davantage en
             disparaissant. Le classement de la semaine repart de zéro chaque lundi.
           </p>
           <p className="mt-4 leading-relaxed text-mute">
-            Rien à gagner en argent ni en lots : seulement des points, des succès et des œuvres d&apos;art
-            à débloquer.
+            Une épreuve par semaine, des succès à débloquer, et des œuvres d&apos;art pour ton profil.
           </p>
         </section>
 
