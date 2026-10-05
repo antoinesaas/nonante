@@ -17,6 +17,8 @@ function contentSecurityPolicy(nonce: string): string {
     // 'wasm-unsafe-eval' : comptage des répétitions (MediaPipe, WebAssembly). eval seulement en développement.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
+    // Seul style en ligne autorisé, par son empreinte : l'annonceur de navigation de Next.js (lecteurs d'écran).
+    "style-src-attr 'unsafe-hashes' 'sha256-zlqnbDt84zf1iSefLU/ImC54isoprH/MRiVZGskwexk='",
     // blob: et data: pour l'aperçu photo et le QR code de double authentification ; Supabase pour les URL signées (admin).
     `img-src 'self' blob: data:${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
     "media-src 'self' blob:",

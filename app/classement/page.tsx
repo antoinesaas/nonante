@@ -6,7 +6,7 @@ import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getUser } from "@/lib/auth";
 import { todayParis } from "@/lib/dates";
-import { CATEGORY_LABEL, plural } from "@/lib/proofs";
+import { CATEGORY_LABEL, plural, points } from "@/lib/proofs";
 import type { Category } from "@/lib/types";
 import { label } from "@/lib/ui";
 
@@ -185,7 +185,7 @@ function Rank({ row }: { row: Row }) {
           {row.goal_title ? ` · ${row.goal_title}` : ""}
         </p>
       </div>
-      <span className="shrink-0 font-serif text-2xl tabular-nums">{row.points}</span>
+      <span className="shrink-0 font-serif text-2xl tabular-nums">{points(row.points)}</span>
     </li>
   );
 }

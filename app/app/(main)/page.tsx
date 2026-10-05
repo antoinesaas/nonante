@@ -13,7 +13,7 @@ import { formatDayFr, parisMidnight } from "@/lib/dates";
 import { siteUrl } from "@/lib/env";
 import { formatEuros } from "@/lib/money";
 import { fulfillPass } from "@/lib/payments";
-import { plural, signed } from "@/lib/proofs";
+import { plural, points as formatPoints, signed } from "@/lib/proofs";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import type { ChallengeView, Dashboard } from "@/lib/types";
 import { btnLink, btnPrimary, label } from "@/lib/ui";
@@ -104,12 +104,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
           </h1>
         </div>
         <div className="pt-9 text-right">
-          <p className="font-serif text-4xl leading-none tabular-nums">{d.points}</p>
+          <p className="font-serif text-4xl leading-none tabular-nums">{formatPoints(d.points ?? 0)}</p>
           <p className="mt-1 text-xs text-mute">points</p>
           {d.rank ? (
             <p className="mt-2 text-xs text-mute tabular-nums">
               {d.rank}
-              <sup>e</sup> sur {d.total}
+              <sup>{d.rank === 1 ? "er" : "e"}</sup> sur {d.total}
             </p>
           ) : null}
         </div>
@@ -120,7 +120,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
       {(d.audits ?? []).map((a) => (
         <Link key={a.id} href={`/app/controle/${a.id}`} className="mt-8 block border border-paper p-4">
           <p className="text-sm">
-            Contrôle : envoie une photo de ta preuve{a.label ? ` (${a.label})` : ""} avant{" "}
+            Contrôle : envoie une photo de ta preuve{a.label ? ` (${a.label.replace(/^alors /, "").replace(/\.$/, "")})` : ""} avant{" "}
             {new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", weekday: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(a.due_at))}
             . Sinon : {signed(-a.penalty)} points.
           </p>

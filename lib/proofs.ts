@@ -75,6 +75,11 @@ export function timeFr(hhmm: string): string {
   return `${h} h${m ? ` ${String(m).padStart(2, "0")}` : ""}`;
 }
 
+/** Total de points : vrai signe moins (−30), sans « + » devant les positifs. */
+export function points(n: number): string {
+  return n < 0 ? `−${Math.abs(n).toLocaleString("fr-FR")}` : n.toLocaleString("fr-FR");
+}
+
 export function signed(points: number): string {
   return points > 0 ? `+${points}` : points < 0 ? `−${Math.abs(points)}` : "0";
 }

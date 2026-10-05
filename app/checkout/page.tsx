@@ -5,7 +5,7 @@ import { CheckoutPassForm } from "@/app/checkout/CheckoutPassForm";
 import { Logo } from "@/components/Logo";
 import { requireUser } from "@/lib/auth";
 import { currentPrice } from "@/lib/cohorts";
-import { formatDayFr } from "@/lib/dates";
+import { formatRangeFr } from "@/lib/dates";
 import { formatEuros } from "@/lib/money";
 import { btnLink } from "@/lib/ui";
 
@@ -46,7 +46,7 @@ export default async function CheckoutPage() {
       <p className="mt-14 text-xs tracking-[0.2em] text-mute uppercase">Pass d&apos;arc</p>
       <h1 className="mt-4 font-serif text-5xl leading-none">{cohort.name}</h1>
       <p className="mt-4 text-mute">
-        Du {formatDayFr(cohort.start_date, { year: false })} au {formatDayFr(cohort.end_date)}. {count ?? 0} principes, une
+        {formatRangeFr(cohort.start_date, cohort.end_date)}. {count ?? 0} principes, une
         épreuve par semaine, le classement.
       </p>
 

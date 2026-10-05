@@ -9,7 +9,7 @@ import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { DEFAULT_PROFILE_ART, getArt } from "@/lib/art";
 import { getUser } from "@/lib/auth";
-import { CATEGORY_LABEL, plural } from "@/lib/proofs";
+import { CATEGORY_LABEL, plural, points } from "@/lib/proofs";
 import type { PublicProfile } from "@/lib/types";
 import { label } from "@/lib/ui";
 
@@ -72,7 +72,7 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
         <dl className="grid grid-cols-3 gap-4 border-b border-line py-8">
           <div>
             <dt className="text-xs text-mute">Points</dt>
-            <dd className="mt-1 font-serif text-4xl tabular-nums">{profile.points ?? 0}</dd>
+            <dd className="mt-1 font-serif text-4xl tabular-nums">{points(profile.points ?? 0)}</dd>
           </div>
           <div>
             <dt className="text-xs text-mute">Rang</dt>

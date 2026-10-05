@@ -12,8 +12,9 @@ export default function ConfidentialitePage() {
       </p>
 
       <h2>Responsable du traitement</h2>
+      <p>Antoine Hofmann, éditeur de Nonante.</p>
       <Todo>
-        <p>Identité et coordonnées du responsable du traitement, et contact pour les données personnelles.</p>
+        <p>Adresse postale et email de contact pour les données personnelles.</p>
       </Todo>
 
       <h2>Données collectées</h2>

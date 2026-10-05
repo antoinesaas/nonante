@@ -7,8 +7,8 @@ import { Logo } from "@/components/Logo";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import type { Artwork } from "@/lib/art";
 import type { PublicCohort } from "@/lib/cohorts";
-import { formatDayFr } from "@/lib/dates";
-import { WEAK_MOMENTS } from "@/lib/proofs";
+import { formatRangeFr } from "@/lib/dates";
+import { timeFr, WEAK_MOMENTS } from "@/lib/proofs";
 import type { Category } from "@/lib/types";
 import { btnLink, btnPrimary, input } from "@/lib/ui";
 
@@ -146,7 +146,8 @@ export function OnboardingFlow({ cohort, profile, prefill, firstArt, lastArt, cu
               <p className="text-xs tracking-[0.2em] text-mute uppercase">{cohort.name}</p>
               <h1 className="mt-5 font-serif text-5xl leading-[0.95]">90 jours. Un objectif. Des preuves.</h1>
               <p className="mt-6 text-lg leading-relaxed text-paper/80">
-                Six questions. L&apos;app te donnera ensuite tes principes : tu ne les choisis pas, tu les tiens.
+                Quelques questions, une à la fois. L&apos;app te donnera ensuite tes principes : tu ne les choisis pas,
+                tu les tiens.
               </p>
             </>
           ) : null}
@@ -253,7 +254,7 @@ export function OnboardingFlow({ cohort, profile, prefill, firstArt, lastArt, cu
                 <select value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} className={`${input} mt-5`}>
                   {WAKE_TIMES.map((t) => (
                     <option key={t} value={t}>
-                      {t.replace(":", " h ").replace(" h 00", " h")}
+                      {timeFr(t)}
                     </option>
                   ))}
                 </select>
@@ -276,7 +277,7 @@ export function OnboardingFlow({ cohort, profile, prefill, firstArt, lastArt, cu
               <p className="text-xs tracking-[0.2em] text-mute uppercase">{cohort.name}</p>
               <h1 className="mt-5 font-serif text-5xl leading-[0.95]">Tes principes sont prêts.</h1>
               <p className="mt-6 text-lg leading-relaxed text-paper/80">
-                Du {formatDayFr(cohort.start_date, { year: false })} au {formatDayFr(cohort.end_date)}. Cinq principes,
+                {formatRangeFr(cohort.start_date, cohort.end_date)}. Cinq principes,
                 chacun avec sa difficulté et sa preuve. Rien ne se valide sans preuve.
               </p>
             </>

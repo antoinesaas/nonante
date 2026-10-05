@@ -62,11 +62,15 @@ export function RepCounter(props: Props) {
       const { FilesetResolver, PoseLandmarker } = await import("@mediapipe/tasks-vision");
       // Fichiers servis par Nonante (public/mediapipe et public/models) : aucun appel à un service tiers.
       const vision = await FilesetResolver.forVisionTasks("/mediapipe");
-      landmarker.current = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: "/models/pose_landmarker_lite.task", delegate: "GPU" },
-        runningMode: "VIDEO",
+      const options = (delegate: "GPU" | "CPU") => ({
+        baseOptions: { modelAssetPath: "/models/pose_landmarker_lite.task", delegate },
+        runningMode: "VIDEO" as const,
         numPoses: 1,
       });
+      // GPU si possible, sinon processeur (plus lent mais disponible partout).
+      landmarker.current = await PoseLandmarker.createFromOptions(vision, options("GPU")).catch(() =>
+        PoseLandmarker.createFromOptions(vision, options("CPU")),
+      );
       if (video.current) {
         video.current.srcObject = stream.current;
         await video.current.play();
@@ -187,7 +191,7 @@ export function RepCounter(props: Props) {
         ) : null}
       </div>
 
-      <div className="mt-auto space-y-4 pt-8 text-center">
+      <div className="mt-auto flex flex-col items-center gap-4 pt-8 text-center">
         {phase === "intro" ? (
           <>
             <h1 className="font-serif text-4xl leading-tight">{goal}, comptées.</h1>

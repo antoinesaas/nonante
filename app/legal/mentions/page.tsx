@@ -10,24 +10,23 @@ export default function MentionsPage() {
       <p className="text-sm text-mute">Gabarit à compléter avant toute mise en production.</p>
 
       <h2>Éditeur</h2>
+      <p>Le site Nonante est édité par Antoine Hofmann.</p>
       <Todo>
         <p>
-          Nom ou raison sociale, forme juridique, capital social, adresse du siège, numéro SIRET et RCS,
-          numéro de TVA intracommunautaire, email et téléphone de contact.
+          Statut (entrepreneur individuel, société…), adresse, numéro SIRET et RCS si applicable, numéro de
+          TVA intracommunautaire si applicable, email et téléphone de contact.
         </p>
       </Todo>
 
       <h2>Directeur de la publication</h2>
-      <Todo>
-        <p>Nom et qualité du directeur de la publication.</p>
-      </Todo>
+      <p>Antoine Hofmann.</p>
 
       <h2>Hébergement</h2>
+      <p>
+        Site hébergé par Vercel Inc. Base de données, authentification et fichiers hébergés par Supabase Inc.
+      </p>
       <Todo>
-        <p>
-          Hébergeur du site (Vercel) et de la base de données (Supabase) : raison sociale, adresse,
-          téléphone. Vérifier les informations sur les sites de ces prestataires.
-        </p>
+        <p>Adresse et téléphone de chaque hébergeur, à recopier depuis leurs mentions légales officielles.</p>
       </Todo>
 
       <h2>Images</h2>

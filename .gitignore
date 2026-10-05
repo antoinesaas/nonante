@@ -43,3 +43,6 @@ next-env.d.ts
 
 # MediaPipe (copié depuis node_modules par postinstall)
 /public/mediapipe/
+
+# Configuration locale de prévisualisation
+.claude/launch.json

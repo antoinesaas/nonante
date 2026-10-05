@@ -37,6 +37,12 @@ export function parisMidnight(date: string): Date {
   return new Date(utcGuess - parisOffsetMs(new Date(utcGuess)));
 }
 
+/** « Du 1er janvier au 31 mars 2027 », ou « Du 5 octobre 2026 au 2 janvier 2027 » si les années diffèrent. */
+export function formatRangeFr(start: string, end: string): string {
+  const sameYear = start.slice(0, 4) === end.slice(0, 4);
+  return `Du ${formatDayFr(start, { year: !sameYear })} au ${formatDayFr(end)}`;
+}
+
 /** « 1er janvier 2027 », « vendredi 1er janvier 2027 »… */
 export function formatDayFr(
   date: string,

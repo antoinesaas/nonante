@@ -1,6 +1,7 @@
 /**
- * Crée (une seule fois) le produit Stripe « Pass d'arc » et, pour chaque cohorte,
- * un prix normal et un prix early bird au montant lu en base. Stocke les IDs sur la cohorte.
+ * Crée (une seule fois) les coupons de parrainage (−20 %) et de fidélité (−50 %), le produit
+ * « Pass d'arc » et, pour chaque cohorte, un prix normal et un prix early bird au montant lu en base.
+ * Stocke les IDs des prix sur la cohorte.
  *
  * Relançable sans risque : un prix n'est recréé que s'il manque ou si le montant en base a changé.
  * Usage : npm run stripe:setup
@@ -53,10 +54,29 @@ async function ensurePrice(
   return price.id;
 }
 
+// Remises commerciales (mêmes identifiants que lib/stripe-codes.ts).
+const COUPONS = [
+  { id: "nonante-parrainage-20", percent_off: 20, name: "Parrainage Nonante (−20 %)" },
+  { id: "nonante-fidelite-50", percent_off: 50, name: "Fidélité Nonante (−50 %)" },
+];
+
+async function ensureCoupons() {
+  for (const coupon of COUPONS) {
+    try {
+      await stripe.coupons.retrieve(coupon.id);
+      console.log(`Coupon ${coupon.id} : déjà présent`);
+    } catch {
+      await stripe.coupons.create({ ...coupon, duration: "once" });
+      console.log(`Coupon ${coupon.id} : créé`);
+    }
+  }
+}
+
 async function main() {
   const mode = env("STRIPE_SECRET_KEY").startsWith("sk_live_") ? "PRODUCTION" : "test";
   console.log(`Stripe en mode ${mode}.`);
 
+  await ensureCoupons();
   const product = await passProduct();
   console.log(`Produit : ${product.id}`);
 

@@ -16,8 +16,9 @@ export default function CgvPage() {
         Nonante propose des arcs de 90 jours qui démarrent à dates fixes. Le pass d&apos;arc donne accès à
         l&apos;application pendant l&apos;arc acheté : principes, preuves, calendrier, classement.
       </p>
+      <p>Le vendeur est Antoine Hofmann (voir les mentions légales).</p>
       <Todo>
-        <p>Identité du vendeur (renvoi aux mentions légales) et description contractuelle du service.</p>
+        <p>Statut et coordonnées complètes du vendeur, description contractuelle du service.</p>
       </Todo>
 
       <h2>Prix et paiement</h2>

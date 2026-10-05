@@ -8,7 +8,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { getUser } from "@/lib/auth";
 import { currentPrice, getCohortSignups, getNextOpenCohort, type PublicCohort } from "@/lib/cohorts";
-import { formatDayFr, parisMidnight } from "@/lib/dates";
+import { formatDayFr, formatRangeFr, parisMidnight } from "@/lib/dates";
 import { formatEuros } from "@/lib/money";
 
 // Calendrier d'exemple, présenté comme tel : 22 jours écoulés, aujourd'hui = jour 23.
@@ -148,7 +148,7 @@ function CohortOffer({ cohort, signups, joinHref }: { cohort: PublicCohort; sign
         <Ordinals>{cohort.name}</Ordinals>
       </h2>
       <p className="mt-3 text-mute">
-        Du {formatDayFr(cohort.start_date, { year: false })} au {formatDayFr(cohort.end_date)}.
+        {formatRangeFr(cohort.start_date, cohort.end_date)}.
       </p>
 
       <div className="mt-10">
