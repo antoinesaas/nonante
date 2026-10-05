@@ -156,7 +156,7 @@ J'ai aussi joué le parcours complet dans un navigateur (375 px) contre un Supab
 - **Appliquer les migrations** sur ton projet Supabase et faire les réglages Auth ci-dessus.
 - **Clés** Stripe, Resend et VAPID dans Vercel ; `npm run stripe:setup` ; endpoint webhook.
 - **Tester sur de vrais téléphones** (iPhone Safari et Android Chrome) : le comptage des pompes à la caméra et la prise de photo. Je n'ai pas pu le faire, car le navigateur intégré bloque la caméra.
-- **Compléter les pages légales** : ton statut, ton adresse, ton SIRET, ton email de contact, le droit de rétractation et le médiateur de la consommation (blocs « À COMPLÉTER »). Je n'ai rien inventé.
+- **Compléter les pages légales** : ton adresse, ton email de contact, le droit de rétractation et le médiateur de la consommation (blocs « À COMPLÉTER »). Je n'ai rien inventé.
 - **Avant d'activer la mise sur soi** : vérifier le délai maximal de remboursement Stripe (les remboursements se font à la fin d'un arc de 90 jours) et faire valider les CGV par un professionnel.
 
 ## Choix faits en route

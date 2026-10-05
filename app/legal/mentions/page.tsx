@@ -13,8 +13,7 @@ export default function MentionsPage() {
       <p>Le site Nonante est édité par Antoine Hofmann.</p>
       <Todo>
         <p>
-          Statut (entrepreneur individuel, société…), adresse, numéro SIRET et RCS si applicable, numéro de
-          TVA intracommunautaire si applicable, email et téléphone de contact.
+          Adresse et email de contact de l&apos;éditeur.
         </p>
       </Todo>
 
@@ -23,11 +22,13 @@ export default function MentionsPage() {
 
       <h2>Hébergement</h2>
       <p>
-        Site hébergé par Vercel Inc. Base de données, authentification et fichiers hébergés par Supabase Inc.
+        Site hébergé par Vercel Inc., 440 N Barranca Avenue #4133, Covina, CA 91723, États-Unis
+        (privacy@vercel.com).
       </p>
-      <Todo>
-        <p>Adresse et téléphone de chaque hébergeur, à recopier depuis leurs mentions légales officielles.</p>
-      </Todo>
+      <p>
+        Base de données, authentification et fichiers hébergés par Supabase Pte. Ltd., 65 Chulia Street
+        #38-02/03, OCBC Centre, Singapour 049513 (privacy@supabase.com).
+      </p>
 
       <h2>Images</h2>
       <p>
