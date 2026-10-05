@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Palette fermée : seules ces couleurs existent. Vert et rouge sont réservés
+   aux états des jours et des principes. */
+@theme {
+  --color-*: initial;
+  --color-ink: #0a0a0a;
+  --color-surface: #141414;
+  --color-line: #2a2a2a;
+  --color-paper: #f2f2f2;
+  --color-mute: #8a8a8a;
+  --color-ok: #34c759;
+  --color-ko: #ff453a;
+
+  --radius-*: initial;
+  --radius-xs: 2px;
+  --radius-full: 9999px;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+}
+
+/* En couche « base » : les utilitaires Tailwind peuvent toujours les surcharger. */
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    background: var(--color-ink);
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  ::selection {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--color-paper);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
