@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "stripe:setup": "tsx --env-file=.env.local scripts/stripe-setup.ts",
     "test:db": "node scripts/test-db.mjs",
-    "db:types": "node scripts/gen-types.mjs"
+    "db:types": "node scripts/gen-types.mjs",
+    "art:fetch": "tsx scripts/fetch-art.ts",
+    "postinstall": "node scripts/copy-mediapipe.mjs",
+    "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "1.0.1",

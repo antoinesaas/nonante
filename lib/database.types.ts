@@ -327,6 +327,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      email_log: {
+        Row: {
+          kind: string;
+          ref: string;
+          sent_at: string;
+          user_id: string;
+        };
+        Insert: {
+          kind: string;
+          ref: string;
+          sent_at?: string;
+          user_id: string;
+        };
+        Update: {
+          kind?: string;
+          ref?: string;
+          sent_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       enrollments: {
         Row: {
           amount_paid_cents: number | null;
@@ -1000,6 +1021,7 @@ export type Database = {
       export_my_data: { Args: never; Returns: Json };
       heartbeat: { Args: { p_session_id: string | null; p_nonce: string | null; p_visible: boolean | null; p_hidden_ms: number | null }; Returns: Json };
       leaderboard: { Args: { p_cohort_id: string | null; p_category?: string | null; p_period?: string | null }; Returns: { rank: number; pseudo: string; category: string; points: number; green_days: number; level: number; goal_title: string; is_me: boolean; is_public: boolean }[] };
+      log_email_once: { Args: { p_user: string | null; p_kind: string | null; p_ref: string | null }; Returns: boolean };
       mark_achievements_seen: { Args: never; Returns: undefined };
       mark_level_seen: { Args: never; Returns: undefined };
       mark_photos_deleted: { Args: { p_paths: string[] | null }; Returns: undefined };

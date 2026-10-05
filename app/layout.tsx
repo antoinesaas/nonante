@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: { default: "Nonante · Tiens 90 jours. Prouve-le.", template: "%s · Nonante" },
   description,
+  applicationName: "Nonante",
+  appleWebApp: { capable: true, title: "Nonante", statusBarStyle: "black-translucent" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
   openGraph: {
     title: "Tiens 90 jours. Prouve-le.",
     description,

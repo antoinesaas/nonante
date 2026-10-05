@@ -1,0 +1,112 @@
+[
+  {
+    "slug": "friedrich-moine",
+    "title": "Le Moine au bord de la mer",
+    "artist": "Caspar David Friedrich",
+    "year": "1808-1810",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Der_M%C3%B6nch_am_Meer_-_Google_Art_Project.jpg",
+    "width": 2000,
+    "height": 1272
+  },
+  {
+    "slug": "friedrich-voyageur",
+    "title": "Le Voyageur contemplant une mer de nuages",
+    "artist": "Caspar David Friedrich",
+    "year": "vers 1818",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg",
+    "width": 1562,
+    "height": 2000
+  },
+  {
+    "slug": "friedrich-rugen",
+    "title": "Falaises de craie sur l'île de Rügen",
+    "artist": "Caspar David Friedrich",
+    "year": "1818",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Kreidefelsen_auf_R%C3%BCgen_(Museum_Oskar_Reinhart).jpg",
+    "width": 1391,
+    "height": 1800
+  },
+  {
+    "slug": "malevitch-carre-noir",
+    "title": "Carré noir",
+    "artist": "Kasimir Malevitch",
+    "year": "1915",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Kazimir_Malevich,_1915,_Black_Suprematic_Square,_oil_on_linen_canvas,_79.5_x_79.5_cm,_Tretyakov_Gallery,_Moscow.jpg",
+    "width": 1718,
+    "height": 1718
+  },
+  {
+    "slug": "malevitch-carre-blanc",
+    "title": "Carré blanc sur fond blanc",
+    "artist": "Kasimir Malevitch",
+    "year": "1918",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Kazimir_Malevich_-_%27Suprematist_Composition-_White_on_White%27,_oil_on_canvas,_1918,_Museum_of_Modern_Art.jpg",
+    "width": 1626,
+    "height": 1686
+  },
+  {
+    "slug": "mondrian-jetee",
+    "title": "Jetée et océan",
+    "artist": "Piet Mondrian",
+    "year": "1915",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Otterloo_kroller_muller_mondrian_composition_10_noir_et_blanc.jpg",
+    "width": 2000,
+    "height": 1595
+  },
+  {
+    "slug": "hammershoi-strandgade",
+    "title": "Intérieur, Strandgade 30",
+    "artist": "Vilhelm Hammershøi",
+    "year": "1901-1906",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Vilhelm_Hammersh%C3%B8i,_Interi%C3%B8r_fra_Strandgade_30,_1900.jpg",
+    "width": 1712,
+    "height": 2000
+  },
+  {
+    "slug": "turner-norham",
+    "title": "Norham Castle, lever du soleil",
+    "artist": "J. M. W. Turner",
+    "year": "vers 1845",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Joseph_Mallord_William_Turner_-_Norham_Castle,_Sunrise_-_WGA23182.jpg",
+    "width": 1536,
+    "height": 1133
+  },
+  {
+    "slug": "hokusai-vague",
+    "title": "La Grande Vague de Kanagawa",
+    "artist": "Katsushika Hokusai",
+    "year": "vers 1831",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Great_Wave_off_Kanagawa2.jpg",
+    "width": 2000,
+    "height": 1369
+  },
+  {
+    "slug": "hiroshige-neige",
+    "title": "Neige de nuit à Kanbara",
+    "artist": "Utagawa Hiroshige",
+    "year": "1833-1834",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Hiroshige-53-Stations-Hoeido-16-Kanbara-MFA-01.jpg",
+    "width": 1839,
+    "height": 1272
+  },
+  {
+    "slug": "adams-tetons",
+    "title": "The Tetons and the Snake River",
+    "artist": "Ansel Adams (National Park Service)",
+    "year": "1942",
+    "license": "Public domain",
+    "source": "https://commons.wikimedia.org/wiki/File:Adams_The_Tetons_and_the_Snake_River.jpg",
+    "width": 2000,
+    "height": 1601
+  }
+]

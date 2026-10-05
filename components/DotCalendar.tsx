@@ -1,36 +1,64 @@
 import { ARC_DAYS } from "@/lib/rules";
+import type { DayStatus } from "@/lib/types";
 
-export type DayState = "green" | "red" | "white" | "future";
+export type DayState = DayStatus;
 
-const DOT: Record<DayState, string> = {
+const DOT: Record<DayStatus, string> = {
   green: "bg-ok",
   red: "bg-ko",
   white: "bg-paper",
   future: "border border-mute/50",
+  today: "border border-mute/50 ring-1 ring-paper ring-offset-[3px] ring-offset-ink",
+  pending: "border border-mute",
+  none: "border border-line",
 };
 
-const LABEL: Record<DayState, string> = {
+export const DAY_LABEL: Record<DayStatus, string> = {
   green: "réussi",
   red: "raté",
   white: "absent",
   future: "à venir",
+  today: "aujourd'hui",
+  pending: "en cours de clôture",
+  none: "avant ton entrée",
 };
 
-export function Dot({ state, today = false }: { state: DayState; today?: boolean }) {
-  const ring = today ? " ring-1 ring-paper ring-offset-[3px] ring-offset-ink" : "";
+export function Dot({ state, today = false }: { state: DayStatus; today?: boolean }) {
+  const ring = today && state !== "today" ? " ring-1 ring-paper ring-offset-[3px] ring-offset-ink" : "";
   return <span className={`block size-3.5 rounded-full sm:size-4 ${DOT[state]}${ring}`} />;
 }
 
+export const calendarGrid = "grid w-fit grid-cols-10 gap-x-3.5 gap-y-3.5 sm:gap-x-5 sm:gap-y-5";
+
 /** Le calendrier de l'arc : 90 points, 10 colonnes × 9 lignes. */
-export function DotCalendar({ days, today }: { days: DayState[]; today?: number }) {
+export function DotCalendar({ days, today }: { days: DayStatus[]; today?: number }) {
   const cells = Array.from({ length: ARC_DAYS }, (_, i) => days[i] ?? "future");
   return (
-    <ol className="grid w-fit grid-cols-10 gap-x-3.5 gap-y-3.5 sm:gap-x-5 sm:gap-y-5">
+    <ol className={calendarGrid}>
       {cells.map((state, i) => (
-        <li key={i} aria-label={`Jour ${i + 1} : ${i === today ? "aujourd'hui" : LABEL[state]}`}>
+        <li key={i} aria-label={`Jour ${i + 1} : ${i === today ? "aujourd'hui" : DAY_LABEL[state]}`}>
           <Dot state={state} today={i === today} />
         </li>
       ))}
     </ol>
+  );
+}
+
+export function CalendarLegend() {
+  const items: { state: DayStatus; label: string }[] = [
+    { state: "green", label: "réussi" },
+    { state: "red", label: "raté" },
+    { state: "white", label: "absent" },
+    { state: "future", label: "à venir" },
+  ];
+  return (
+    <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-mute">
+      {items.map((item) => (
+        <li key={item.state} className="flex items-center gap-2">
+          <Dot state={item.state} />
+          {item.label}
+        </li>
+      ))}
+    </ul>
   );
 }

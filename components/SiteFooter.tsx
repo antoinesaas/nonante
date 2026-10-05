@@ -7,7 +7,13 @@ export function SiteFooter() {
       <Link href="/" aria-label="Nonante, accueil">
         <Logo size="sm" />
       </Link>
-      <nav aria-label="Informations légales" className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+      <nav aria-label="Liens" className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+        <Link href="/classement" className="hover:text-paper">
+          Classement
+        </Link>
+        <Link href="/art" className="hover:text-paper">
+          Œuvres
+        </Link>
         <Link href="/legal/mentions" className="hover:text-paper">
           Mentions légales
         </Link>

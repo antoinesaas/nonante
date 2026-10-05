@@ -1,9 +1,8 @@
 import type Stripe from "stripe";
 import { z } from "zod";
-import { formatDayFr } from "@/lib/dates";
-import { sendEmail } from "@/lib/email";
-import { requireEnv, siteUrl } from "@/lib/env";
-import { formatEuros } from "@/lib/money";
+import { sendPresaleConfirmation } from "@/lib/emails";
+import { requireEnv } from "@/lib/env";
+import { fulfillPass, idOf } from "@/lib/payments";
 import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -56,18 +55,37 @@ export async function POST(request: Request) {
   return Response.json({ received: true });
 }
 
-function idOf(value: string | { id: string } | null | undefined): string | null {
-  if (!value) return null;
-  return typeof value === "string" ? value : value.id;
-}
-
 async function handlePaidCheckout(session: Stripe.Checkout.Session) {
   // Moyens de paiement différés : on attend checkout.session.async_payment_succeeded.
   if (session.payment_status !== "paid") return;
-  // Phase 1 : seules les préventes existent. Le pass avec compte arrive en phase 3.
-  if (session.metadata?.type !== "presale") return;
+  switch (session.metadata?.type) {
+    case "pass":
+      await fulfillPass(session);
+      return;
+    case "stake":
+      await recordStake(session);
+      return;
+    case "presale":
+      await recordPresale(session);
+      return;
+    default:
+      return;
+  }
+}
 
-  const parsedCohortId = z.uuid().safeParse(session.metadata.cohort_id);
+async function recordStake(session: Stripe.Checkout.Session) {
+  const enrollmentId = z.uuid().safeParse(session.metadata?.enrollment_id);
+  if (!enrollmentId.success) throw new Error("enrollment_id invalide dans les métadonnées");
+  const { error } = await createAdminClient().rpc("record_stake", {
+    p_enrollment: enrollmentId.data,
+    p_payment_intent: idOf(session.payment_intent),
+    p_amount: session.amount_total ?? 0,
+  });
+  if (error) throw new Error(`mise non enregistrée (${error.code})`);
+}
+
+async function recordPresale(session: Stripe.Checkout.Session) {
+  const parsedCohortId = z.uuid().safeParse(session.metadata?.cohort_id);
   if (!parsedCohortId.success) throw new Error("cohort_id invalide dans les métadonnées");
   const cohortId = parsedCohortId.data;
   const email = session.customer_details?.email?.trim().toLowerCase();
@@ -86,8 +104,8 @@ async function handlePaidCheckout(session: Stripe.Checkout.Session) {
         stripe_promotion_code_id: idOf(session.discounts?.find((d) => d.promotion_code)?.promotion_code),
         amount_paid_cents: session.amount_total ?? 0,
         currency: session.currency ?? "eur",
-        utm_source: session.metadata.utm_source ?? null,
-        utm_campaign: session.metadata.utm_campaign ?? null,
+        utm_source: session.metadata?.utm_source ?? null,
+        utm_campaign: session.metadata?.utm_campaign ?? null,
       },
       { onConflict: "stripe_checkout_session_id", ignoreDuplicates: true },
     )
@@ -97,32 +115,6 @@ async function handlePaidCheckout(session: Stripe.Checkout.Session) {
   // Déjà enregistrée (événement rejoué) : pas de second email.
   if (!inserted?.length) return;
 
-  const { data: cohort, error: cohortError } = await admin
-    .from("cohorts")
-    .select("name, start_date, end_date")
-    .eq("id", cohortId)
-    .single();
-  if (cohortError) {
-    console.error(`[stripe] cohorte introuvable pour l'email de confirmation : ${cohortError.code}`);
-    return;
-  }
-
-  await sendEmail({
-    to: email,
-    subject: "Ta place est réservée.",
-    text: [
-      `Ta place est réservée : ${cohort.name}.`,
-      "",
-      `Départ : ${formatDayFr(cohort.start_date, { weekday: true })}.`,
-      `Fin : ${formatDayFr(cohort.end_date, { weekday: true })}.`,
-      `Montant payé : ${formatEuros(session.amount_total ?? 0)}.`,
-      "",
-      "Avant le départ, tu recevras un email pour créer ton compte avec cette adresse.",
-      "Tu choisiras ton objectif, et l'app te donnera tes principes.",
-      "",
-      siteUrl(),
-      "",
-      "Nonante",
-    ].join("\n"),
-  });
+  const { data: cohort } = await admin.from("cohorts").select("name, start_date, end_date").eq("id", cohortId).single();
+  if (cohort) await sendPresaleConfirmation(email, cohort, session.amount_total ?? 0);
 }

@@ -84,7 +84,6 @@ await q(`insert into auth.users (id, email) values
 const testCohort = await val("select id from public.cohorts where is_test");
 const janCohort = await val("select id from public.cohorts where name = 'Arc du 1er janvier'");
 const parisToday = await val("select public.paris_today()::text");
-const isodow = Number(await val("select extract(isodow from public.paris_today())::int"));
 
 const onboard = (user, overrides = {}) =>
   as(user, () => rpc("create_enrollment", {
@@ -387,7 +386,7 @@ console.log("\nFin d'arc");
 const endCohort = await val("insert into public.cohorts (name, start_date, is_test) values ('Finie', public.paris_today() - 90, true) returning id");
 await q("insert into auth.users (id, email) values ('12121212-0000-4000-8000-000000000008', 'h@exemple.fr')");
 const H = "12121212-0000-4000-8000-000000000008";
-const enrH = await q("insert into public.profiles (id, pseudo, birth_year) values ($1, 'tenace', 2000) returning id", [H]);
+await q("insert into public.profiles (id, pseudo, birth_year) values ($1, 'tenace', 2000)", [H]);
 const enrHid = await val("insert into public.enrollments (user_id, cohort_id, category, goal_title, status, started_on, paid_at) values ($1, $2, 'etudes', 'Tenir', 'active', public.paris_today() - 90, now()) returning id", [H, endCohort]);
 await q("insert into public.day_status (enrollment_id, day, status, opened_app) select $1, d::date, case when extract(day from d) = 1 then 'red' else 'green' end, true from generate_series(public.paris_today() - 90, public.paris_today() - 1, interval '1 day') d", [enrHid]);
 const ending = await rpc("cron_cohort_end");

@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { Ordinals } from "@/components/Ordinals";
 import { SiteFooter } from "@/components/SiteFooter";
 import { WaitlistForm } from "@/components/WaitlistForm";
+import { getUser } from "@/lib/auth";
 import { currentPrice, getCohortSignups, getNextOpenCohort, type PublicCohort } from "@/lib/cohorts";
 import { formatDayFr, parisMidnight } from "@/lib/dates";
 import { formatEuros } from "@/lib/money";
@@ -33,14 +34,18 @@ function serverNow(): number {
 }
 
 export default async function Home() {
-  const cohort = await getNextOpenCohort();
+  const [cohort, { user }] = await Promise.all([getNextOpenCohort(), getUser()]);
   const signups = cohort ? await getCohortSignups(cohort.id) : null;
+  const joinHref = user ? "/app" : "/login?next=/onboarding";
 
   return (
     <>
-      <header className="mx-auto flex w-full max-w-xl items-center px-5 pt-6">
+      <header className="mx-auto flex w-full max-w-xl items-center justify-between px-5 pt-6">
         <Link href="/" aria-label="Nonante, accueil">
           <Logo />
+        </Link>
+        <Link href={user ? "/app" : "/login"} className="text-sm text-mute hover:text-paper">
+          {user ? "Mon arc" : "Connexion"}
         </Link>
       </header>
 
@@ -56,16 +61,16 @@ export default async function Home() {
             Pour les étudiants qui mènent leurs études et leur business de front. Un objectif, une
             date, des principes imposés. Rien ne se valide sans preuve.
           </p>
-          <a
-            href="#rejoindre"
+          <Link
+            href={cohort ? "#rejoindre" : joinHref}
             className="mt-9 inline-flex h-14 items-center rounded-xs bg-paper px-7 text-base font-medium text-ink transition-opacity hover:opacity-90"
           >
             Rejoindre l&apos;arc
-          </a>
+          </Link>
         </section>
 
         {cohort && signups !== null ? (
-          <CohortOffer cohort={cohort} signups={signups} />
+          <CohortOffer cohort={cohort} signups={signups} joinHref={joinHref} />
         ) : (
           <NoOpenCohort />
         )}
@@ -118,12 +123,12 @@ export default async function Home() {
             <p className="font-serif text-4xl leading-tight">
               <Ordinals>{`Le ${formatDayFr(cohort.start_date, { year: false })}, tout le monde part de zéro.`}</Ordinals>
             </p>
-            <a
-              href="#rejoindre"
+            <Link
+              href={joinHref}
               className="mt-8 inline-flex h-14 items-center rounded-xs border border-paper px-7 text-base text-paper transition-colors hover:bg-paper hover:text-ink"
             >
               Rejoindre l&apos;arc
-            </a>
+            </Link>
           </section>
         ) : null}
       </main>
@@ -133,7 +138,7 @@ export default async function Home() {
   );
 }
 
-function CohortOffer({ cohort, signups }: { cohort: PublicCohort; signups: number }) {
+function CohortOffer({ cohort, signups, joinHref }: { cohort: PublicCohort; signups: number; joinHref: string }) {
   const price = currentPrice(cohort);
 
   return (
@@ -168,13 +173,28 @@ function CohortOffer({ cohort, signups }: { cohort: PublicCohort; signups: numbe
           {price.early ? "Prix early bird jusqu'au départ. " : null}
           Paiement unique, pas d&apos;abonnement.
         </p>
-        <div className="mt-8">
-          <CheckoutForm cohortId={cohort.id} label="Rejoindre l'arc" />
-        </div>
-        <p className="mt-3 text-xs text-mute">Paiement sécurisé par Stripe. Codes promo acceptés.</p>
+        <Link
+          href={joinHref}
+          className="mt-8 inline-flex h-14 w-full items-center justify-center rounded-xs bg-paper px-6 text-base font-medium text-ink transition-opacity hover:opacity-90"
+        >
+          Rejoindre l&apos;arc
+        </Link>
+        <p className="mt-3 text-xs text-mute">
+          Six questions, tes principes, puis le paiement. Sécurisé par Stripe, codes promo acceptés.
+        </p>
       </div>
 
       <details className="group mt-10">
+        <summary className="cursor-pointer list-none text-sm text-mute hover:text-paper [&::-webkit-details-marker]:hidden">
+          Pressé ? <span className="underline underline-offset-4">Réserve ta place maintenant, crée ton compte plus tard.</span>
+        </summary>
+        <div className="mt-5">
+          <CheckoutForm cohortId={cohort.id} label={`Réserver pour ${formatEuros(price.cents)}`} />
+          <p className="mt-3 text-xs text-mute">Ta place sera rattachée au compte créé avec la même adresse email.</p>
+        </div>
+      </details>
+
+      <details className="group mt-6">
         <summary className="cursor-pointer list-none text-sm text-mute hover:text-paper [&::-webkit-details-marker]:hidden">
           Pas encore prêt&nbsp;? <span className="underline underline-offset-4">Reçois un rappel avant le départ.</span>
         </summary>
