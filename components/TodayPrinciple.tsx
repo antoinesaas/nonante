@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { validateDeclaratif } from "@/app/actions/proofs";
-import { ACTION_LABEL, isStrong, PROOF_LABEL, proofHref, timeFr } from "@/lib/proofs";
+import { ACTION_LABEL, isStrong, PILLAR_LABEL, PROOF_LABEL, proofHref, targetHint } from "@/lib/proofs";
 import type { PrincipleView } from "@/lib/types";
 import { btnSmall } from "@/lib/ui";
 
@@ -19,26 +19,32 @@ function Check() {
 export function TodayPrinciple({ principle, disabled = false }: { principle: PrincipleView; disabled?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [showWhy, setShowWhy] = useState(false);
   const v = principle.validation;
   const href = proofHref(principle.proof_type, principle.id);
-  const weakValue = Math.round(principle.value * 0.5);
-  const shown = isStrong(principle.proof_type) ? principle.value : weakValue;
-
-  let hint: string | null = null;
-  if (principle.proof_type === "reveil" && principle.target.before) hint = `avant ${timeFr(principle.target.before)}`;
-  if (principle.target.after) hint = `à partir de ${timeFr(principle.target.after)}`;
-  if (principle.proof_type === "session" && principle.target.minutes) hint = `${principle.target.minutes} min`;
+  const shown = isStrong(principle.proof_type) ? principle.value : Math.round(principle.value * 0.5);
+  const hint = targetHint(principle.proof_type, principle.target);
 
   return (
     <li className="py-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-mute">{principle.if_text},</p>
-          <p className="mt-1 text-lg leading-snug">{principle.then_text}</p>
+          <p className="text-[10px] tracking-[0.2em] text-mute uppercase">{PILLAR_LABEL[principle.pillar]}</p>
+          <p className="mt-1.5 text-mute">{principle.if_text},</p>
+          <p className="mt-0.5 text-lg leading-snug">{principle.then_text}</p>
           <p className="mt-2 text-xs text-mute">
             {PROOF_LABEL[principle.proof_type]}
             {hint ? ` · ${hint}` : null}
+            {principle.why ? (
+              <>
+                {" · "}
+                <button type="button" onClick={() => setShowWhy((s) => !s)} className="underline underline-offset-2 hover:text-paper">
+                  pourquoi
+                </button>
+              </>
+            ) : null}
           </p>
+          {showWhy && principle.why ? <p className="mt-2 text-sm text-mute">{principle.why}</p> : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           {v ? (

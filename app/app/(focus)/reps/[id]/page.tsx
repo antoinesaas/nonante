@@ -17,7 +17,7 @@ export default async function RepsPage({ params, searchParams }: PageProps<"/app
     const { data: assignment } = await supabase.from("challenge_assignments").select("id, challenge_id").eq("id", id).maybeSingle();
     if (!assignment) notFound();
     const { data: challenge } = await supabase.from("challenges").select("title, proof_type, rule").eq("id", assignment.challenge_id).single();
-    if (challenge?.proof_type !== "reps") redirect("/app/epreuve");
+    if (challenge?.proof_type !== "reps") redirect("/app/quete");
     const exercise = ((challenge.rule as { exercise?: Exercise }).exercise ?? "pushup") as Exercise;
     return <RepCounter mode="challenge" assignmentId={id} label={challenge.title} exercise={exercise} target={null} weakPoints={null} />;
   }

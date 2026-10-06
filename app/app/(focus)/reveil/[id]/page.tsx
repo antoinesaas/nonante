@@ -25,7 +25,7 @@ export default async function WakePage({ params, searchParams }: PageProps<"/app
     const { data: assignment } = await supabase.from("challenge_assignments").select("id, challenge_id").eq("id", id).maybeSingle();
     if (!assignment) notFound();
     const { data: challenge } = await supabase.from("challenges").select("title, proof_type, rule").eq("id", assignment.challenge_id).single();
-    if (challenge?.proof_type !== "reveil") redirect("/app/epreuve");
+    if (challenge?.proof_type !== "reveil") redirect("/app/quete");
     const before = (challenge.rule as { before?: string }).before ?? "08:00";
     return (
       <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-center px-5 py-12">

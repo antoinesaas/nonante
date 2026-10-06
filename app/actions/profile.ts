@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getUser } from "@/lib/auth";
 import { type ActionResult, userMessage } from "@/lib/errors";
-import { removeProofPhotos } from "@/lib/photos";
+import { removeAvatars, removeProofPhotos, storeAvatar } from "@/lib/photos";
 import { isAllowedPushEndpoint } from "@/lib/push";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,10 +18,40 @@ export async function updateSettings(_prev: ActionResult, formData: FormData): P
     p_is_public: formData.get("isPublic") === "on",
     p_art_slug: typeof art === "string" && /^[a-z0-9-]{1,60}$/.test(art) ? art : null,
     p_email_reminders: formData.get("emailReminders") === "on",
+    p_wallet_public: formData.get("walletPublic") === "on",
+    p_bio: String(formData.get("bio") ?? "").slice(0, 200),
   });
   if (error) return { ok: false, message: userMessage(error) };
   revalidatePath("/app/profil");
   return { ok: true, message: "Enregistré." };
+}
+
+/** Photo de profil : vérifiée, recadrée en carré 512 px, ré-encodée (sans métadonnées) dans le bucket public. */
+export async function uploadAvatar(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const { user } = await getUser();
+  if (!user) return { ok: false, message: "Connecte-toi." };
+  if (!(await rateLimit("avatar", 10, 3600))) return { ok: false, message: "Trop de changements. Réessaie plus tard." };
+  const stored = await storeAvatar(user.id, formData.get("avatar"));
+  if ("error" in stored) return { ok: false, message: stored.error };
+  const { data: old, error } = await createAdminClient().rpc("set_avatar", { p_user: user.id, p_path: stored.path });
+  if (error) {
+    await removeAvatars([stored.path]);
+    return { ok: false, message: userMessage(error) };
+  }
+  if (old) await removeAvatars([old as string]);
+  revalidatePath("/app/profil");
+  revalidatePath("/app");
+  return { ok: true, message: "Photo enregistrée." };
+}
+
+export async function removeAvatar(): Promise<ActionResult> {
+  const { user } = await getUser();
+  if (!user) return { ok: false, message: "Connecte-toi." };
+  const { data: old, error } = await createAdminClient().rpc("set_avatar", { p_user: user.id, p_path: null as unknown as string });
+  if (error) return { ok: false, message: userMessage(error) };
+  if (old) await removeAvatars([old as string]);
+  revalidatePath("/app/profil");
+  return { ok: true, message: "Photo retirée." };
 }
 
 const Subscription = z.object({
@@ -73,9 +103,11 @@ export async function deleteAccount(_prev: ActionResult, formData: FormData): Pr
   const typed = String(formData.get("confirm") ?? "").trim().toLowerCase();
   if (profile && typed !== profile.pseudo) return { ok: false, message: "Recopie ton pseudo pour confirmer." };
 
-  const { data: paths, error } = await supabase.rpc("delete_my_account");
+  const { data: files, error } = await supabase.rpc("delete_my_account");
   if (error) return { ok: false, message: userMessage(error) };
-  await removeProofPhotos((paths as string[] | null) ?? []);
+  const f = (files as { proofs: string[]; avatars: string[] } | null) ?? { proofs: [], avatars: [] };
+  await removeProofPhotos(f.proofs);
+  await removeAvatars(f.avatars);
   const { error: authError } = await createAdminClient().auth.admin.deleteUser(user.id);
   if (authError) console.error(`[compte] suppression auth impossible : ${authError.code ?? "erreur"}`);
   await supabase.auth.signOut();

@@ -16,7 +16,7 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
     const day = days[index];
     setSelected(index);
     setDetail(null);
-    if (["green", "red", "white", "today", "pending"].includes(day.status)) {
+    if (["green", "red", "white", "joker", "today", "pending"].includes(day.status)) {
       startTransition(async () => setDetail(await getDayDetail(day.day)));
     }
   }

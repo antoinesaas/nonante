@@ -18,17 +18,17 @@ const instrumentSerif = Instrument_Serif({
 });
 
 const description =
-  "Un arc de 90 jours pour les étudiants-entrepreneurs. Un objectif, une date, des principes imposés. Rien ne se valide sans preuve.";
+  "Le jeu de la vraie vie pour les jeunes entrepreneurs : 90 jours, tes principes, chaque jour prouvé. Maxe tes stats.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: { default: "Nonante · Tiens 90 jours. Prouve-le.", template: "%s · Nonante" },
+  title: { default: "Nonante · Le jeu de la vraie vie", template: "%s · Nonante" },
   description,
   applicationName: "Nonante",
   appleWebApp: { capable: true, title: "Nonante", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
   openGraph: {
-    title: "Tiens 90 jours. Prouve-le.",
+    title: "Le jeu de la vraie vie. 90 jours pour maxer tes stats.",
     description,
     siteName: "Nonante",
     locale: "fr_FR",

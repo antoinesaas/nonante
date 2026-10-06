@@ -7,6 +7,7 @@ const DOT: Record<DayStatus, string> = {
   green: "bg-ok",
   red: "bg-ko",
   white: "bg-paper",
+  joker: "border border-paper bg-[radial-gradient(circle,var(--color-paper)_30%,transparent_32%)]",
   future: "border border-mute/50",
   today: "border border-mute/50 ring-1 ring-paper ring-offset-[3px] ring-offset-ink",
   pending: "border border-mute",
@@ -17,10 +18,11 @@ export const DAY_LABEL: Record<DayStatus, string> = {
   green: "réussi",
   red: "raté",
   white: "absent",
+  joker: "joker",
   future: "à venir",
   today: "aujourd'hui",
   pending: "en cours de clôture",
-  none: "avant ton entrée",
+  none: "hors de l'arc",
 };
 
 export function Dot({ state, today = false }: { state: DayStatus; today?: boolean }) {
@@ -49,6 +51,7 @@ export function CalendarLegend() {
     { state: "green", label: "réussi" },
     { state: "red", label: "raté" },
     { state: "white", label: "absent" },
+    { state: "joker", label: "joker" },
     { state: "future", label: "à venir" },
   ];
   return (

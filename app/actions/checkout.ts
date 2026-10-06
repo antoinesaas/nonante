@@ -5,202 +5,151 @@ import { redirect } from "next/navigation";
 import type Stripe from "stripe";
 import { z } from "zod";
 import { getUser } from "@/lib/auth";
-import { currentPrice } from "@/lib/cohorts";
-import type { Database } from "@/lib/database.types";
-import { todayParis } from "@/lib/dates";
 import { siteUrl } from "@/lib/env";
-import { passDescription } from "@/lib/payments";
 import { rateLimit } from "@/lib/rate-limit";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { PublicPlans } from "@/lib/types";
 import { parseUtm, UTM_COOKIE } from "@/lib/utm";
 
 export type CheckoutState = { error: string | null };
 
-type Cohort = Database["public"]["Tables"]["cohorts"]["Row"];
-
 const UNAVAILABLE = "Le paiement n'est pas encore disponible. Réessaie plus tard.";
 
-async function utmMetadata(): Promise<Record<string, string>> {
-  const utm = parseUtm((await cookies()).get(UTM_COOKIE)?.value);
-  const metadata: Record<string, string> = {};
-  if (utm.source) metadata.utm_source = utm.source;
-  if (utm.campaign) metadata.utm_campaign = utm.campaign;
-  return metadata;
+const Input = z.object({
+  plan: z.enum(["essentiel", "pro", "fondateur"]),
+  interval: z.enum(["month", "year", "lifetime"]),
+  waiver: z.literal("on", { error: "Coche la case pour démarrer tout de suite." }),
+});
+
+type Billing = {
+  email: string | null;
+  pseudo: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  plan: string | null;
+  plan_status: string | null;
+  effective_plan: string | null;
+  utm_source: string | null;
+  utm_campaign: string | null;
+};
+
+async function billing(userId: string): Promise<Billing | null> {
+  const { data } = await createAdminClient().rpc("billing_profile", { p_user: userId });
+  return (data as Billing | null) ?? null;
 }
 
-/**
- * Utilise le prix Stripe de la cohorte s'il existe et correspond au montant en base.
- * Sinon (prix modifié en base, script stripe-setup pas encore lancé), prix calculé à la volée.
- * Le montant est toujours lu en base, jamais envoyé par le client.
- */
-async function passLineItem(cohort: Cohort): Promise<Stripe.Checkout.SessionCreateParams.LineItem> {
-  const price = currentPrice(cohort);
-  const priceId = price.early ? cohort.stripe_early_price_id : cohort.stripe_price_id;
-  if (priceId) {
-    const stripePrice = await getStripe().prices.retrieve(priceId);
-    if (stripePrice.active && stripePrice.currency === "eur" && stripePrice.unit_amount === price.cents) {
-      return { price: priceId, quantity: 1 };
-    }
-    console.warn("[checkout] prix Stripe différent du prix en base : prix calculé utilisé.");
-  }
-  return {
-    quantity: 1,
-    price_data: {
-      currency: "eur",
-      unit_amount: price.cents,
-      product_data: { name: `Pass d'arc · ${cohort.name}`, description: passDescription(cohort) },
-    },
-  };
+/** Client Stripe de l'utilisateur, créé une seule fois. */
+async function ensureCustomer(userId: string, b: Billing): Promise<string> {
+  if (b.stripe_customer_id) return b.stripe_customer_id;
+  const customer = await getStripe().customers.create(
+    { email: b.email ?? undefined, name: b.pseudo, metadata: { user_id: userId } },
+    { idempotencyKey: `customer-${userId}` },
+  );
+  await createAdminClient().rpc("set_stripe_customer", { p_user: userId, p_customer: customer.id });
+  return customer.id;
 }
 
-async function createSession(params: Stripe.Checkout.SessionCreateParams): Promise<string | null> {
+async function portalUrl(customer: string): Promise<string | null> {
+  const admin = createAdminClient();
+  const { data: setting } = await admin.from("settings").select("value").eq("key", "stripe_portal").maybeSingle();
+  const configuration = typeof setting?.value === "string" ? setting.value : undefined;
   try {
-    const session = await getStripe().checkout.sessions.create(params);
+    const session = await getStripe().billingPortal.sessions.create({
+      customer,
+      return_url: `${siteUrl()}/app/profil`,
+      locale: "fr",
+      ...(configuration ? { configuration } : {}),
+    });
     return session.url;
   } catch (e) {
-    console.error(`[checkout] création de la session Stripe impossible : ${e instanceof Error ? e.name : "inconnue"}`);
+    console.error(`[portail] ouverture impossible : ${e instanceof Error ? e.name : "erreur"}`);
     return null;
   }
 }
 
-/** Pass d'arc pour l'inscription en attente de l'utilisateur connecté. */
-export async function startPassCheckout(): Promise<CheckoutState> {
-  const { supabase, user } = await getUser();
-  if (!user) redirect("/login?next=/checkout");
-
-  // Une prévente au même email ? Rattachée, pas de second paiement.
-  const { data: claimed } = await supabase.rpc("claim_presale");
-  if (claimed) redirect("/app?paid=1");
-
+/** Plan choisi : abonnement mensuel ou annuel, ou Fondateur (paiement unique). Prix lus en base, jamais envoyés par le client. */
+export async function startCheckout(_prev: CheckoutState, formData: FormData): Promise<CheckoutState> {
+  const { user } = await getUser();
+  if (!user) redirect("/login?next=/abonnement");
   if (!stripeConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return { error: UNAVAILABLE };
   if (!(await rateLimit("checkout", 10, 600))) return { error: "Trop de tentatives. Réessaie dans quelques minutes." };
 
-  const { data: enrollment } = await supabase
-    .from("enrollments")
-    .select("id, cohort_id")
-    .eq("user_id", user.id)
-    .eq("status", "pending_payment")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!enrollment) redirect("/onboarding");
+  const parsed = Input.safeParse({ plan: formData.get("plan"), interval: formData.get("interval"), waiver: formData.get("waiver") });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Choix invalide." };
+  const { plan, interval } = parsed.data;
+  if ((plan === "fondateur") !== (interval === "lifetime")) return { error: "Choix invalide." };
 
-  const { data: cohort } = await createAdminClient().from("cohorts").select("*").eq("id", enrollment.cohort_id).single();
-  if (!cohort || !cohort.enroll_open || todayParis() > addDays(cohort.start_date, 6)) {
-    return { error: "Cet arc n'est plus ouvert aux inscriptions." };
+  const b = await billing(user.id);
+  if (!b) redirect("/onboarding");
+  if (b.effective_plan === "fondateur") return { error: "Tu as déjà l'accès à vie." };
+
+  // Abonnement en cours : changement de plan ou de période dans le portail Stripe (prorata géré par Stripe).
+  if (plan !== "fondateur" && b.stripe_customer_id && b.stripe_subscription_id && ["active", "trialing", "past_due"].includes(b.plan_status ?? "")) {
+    const url = await portalUrl(b.stripe_customer_id);
+    if (!url) return { error: UNAVAILABLE };
+    redirect(url);
   }
 
-  const metadata = { type: "pass", enrollment_id: enrollment.id, cohort_id: cohort.id, user_id: user.id, ...(await utmMetadata()) };
-  let lineItem: Stripe.Checkout.SessionCreateParams.LineItem;
+  const admin = createAdminClient();
+  const [{ data: price }, { data: plans }] = await Promise.all([
+    admin.rpc("plan_price", { p_plan: plan, p_interval: interval }),
+    admin.rpc("plans_public"),
+  ]);
+  const priceId = (price as { price_id: string | null } | null)?.price_id;
+  if (!priceId) return { error: UNAVAILABLE };
+  const p = plans as PublicPlans | null;
+  if (plan === "fondateur" && p && p.fondateur.sold >= p.fondateur.limit) return { error: "Les 100 places Fondateur sont parties." };
+
+  const utm = parseUtm((await cookies()).get(UTM_COOKIE)?.value);
+  const metadata: Record<string, string> = { user_id: user.id, plan, interval, waiver: "acces_immediat" };
+  const source = b.utm_source ?? utm.source;
+  const campaign = b.utm_campaign ?? utm.campaign;
+  if (source) metadata.utm_source = source;
+  if (campaign) metadata.utm_campaign = campaign;
+
+  let url: string | null = null;
   try {
-    lineItem = await passLineItem(cohort);
-  } catch {
-    return { error: UNAVAILABLE };
-  }
-  const url = await createSession({
-    mode: "payment",
-    line_items: [lineItem],
-    allow_promotion_codes: true,
-    customer_email: user.email,
-    client_reference_id: user.id,
-    locale: "fr",
-    metadata,
-    payment_intent_data: { metadata: { type: "pass", enrollment_id: enrollment.id, cohort_id: cohort.id } },
-    success_url: `${siteUrl()}/app?paid=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${siteUrl()}/checkout`,
-  });
-  if (!url) return { error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant." };
-  redirect(url);
-}
-
-/** Mise sur soi (FEATURE_STAKE) : paiement séparé, remboursé si l'arc est tenu, reversé à une association sinon. */
-export async function startStakeCheckout(): Promise<CheckoutState> {
-  if (process.env.FEATURE_STAKE !== "true") return { error: "La mise n'est pas proposée." };
-  const { supabase, user } = await getUser();
-  if (!user) redirect("/login?next=/app");
-  if (!stripeConfigured()) return { error: UNAVAILABLE };
-  if (!(await rateLimit("stake", 5, 600))) return { error: "Trop de tentatives. Réessaie dans quelques minutes." };
-
-  const { data: enrollment } = await supabase
-    .from("enrollments")
-    .select("id, cohort_id, status, stake_status")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!enrollment || enrollment.stake_status !== "none") return { error: "Aucune mise possible pour cet arc." };
-  const { data: cohort } = await supabase.from("cohorts").select("start_date").eq("id", enrollment.cohort_id).single();
-  if (!cohort || todayParis() >= cohort.start_date) return { error: "La mise se fait avant le départ de l'arc." };
-
-  const amount = Number(process.env.DEFAULT_STAKE_CENTS ?? "3000");
-  const url = await createSession({
-    mode: "payment",
-    line_items: [{
-      quantity: 1,
-      price_data: {
-        currency: "eur",
-        unit_amount: amount,
-        product_data: {
-          name: "Mise sur soi",
-          description: "Remboursée intégralement si tu tiens l'arc. Reversée à une association sinon.",
+    const customer = await ensureCustomer(user.id, b);
+    const params: Stripe.Checkout.SessionCreateParams = {
+      mode: plan === "fondateur" ? "payment" : "subscription",
+      customer,
+      client_reference_id: user.id,
+      line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
+      locale: "fr",
+      metadata,
+      custom_text: {
+        submit: {
+          message:
+            "Tu demandes l'accès immédiat. En cas de rétractation dans les 14 jours, le service déjà fourni reste dû au prorata.",
         },
       },
-    }],
-    customer_email: user.email,
-    client_reference_id: user.id,
-    locale: "fr",
-    metadata: { type: "stake", enrollment_id: enrollment.id, user_id: user.id },
-    payment_intent_data: { metadata: { type: "stake", enrollment_id: enrollment.id } },
-    success_url: `${siteUrl()}/app?mise=1`,
-    cancel_url: `${siteUrl()}/app`,
-  });
+      success_url: `${siteUrl()}/app?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl()}/abonnement`,
+    };
+    if (plan === "fondateur") {
+      params.payment_intent_data = { metadata };
+      params.invoice_creation = { enabled: true };
+    } else {
+      params.subscription_data = { metadata };
+    }
+    const session = await getStripe().checkout.sessions.create(params);
+    url = session.url;
+  } catch (e) {
+    console.error(`[checkout] session Stripe impossible : ${e instanceof Error ? e.name : "inconnue"}`);
+  }
   if (!url) return { error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant." };
   redirect(url);
 }
 
-function addDays(date: string, days: number): string {
-  const d = new Date(`${date}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-const PresaleInput = z.object({ cohortId: z.uuid() });
-
-/**
- * Prévente sans compte (landing) : Stripe collecte l'email ; le paiement sera rattaché
- * au compte créé avec ce même email.
- */
-export async function startPresaleCheckout(_prev: CheckoutState, formData: FormData): Promise<CheckoutState> {
-  const parsed = PresaleInput.safeParse({ cohortId: formData.get("cohortId") });
-  if (!parsed.success) return { error: "Requête invalide." };
-  if (!stripeConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return { error: UNAVAILABLE };
-  if (!(await rateLimit("checkout", 10, 600))) return { error: "Trop de tentatives. Réessaie dans quelques minutes." };
-
-  const { data: cohort, error } = await createAdminClient().from("cohorts").select("*").eq("id", parsed.data.cohortId).maybeSingle();
-  if (error) return { error: "Service indisponible. Réessaie dans un instant." };
-  if (!cohort || !cohort.enroll_open || cohort.is_test || cohort.start_date <= todayParis()) {
-    return { error: "Cet arc n'est plus ouvert aux préventes." };
-  }
-
-  let lineItem: Stripe.Checkout.SessionCreateParams.LineItem;
-  try {
-    lineItem = await passLineItem(cohort);
-  } catch {
-    return { error: UNAVAILABLE };
-  }
-  const url = await createSession({
-    mode: "payment",
-    line_items: [lineItem],
-    allow_promotion_codes: true,
-    customer_creation: "always",
-    locale: "fr",
-    metadata: { type: "presale", cohort_id: cohort.id, ...(await utmMetadata()) },
-    payment_intent_data: { metadata: { type: "presale", cohort_id: cohort.id } },
-    success_url: `${siteUrl()}/merci?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${siteUrl()}/#rejoindre`,
-  });
-  if (!url) return { error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant." };
-  redirect(url);
+/** Portail Stripe : changer de plan, de carte, résilier, télécharger ses factures. */
+export async function openBillingPortal(): Promise<void> {
+  const { user } = await getUser();
+  if (!user) redirect("/login?next=/app/profil");
+  if (!stripeConfigured()) redirect("/app/profil?portail=indisponible");
+  const b = await billing(user.id);
+  if (!b?.stripe_customer_id) redirect("/abonnement");
+  const url = await portalUrl(b.stripe_customer_id);
+  redirect(url ?? "/app/profil?portail=indisponible");
 }

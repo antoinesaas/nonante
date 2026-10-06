@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/app/login/LoginForm";
+import { ArtBackdrop } from "@/components/Art";
 import { Logo } from "@/components/Logo";
+import { IMAGES } from "@/lib/art";
 import { getUser, safeNext } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Connexion", robots: { index: false } };
@@ -14,13 +16,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   if (user) redirect(next);
 
   return (
+    <ArtBackdrop slug={IMAGES.login}>
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-6 pb-12">
       <Link href="/" aria-label="Nonante, accueil">
         <Logo />
       </Link>
       <div className="my-auto py-16">
-        <h1 className="font-serif text-5xl leading-none">Connexion.</h1>
-        <p className="mt-5 text-mute">Pas de mot de passe. Un lien et un code arrivent par email.</p>
+        <h1 className="font-serif text-5xl leading-none">Entre dans le jeu.</h1>
+        <p className="mt-5 text-paper/80">Pas de mot de passe. Un lien de connexion arrive par email.</p>
         {params.erreur === "lien" ? (
           <p role="alert" className="mt-6 text-sm">
             Ce lien a expiré ou a déjà servi. Demande un nouveau code.
@@ -31,5 +34,6 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </div>
       </div>
     </main>
+    </ArtBackdrop>
   );
 }

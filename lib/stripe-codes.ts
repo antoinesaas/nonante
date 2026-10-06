@@ -1,5 +1,4 @@
 import "server-only";
-import { randomBytes } from "node:crypto";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -43,17 +42,15 @@ export async function ensureReferralCode(userId: string, code: string): Promise<
   return true;
 }
 
-/** Code fidélité : −50 % sur l'arc suivant, à usage unique. */
-export async function createLoyaltyCode(userId: string, enrollmentId: string): Promise<string> {
+/**
+ * Fidélité : arc tenu = −50 % sur la prochaine facture de l'abonnement (coupon à usage unique).
+ * Sans abonnement (Fondateur, accès offert) : rien à appliquer.
+ */
+export async function applyLoyaltyDiscount(subscriptionId: string): Promise<boolean> {
   const stripe = getStripe();
   await ensureCoupon(LOYALTY_COUPON, 50, "Fidélité Nonante (−50 %)");
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const suffix = Array.from(randomBytes(8), (b) => alphabet[b % alphabet.length]).join("");
-  const promo = await stripe.promotionCodes.create({
-    promotion: { type: "coupon", coupon: LOYALTY_COUPON },
-    code: `MERCI-${suffix}`,
-    max_redemptions: 1,
-    metadata: { nonante: "loyalty", user_id: userId, enrollment_id: enrollmentId },
-  });
-  return promo.code;
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  if (!["active", "trialing", "past_due"].includes(subscription.status)) return false;
+  await stripe.subscriptions.update(subscriptionId, { discounts: [{ coupon: LOYALTY_COUPON }] });
+  return true;
 }

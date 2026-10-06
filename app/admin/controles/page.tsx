@@ -1,5 +1,6 @@
 import { AuditActions } from "@/app/admin/controles/AuditActions";
 import { requireAdmin } from "@/lib/auth";
+import { formatEuros } from "@/lib/money";
 
 type QueueItem = {
   id: string;
@@ -12,6 +13,7 @@ type QueueItem = {
   has_photo: boolean;
   principle: string | null;
   challenge: string | null;
+  wallet: { label: string; amount_cents: number; source: string } | null;
   proof: { type: string; day: string; link: string | null; has_photo: boolean } | null;
 };
 
@@ -40,7 +42,9 @@ export default async function AuditQueuePage() {
               <span className="font-medium">{a.pseudo}</span>{" "}
               <span className="text-sm text-mute">· {a.status === "submitted" ? `envoyé ${when(a.submitted_at!)}` : `attendu avant ${when(a.due_at)}`}</span>
             </p>
-            <p className="text-sm">{a.principle ?? a.challenge}</p>
+            <p className="text-sm">
+              {a.wallet ? `Revenu : ${a.wallet.label} · ${formatEuros(a.wallet.amount_cents)}` : (a.principle ?? a.challenge)}
+            </p>
             {a.proof ? (
               <p className="text-xs text-mute">
                 Preuve d&apos;origine : {a.proof.type}, le {a.proof.day}

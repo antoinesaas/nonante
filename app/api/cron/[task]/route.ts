@@ -1,15 +1,15 @@
 import { timingSafeEqual } from "node:crypto";
-import { runDue, taskAudits, taskCleanup, taskCohortEnd, taskDayClose, taskReminders, taskWeekly } from "@/lib/cron";
+import { runDue, taskArcEnd, taskAudits, taskCleanup, taskDayClose, taskReminders, taskWeekly } from "@/lib/cron";
 
 export const maxDuration = 300;
 
 const TASKS: Record<string, () => Promise<unknown>> = {
   "day-close": () => taskDayClose(),
   reminders: () => taskReminders(),
-  weekly: () => taskWeekly(undefined, { recap: true }),
+  weekly: () => taskWeekly(),
   audits: () => taskAudits(),
   cleanup: () => taskCleanup(),
-  "cohort-end": () => taskCohortEnd(),
+  "arc-end": () => taskArcEnd(),
   run: () => runDue(),
 };
 

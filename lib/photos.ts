@@ -51,3 +51,38 @@ export async function removeProofPhotos(paths: string[]): Promise<void> {
     await storage.remove(paths.slice(i, i + 100));
   }
 }
+
+/** Photo de profil : carré 512 px, WebP, sans métadonnées, dans le bucket public avatars/<user_id>/<uuid>.webp. */
+export async function storeAvatar(userId: string, file: unknown): Promise<{ path: string } | { error: string }> {
+  if (!(file instanceof File) || file.size === 0) return { error: "Photo manquante." };
+  if (file.size > MAX_PHOTO_BYTES) return { error: "Photo trop lourde : 3 Mo maximum." };
+  const input = Buffer.from(await file.arrayBuffer());
+  let format: string | undefined;
+  try {
+    format = (await sharp(input).metadata()).format;
+  } catch {
+    return { error: "Ce fichier n'est pas une image." };
+  }
+  if (!format || !ACCEPTED.has(format)) return { error: "Format d'image non accepté." };
+  let clean: Buffer;
+  try {
+    clean = await sharp(input, { failOn: "error" })
+      .rotate()
+      .resize({ width: 512, height: 512, fit: "cover", position: "attention" })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch {
+    return { error: "Image illisible." };
+  }
+  const path = `${userId}/${randomUUID()}.webp`;
+  const { error } = await createAdminClient()
+    .storage.from("avatars")
+    .upload(path, clean, { contentType: "image/webp", upsert: false, cacheControl: "31536000" });
+  if (error) return { error: "Envoi impossible. Réessaie." };
+  return { path };
+}
+
+export async function removeAvatars(paths: string[]): Promise<void> {
+  if (!paths.length) return;
+  await createAdminClient().storage.from("avatars").remove(paths);
+}

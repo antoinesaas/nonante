@@ -3,23 +3,28 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { type ProofResult, submitPhoto } from "@/app/actions/proofs";
+import { compressImage } from "@/lib/compress-image";
 import { btnLink, btnPrimary, btnSecondary } from "@/lib/ui";
 
 type Props = {
-  kind: "principle" | "audit" | "challenge";
+  kind: "principle" | "audit" | "challenge" | "arc_avant" | "arc_apres";
   targetId: string;
   title: string;
   detail: string;
+  /** « file » : capture d'écran choisie dans la galerie (preuves de type capture). */
+  mode?: "camera" | "file";
+  facing?: "environment" | "user";
+  backHref?: string;
 };
 
 const initial: ProofResult = { ok: false, message: null };
 const MAX_SIDE = 1600;
 
 /**
- * Photo prise dans l'app avec la caméra (pas d'accès à la galerie).
+ * Photo prise dans l'app avec la caméra (pas d'accès à la galerie), ou capture d'écran pour les preuves « capture ».
  * Réduite à 1600 px sur le téléphone ; le serveur vérifie, ré-encode et retire les métadonnées.
  */
-export function PhotoCapture({ kind, targetId, title, detail }: Props) {
+export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", facing = "environment", backHref = "/app" }: Props) {
   const [phase, setPhase] = useState<"intro" | "camera" | "preview" | "denied">("intro");
   const [preview, setPreview] = useState<string | null>(null);
   const [state, action, pending] = useActionState(submitPhoto, initial);
@@ -37,7 +42,7 @@ export function PhotoCapture({ kind, targetId, title, detail }: Props) {
   async function openCamera() {
     try {
       stream.current = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 } },
+        video: { facingMode: { ideal: facing }, width: { ideal: 1920 } },
         audio: false,
       });
       setPhase("camera");
@@ -73,6 +78,14 @@ export function PhotoCapture({ kind, targetId, title, detail }: Props) {
     );
   }
 
+  async function pickFile(file: File | undefined) {
+    if (!file) return;
+    const small = await compressImage(file);
+    blob.current = small;
+    setPreview(URL.createObjectURL(small));
+    setPhase("preview");
+  }
+
   function send(formData: FormData) {
     if (!blob.current) return;
     formData.set("photo", new File([blob.current], "preuve.jpg", { type: "image/jpeg" }));
@@ -84,7 +97,7 @@ export function PhotoCapture({ kind, targetId, title, detail }: Props) {
       <div className="space-y-4 text-center">
         <p className="font-serif text-4xl">Envoyé.</p>
         <p className="text-mute">{state.message}</p>
-        <Link href="/app" className={btnPrimary}>
+        <Link href={backHref} className={btnPrimary}>
           Retour
         </Link>
       </div>
@@ -106,10 +119,21 @@ export function PhotoCapture({ kind, targetId, title, detail }: Props) {
         <img src={preview} alt="Aperçu de la photo" className="w-full" />
       ) : null}
 
-      {phase === "intro" ? (
+      {phase === "intro" && mode === "camera" ? (
         <button type="button" onClick={openCamera} className={btnPrimary}>
           Ouvrir la caméra
         </button>
+      ) : null}
+      {phase === "intro" && mode === "file" ? (
+        <label className={`${btnPrimary} cursor-pointer`}>
+          Choisir une capture d&apos;écran
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+            className="sr-only"
+            onChange={(e) => void pickFile(e.target.files?.[0])}
+          />
+        </label>
       ) : null}
       {phase === "camera" ? (
         <button type="button" onClick={capture} className={btnPrimary}>
@@ -128,11 +152,12 @@ export function PhotoCapture({ kind, targetId, title, detail }: Props) {
             onClick={() => {
               setPreview(null);
               blob.current = null;
-              void openCamera();
+              if (mode === "camera") void openCamera();
+              else setPhase("intro");
             }}
             className={btnSecondary}
           >
-            Reprendre
+            {mode === "camera" ? "Reprendre" : "Choisir une autre"}
           </button>
         </form>
       ) : null}
@@ -142,7 +167,7 @@ export function PhotoCapture({ kind, targetId, title, detail }: Props) {
           {state.message}
         </p>
       ) : null}
-      <Link href="/app" className={btnLink}>
+      <Link href={backHref} className={btnLink}>
         Retour
       </Link>
     </div>

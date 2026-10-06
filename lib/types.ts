@@ -1,8 +1,12 @@
-// Formes des objets JSON renvoyés par les fonctions Postgres (my_dashboard, day_detail, my_profile…).
+// Formes des objets JSON renvoyés par les fonctions Postgres (my_dashboard, my_profile, my_wallet…).
 
-export type ProofType = "session" | "reps" | "reveil" | "photo" | "lien" | "declaratif";
-export type DayStatus = "green" | "red" | "white" | "future" | "today" | "pending" | "none";
+export type ProofType = "session" | "reps" | "reveil" | "photo" | "capture" | "lien" | "declaratif";
+export type Pillar = "focus" | "corps" | "business" | "esprit" | "energie";
+export type DayStatus = "green" | "red" | "white" | "joker" | "future" | "today" | "pending" | "none";
 export type Category = "etudes" | "business" | "mixte";
+export type GoalType = "revenu" | "clients" | "lancement" | "audience" | "examens" | "corps" | "autre";
+export type PlanId = "essentiel" | "pro" | "fondateur";
+export type Interval = "month" | "year" | "lifetime";
 
 export type Target = {
   minutes?: number;
@@ -11,22 +15,51 @@ export type Target = {
   exercise?: "pushup" | "squat";
   reps?: number;
   domains?: string[];
+  count?: number;
+  unit?: string;
+};
+
+export type ValidationView = {
+  status: "valid" | "audit_pending" | "rejected";
+  strength: "forte" | "faible";
+  points: number;
+  proof_type: ProofType;
 };
 
 export type PrincipleView = {
   id: string;
   position: number;
+  pillar: Pillar;
   if_text: string;
   then_text: string;
   proof_type: ProofType;
   difficulty: number;
-  max_difficulty: number;
   value: number;
   days: number[];
   target: Target;
+  why: string | null;
+  validation: ValidationView | null;
+};
+
+/** Principe dans l'onglet Principes (version qui s'applique au prochain jour modifiable). */
+export type EditablePrinciple = Omit<PrincipleView, "validation"> & {
   source: "template" | "custom";
-  scheduled_today: boolean;
-  validation: { status: "valid" | "audit_pending" | "rejected"; strength: "forte" | "faible"; points: number; proof_type: ProofType } | null;
+  template_code: string | null;
+  pending: boolean;
+};
+
+export type TemplateView = {
+  code: string;
+  pillar: Pillar;
+  if_text: string;
+  then_text: string;
+  proof_type: ProofType;
+  difficulty: number;
+  days: number[];
+  target: Target;
+  why: string;
+  source: string;
+  recommended: boolean;
 };
 
 export type CalendarDay = { day: string; status: DayStatus };
@@ -59,47 +92,107 @@ export type ChallengeView = {
 
 export type AuditView = { id: string; due_at: string; penalty: number; label: string | null };
 
+export type Stats = {
+  xp: number;
+  level: number;
+  level_floor: number;
+  level_next: number;
+  ovr: number;
+  discipline: number;
+  focus: number;
+  corps: number;
+  business: number;
+  esprit: number;
+  energie: number;
+  streak: number;
+  best_streak: number;
+  green_days: number;
+  focus_minutes: number;
+  reps: number;
+  wakes: number;
+  arcs_completed: number;
+  wallet_proven_cents: number;
+  wallet_declared_cents: number;
+};
+
+export type Limits = { max_principles: number; jokers: number; wallet: boolean; create_squad: boolean };
+
+export type PlanState = {
+  plan: PlanId | null;
+  paid_plan: PlanId | null;
+  interval: Interval | null;
+  status: string | null;
+  period_end: string | null;
+  cancel_at_period_end: boolean;
+  comp_until: string | null;
+  limits: Limits;
+};
+
+export type ArcView = {
+  id: string;
+  status: "draft" | "active" | "completed" | "failed" | "abandoned";
+  arc_number: number;
+  start_date: string;
+  end_date: string;
+  category: Category;
+  goal_type: GoalType;
+  goal_title: string;
+  goal_target: number | null;
+  goal_unit: string | null;
+  jokers_used: number;
+  jokers_total: number;
+  has_before_photo: boolean;
+  has_after_photo: boolean;
+};
+
+export type DashboardState = "none" | "draft" | "before" | "running" | "locked" | "closing" | "ended";
+
 export type Dashboard = {
-  profile: { pseudo: string; is_admin: boolean; is_public: boolean; referral_code: string | null; referral_sales: number } | null;
-  enrollment: {
-    id: string;
-    status: "pending_payment" | "active" | "abandoned" | "completed" | "failed";
-    level: number;
-    level_seen: number;
-    category: Category;
-    goal_title: string;
-    started_on: string | null;
-    stake_status: "none" | "held" | "refunded" | "forfeited";
-    stake_cents: number;
-    loyalty_code: string | null;
-  } | null;
-  cohort?: { id: string; name: string; start_date: string; end_date: string; price_cents: number; early_price_cents: number };
-  state?: "pending" | "before" | "running" | "ended" | "abandoned" | "completed" | "failed";
+  profile: { pseudo: string; avatar_path: string | null; is_admin: boolean; is_public: boolean; referral_code: string | null } | null;
+  plan?: PlanState;
+  enrollment?: ArcView | null;
+  state?: DashboardState;
   today?: string;
   day_number?: number | null;
   points?: number;
   week_points?: number;
   rank?: number | null;
   total?: number | null;
+  stats?: Stats;
   principles?: PrincipleView[];
   calendar?: CalendarDay[];
   challenge?: ChallengeView | null;
   audits?: AuditView[];
   running_session?: { id: string; kind: ProofType; principle_id: string | null; assignment_id: string | null } | null;
+  joker_today?: boolean;
+  wallet_month_cents?: number;
   unseen_achievements?: number;
   level_up?: boolean;
 };
 
 export type DayDetail = {
   day: string;
-  status: "green" | "red" | "white" | null;
+  status: "green" | "red" | "white" | "joker" | null;
+  joker: boolean;
   points: number;
   principles: {
     then_text: string;
     proof_type: ProofType;
+    pillar: Pillar;
     validation: { status: string; strength: string; points: number } | null;
     miss: { points: number; streak: number; white: boolean } | null;
   }[];
+};
+
+export type MyPrinciples = {
+  enrollment: { id: string; status: ArcView["status"]; start_date: string; end_date: string; goal_type: GoalType; goal_title: string; category: Category } | null;
+  editable?: boolean;
+  started?: boolean;
+  effective_day?: string;
+  plan?: PlanId | null;
+  limits?: Limits;
+  principles?: EditablePrinciple[];
+  templates?: TemplateView[];
 };
 
 export type AchievementView = {
@@ -112,41 +205,112 @@ export type AchievementView = {
   percent: number | null;
 };
 
+export type ArcHistory = {
+  number: number;
+  status: ArcView["status"];
+  start_date: string;
+  end_date: string;
+  goal_title: string;
+  green: number;
+  points: number;
+  loyalty_applied: boolean;
+};
+
 export type MyProfile = {
   pseudo: string;
   email: string;
+  avatar_path: string | null;
+  bio: string | null;
   is_public: boolean;
   is_admin: boolean;
   email_reminders: boolean;
+  wallet_public: boolean;
   profile_art_slug: string;
   refused_proofs: number;
   referral_code: string | null;
   referral_ready: boolean;
   referral_sales: number;
+  referral_credit_cents: number;
+  has_billing: boolean;
+  plan: PlanState;
+  stats: Stats;
+  points: number;
+  rank: number | null;
   arts: string[];
   push_subscriptions: number;
-  level: number | null;
-  cohort_id: string | null;
-  enrollment_status: string | null;
-  loyalty_code: string | null;
+  arcs: ArcHistory[];
   achievements: AchievementView[];
 };
 
 export type PublicProfile = {
   pseudo: string;
+  avatar_path: string | null;
+  bio: string | null;
   art: string;
+  founder: boolean;
   refused_proofs: number;
-  level: number | null;
-  status: string | null;
-  category: Category | null;
-  goal: string | null;
-  cohort: string | null;
-  day_number: number | null;
-  points: number | null;
+  member_since: string;
+  stats: Stats;
+  wallet_proven_cents: number | null;
+  arc: { number: number; status: string; category: Category; goal_type: GoalType; goal: string | null; day_number: number | null } | null;
+  points: number;
   rank: number | null;
-  total: number | null;
   calendar: CalendarDay[];
   achievements: { code: string; title: string; description: string; art_slug: string | null; unlocked_at: string }[];
+};
+
+export type LeaderboardRow = {
+  rank: number;
+  pseudo: string;
+  avatar_path: string | null;
+  level: number;
+  ovr: number;
+  category: Category | null;
+  points: number;
+  streak: number;
+  is_me: boolean;
+  is_public: boolean;
+};
+
+export type WalletEntry = {
+  id: string;
+  day: string;
+  amount_cents: number;
+  source: "vente" | "client" | "freelance" | "contenu" | "autre";
+  label: string;
+  status: "declared" | "proven" | "audit_pending" | "rejected";
+  has_proof: boolean;
+};
+
+export type Wallet = {
+  enabled: boolean;
+  proven_cents: number;
+  declared_cents: number;
+  month_cents: number;
+  arc_cents: number;
+  xp_today: boolean;
+  goal: { title: string; target: number | null; unit: string | null } | null;
+  months: { month: string; proven_cents: number; declared_cents: number }[];
+  entries: WalletEntry[];
+};
+
+export type SquadView = {
+  id: string;
+  name: string;
+  description: string | null;
+  is_public: boolean;
+  is_official: boolean;
+  start_date: string | null;
+  members: number;
+  is_member: boolean;
+  is_owner: boolean;
+  code: string | null;
+};
+
+export type PublicPlans = {
+  essentiel: { month: number; year: number };
+  pro: { month: number; year: number };
+  fondateur: { lifetime: number; limit: number; sold: number };
 };
 
 /** Résultat des fonctions de session (start_proof_session, start_challenge_session). */

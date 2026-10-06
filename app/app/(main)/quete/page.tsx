@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChallengeDeclaratif } from "@/app/app/(main)/epreuve/ChallengeDeclaratif";
+import { ChallengeDeclaratif } from "@/app/app/(main)/quete/ChallengeDeclaratif";
 import { LinkForm } from "@/components/LinkForm";
 import { requireUser } from "@/lib/auth";
 import { signed } from "@/lib/proofs";
 import type { Dashboard } from "@/lib/types";
 import { btnPrimary, label } from "@/lib/ui";
 
-export const metadata: Metadata = { title: "Épreuve de la semaine" };
+export const metadata: Metadata = { title: "Quête de la semaine" };
 
 const PAGE: Record<string, string> = { session: "session", reps: "reps", reveil: "reveil", photo: "photo" };
 
 export default async function ChallengePage() {
-  const { supabase } = await requireUser("/app/epreuve");
+  const { supabase } = await requireUser("/app/quete");
   const { data } = await supabase.rpc("my_dashboard");
   const d = data as Dashboard;
   if (!d?.enrollment) redirect("/onboarding");
@@ -34,7 +34,7 @@ export default async function ChallengePage() {
 
   return (
     <>
-      <p className={label}>{c ? `Semaine ${c.week} · ${c.kind === "piege" ? "piège" : `niveau ${c.level}`}` : "Épreuve"}</p>
+      <p className={label}>{c ? `Semaine ${c.week} de l'arc · ${c.kind === "piege" ? "piège" : `palier ${c.level}`}` : "Quête"}</p>
       {c ? (
         <>
           <h1 className="mt-4 font-serif text-4xl leading-tight">{c.title}</h1>
@@ -63,7 +63,7 @@ export default async function ChallengePage() {
               {c.proof_type === "lien" ? <LinkForm mode="challenge" targetId={c.assignment_id} domains={c.rule.domains ?? []} /> : null}
               {c.proof_type === "declaratif" ? <ChallengeDeclaratif assignmentId={c.assignment_id} /> : null}
               {c.proof_type === null ? (
-                <p className="text-sm text-mute">Rien à faire ici : l&apos;épreuve est jugée automatiquement à la clôture du jour.</p>
+                <p className="text-sm text-mute">Rien à faire ici : la quête est jugée automatiquement à la clôture du jour.</p>
               ) : null}
               {c.proof_type === "session" ? (
                 <p className="mt-4 text-xs text-mute">Les sessions de tes principes comptent aussi.</p>
@@ -72,7 +72,7 @@ export default async function ChallengePage() {
           ) : null}
         </>
       ) : (
-        <p className="mt-4 text-mute">L&apos;épreuve de la semaine arrive au départ de l&apos;arc.</p>
+        <p className="mt-4 text-mute">La quête de la semaine arrive au jour 1 de ton arc.</p>
       )}
 
       {history && history.length > 1 ? (

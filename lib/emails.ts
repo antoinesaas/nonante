@@ -1,6 +1,5 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { formatDayFr } from "@/lib/dates";
 import { sendEmail } from "@/lib/email";
 import { siteUrl } from "@/lib/env";
 import { formatEuros } from "@/lib/money";
@@ -25,13 +24,12 @@ export function verifyUnsubscribe(userId: string, token: string): boolean {
 const signature = ["", "Nonante"];
 const withUnsubscribe = (userId: string) => [...signature, "", `Ne plus recevoir les rappels : ${unsubscribeUrl(userId)}`];
 
-export function sendWelcome(to: string, cohort: { name: string; start_date: string }) {
+export function sendWelcome(to: string) {
   return sendEmail({
     to,
-    subject: "Tu es inscrit.",
+    subject: "Ton arc est lancé.",
     text: [
-      `Ta place est confirmée : ${cohort.name}.`,
-      `Départ : ${formatDayFr(cohort.start_date, { weekday: true })}.`,
+      "Ton abonnement est actif. Ton arc de 90 jours est lancé.",
       "",
       "Tes principes t'attendent. Rien ne se valide sans preuve.",
       "",
@@ -78,18 +76,15 @@ export function sendAuditRequest(to: string, auditId: string, dueAt: string, lab
 export function sendWeeklyRecap(
   to: string,
   userId: string,
-  recap: { points: number; green: number; days: number; challenge: string | null; challenge_status: string | null },
+  recap: { points: number; green: number; days: number; streak: number; level: number; ovr: number },
 ) {
-  const challenge = recap.challenge
-    ? `Épreuve : ${recap.challenge} ${recap.challenge_status === "done" ? "Réussie." : recap.challenge_status === "failed" ? "Ratée." : ""}`
-    : null;
   return sendEmail({
     to,
     subject: `Semaine écoulée : ${recap.green} jours verts sur ${recap.days}.`,
     text: [
-      `${recap.points > 0 ? "+" : ""}${recap.points} points cette semaine.`,
-      `${recap.green} jours verts sur ${recap.days}.`,
-      ...(challenge ? [challenge] : []),
+      `${recap.points > 0 ? "+" : ""}${recap.points} points en 7 jours.`,
+      `${recap.green} jours verts sur ${recap.days}. Série en cours : ${plural(recap.streak, "jour", "jours")}.`,
+      `Niveau ${recap.level}, note globale ${recap.ovr}.`,
       "",
       "Le classement de la semaine repart de zéro aujourd'hui.",
       "",
@@ -99,56 +94,48 @@ export function sendWeeklyRecap(
   });
 }
 
-export function sendLoyalty(to: string, cohort: string, code: string) {
+export function sendLoyalty(to: string, applied: boolean) {
   return sendEmail({
     to,
     subject: "Arc tenu.",
     text: [
-      `Tu as tenu ${cohort}. 90 jours, prouvés.`,
+      "Tu as tenu ton arc. 90 jours, prouvés.",
       "",
-      `Pour le prochain arc, ce code donne −50 % : ${code}`,
-      "Il ne sert qu'une fois.",
+      applied
+        ? "Merci : ta prochaine facture est à −50 %. Rien à faire, la remise est déjà appliquée."
+        : "Ton prochain arc t'attend dans l'app.",
       "",
-      siteUrl(),
+      `${siteUrl()}/app`,
       ...signature,
     ].join("\n"),
   });
 }
 
-export function sendArcResult(to: string, cohort: string, green: number) {
+export function sendArcResult(to: string, green: number) {
   return sendEmail({
     to,
-    subject: "L'arc est terminé.",
+    subject: "Ton arc est terminé.",
     text: [
-      `${cohort} est terminé. ${plural(green, "jour vert", "jours verts")} sur 90.`,
+      `Ton arc est terminé : ${plural(green, "jour vert", "jours verts")} sur 90.`,
       "Il en fallait 75, sans plus de 3 jours non verts d'affilée.",
       "",
-      "Le prochain arc t'attend.",
+      "Le prochain arc commence quand tu veux.",
       "",
-      siteUrl(),
+      `${siteUrl()}/app`,
       ...signature,
     ].join("\n"),
   });
 }
 
-export function sendPresaleConfirmation(
-  to: string,
-  cohort: { name: string; start_date: string; end_date: string },
-  amountCents: number,
-) {
+export function sendReferralCredit(to: string, cents: number) {
   return sendEmail({
     to,
-    subject: "Ta place est réservée.",
+    subject: "Quelqu'un a rejoint Nonante grâce à toi.",
     text: [
-      `Ta place est réservée : ${cohort.name}.`,
+      `Ton code de parrainage a servi. ${formatEuros(cents)} de crédit sont ajoutés à ton abonnement.`,
+      "Ils seront déduits de ta prochaine facture.",
       "",
-      `Départ : ${formatDayFr(cohort.start_date, { weekday: true })}.`,
-      `Fin : ${formatDayFr(cohort.end_date, { weekday: true })}.`,
-      `Montant payé : ${formatEuros(amountCents)}.`,
-      "",
-      "Crée ton compte avec cette adresse email : ta place y sera rattachée.",
-      "",
-      `${siteUrl()}/login`,
+      `${siteUrl()}/app/profil`,
       ...signature,
     ].join("\n"),
   });

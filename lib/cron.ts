@@ -3,8 +3,8 @@ import { sendArcResult, sendLoyalty, sendReminder, sendWeeklyRecap } from "@/lib
 import { removeProofPhotos } from "@/lib/photos";
 import { plural } from "@/lib/proofs";
 import { sendPush } from "@/lib/push";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
-import { createLoyaltyCode } from "@/lib/stripe-codes";
+import { stripeConfigured } from "@/lib/stripe";
+import { applyLoyaltyDiscount } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Tâches planifiées (§13). Toutes idempotentes et tolérantes à un retard : le travail fait est noté en base.
@@ -37,7 +37,7 @@ async function call<T>(admin: Admin, fn: string, args: Record<string, unknown> =
   return data;
 }
 
-/** 00 h 05 : clôture des jours (pénalités, jamais deux fois, jours blancs, semaine parfaite, succès, abandons). */
+/** 00 h 05 : clôture des jours (pénalités, jamais deux fois, jours blancs, jokers, semaines, quêtes, succès, fin d'arc). */
 export async function taskDayClose(admin = createAdminClient()) {
   return { closed: await call<number>(admin, "cron_close_days") };
 }
@@ -57,26 +57,23 @@ export async function taskCleanup(admin = createAdminClient()) {
   return { sessions_broken: broken, photos_deleted: paths.length };
 }
 
-/** Lundi : épreuves jugées, montées de niveau, épreuve de la semaine, récapitulatif court. */
-export async function taskWeekly(admin = createAdminClient(), { recap }: { recap: boolean }) {
-  const weekly = await call<{ evaluated: number; level_ups: number }>(admin, "cron_weekly");
+/** Lundi : récapitulatif des 7 derniers jours (un seul par semaine grâce à email_log). */
+export async function taskWeekly(admin = createAdminClient()) {
+  const monday = parisClock().date;
+  const targets = await call<
+    { user_id: string; email: string | null; email_reminders: boolean; points: number; green: number; days: number;
+      streak: number; level: number; ovr: number }[]
+  >(admin, "weekly_recap_targets");
   let recaps = 0;
-  if (recap) {
-    const monday = parisClock().date;
-    const targets = await call<
-      { user_id: string; email: string | null; email_reminders: boolean; points: number; green: number; days: number;
-        challenge: string | null; challenge_status: string | null }[]
-    >(admin, "weekly_recap_targets");
-    for (const t of targets) {
-      if (!t.email || !t.email_reminders || t.days === 0) continue;
-      const first = await call<boolean>(admin, "log_email_once", { p_user: t.user_id, p_kind: "weekly", p_ref: monday });
-      if (first && (await sendWeeklyRecap(t.email, t.user_id, t))) recaps++;
-    }
+  for (const t of targets) {
+    if (!t.email || !t.email_reminders || t.days === 0) continue;
+    const first = await call<boolean>(admin, "log_email_once", { p_user: t.user_id, p_kind: "weekly", p_ref: monday });
+    if (first && (await sendWeeklyRecap(t.email, t.user_id, t))) recaps++;
   }
-  return { ...weekly, recaps };
+  return { recaps };
 }
 
-/** 18 h 30 : un seul rappel par jour, push si possible, sinon email. */
+/** Le soir : un seul rappel par jour, push si possible, sinon email. */
 export async function taskReminders(admin = createAdminClient()) {
   const targets = await call<
     { user_id: string; email: string | null; remaining: number; points: number; email_reminders: boolean; has_push: boolean }[]
@@ -98,49 +95,39 @@ export async function taskReminders(admin = createAdminClient()) {
   return { targets: targets.length, push, email };
 }
 
-/** Clôture des cohortes : arcs tenus (codes fidélité, mises remboursées) et ratés (bilan). */
-export async function taskCohortEnd(admin = createAdminClient()) {
-  const result = await call<{
-    completed: { enrollment_id: string; user_id: string; email: string | null; cohort: string; stake_payment_intent_id: string | null }[];
-    failed: { enrollment_id: string; user_id: string; email: string | null; cohort: string; green: number }[];
-  }>(admin, "cron_cohort_end");
-
-  let loyalty = 0;
-  let refunds = 0;
-  for (const c of result.completed) {
-    if (stripeConfigured()) {
+/** Arcs tenus : −50 % sur la prochaine facture (une fois). Arcs terminés : email de bilan (une fois). */
+export async function taskArcEnd(admin = createAdminClient()) {
+  const loyalty = await call<{ enrollment_id: string; user_id: string; email: string | null; subscription_id: string | null; plan: string | null }[]>(
+    admin,
+    "cron_loyalty_targets",
+  );
+  let applied = 0;
+  for (const l of loyalty) {
+    let ok = false;
+    if (l.subscription_id && l.plan !== "fondateur" && stripeConfigured()) {
       try {
-        const first = await call<boolean>(admin, "log_email_once", { p_user: c.user_id, p_kind: "loyalty", p_ref: c.enrollment_id });
-        if (first) {
-          const code = await createLoyaltyCode(c.user_id, c.enrollment_id);
-          await call(admin, "set_loyalty_code", { p_enrollment: c.enrollment_id, p_code: code });
-          if (c.email) await sendLoyalty(c.email, c.cohort, code);
-          loyalty++;
-        }
+        ok = await applyLoyaltyDiscount(l.subscription_id);
       } catch (e) {
-        console.error(`[cron] code fidélité impossible : ${e instanceof Error ? e.message : "erreur"}`);
-      }
-      // Mise sur soi : remboursée intégralement à qui tient son arc.
-      if (c.stake_payment_intent_id) {
-        try {
-          await getStripe().refunds.create(
-            { payment_intent: c.stake_payment_intent_id },
-            { idempotencyKey: `stake-refund-${c.enrollment_id}` },
-          );
-          await call(admin, "mark_stake", { p_enrollment: c.enrollment_id, p_status: "refunded" });
-          refunds++;
-        } catch (e) {
-          console.error(`[cron] remboursement de mise impossible : ${e instanceof Error ? e.message : "erreur"}`);
-        }
+        console.error(`[cron] remise de fidélité impossible : ${e instanceof Error ? e.message : "erreur"}`);
+        continue;
       }
     }
+    await call(admin, "mark_loyalty_applied", { p_enrollment: l.enrollment_id });
+    if (ok) applied++;
+    if (l.email) {
+      const first = await call<boolean>(admin, "log_email_once", { p_user: l.user_id, p_kind: "loyalty", p_ref: l.enrollment_id });
+      if (first) await sendLoyalty(l.email, ok);
+    }
   }
-  for (const f of result.failed) {
-    if (!f.email) continue;
-    const first = await call<boolean>(admin, "log_email_once", { p_user: f.user_id, p_kind: "arc_result", p_ref: f.enrollment_id });
-    if (first) await sendArcResult(f.email, f.cohort, f.green);
+
+  const results = await call<{ enrollment_id: string; user_id: string; email: string | null; status: string; green: number }[]>(admin, "cron_arc_results");
+  let emails = 0;
+  for (const r of results) {
+    if (!r.email || r.status !== "failed") continue;
+    const first = await call<boolean>(admin, "log_email_once", { p_user: r.user_id, p_kind: "arc_result", p_ref: r.enrollment_id });
+    if (first && (await sendArcResult(r.email, r.green))) emails++;
   }
-  return { completed: result.completed.length, failed: result.failed.length, loyalty, refunds };
+  return { loyalty: loyalty.length, discounts: applied, result_emails: emails };
 }
 
 /** Une seule route pour les plans Vercel limités : exécute tout ce qui est dû. */
@@ -155,8 +142,8 @@ export async function runDue() {
   report.cleanup = await taskCleanup(admin);
   report.dayClose = await taskDayClose(admin);
   report.audits = await taskAudits(admin);
-  report.cohortEnd = await taskCohortEnd(admin);
-  report.weekly = await taskWeekly(admin, { recap: clock.isodow === 1 && clock.hour < 12 });
+  report.arcEnd = await taskArcEnd(admin);
+  if (clock.isodow === 1 && clock.hour < 12) report.weekly = await taskWeekly(admin);
   if (clock.hour >= 18 && clock.hour < 22) report.reminders = await taskReminders(admin);
   return report;
 }

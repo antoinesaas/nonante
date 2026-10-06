@@ -218,7 +218,6 @@ await rejects("le nonce d'une session n'est pas lisible", () => as(A, () => q("s
 
 // ---------------------------------------------------------------------------
 console.log("\nValidations et anti-triche");
-const declA = (await principlesOf(enrA)).find((p) => p.proof_type === "declaratif" || p.proof_type === "capture");
 const declOnly = (await principlesOf(enrA)).find((p) => p.proof_type === "declaratif");
 const res1 = await as(A, () => rpc("validate_declaratif", { p_principle_id: declOnly.id }));
 check("preuve faible : 50 % des points", res1.points === 5 * declOnly.difficulty, JSON.stringify(res1));

@@ -16,7 +16,7 @@ export default async function SessionPage({ params, searchParams }: PageProps<"/
     const { data: assignment } = await supabase.from("challenge_assignments").select("id, challenge_id").eq("id", id).maybeSingle();
     if (!assignment) notFound();
     const { data: challenge } = await supabase.from("challenges").select("title, proof_type").eq("id", assignment.challenge_id).single();
-    if (challenge?.proof_type !== "session") redirect("/app/epreuve");
+    if (challenge?.proof_type !== "session") redirect("/app/quete");
     return <FocusTimer mode="challenge" assignmentId={id} label={challenge.title} minutes={null} />;
   }
 

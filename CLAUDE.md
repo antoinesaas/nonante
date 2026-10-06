@@ -153,7 +153,7 @@ RLS partout, Storage), Stripe, Web Push (VAPID), Resend facultatif, MediaPipe, s
 
 ## 7. Pages
 
-`/` (landing), `/login`, `/onboarding`, `/abonnement` (plans), `/merci`, `/app` (aujourd'hui), `/app/principes`,
+`/` (landing), `/login`, `/onboarding`, `/abonnement` (plans), `/app` (aujourd'hui), `/app/principes`,
 `/app/portefeuille`, `/app/escouades`, `/app/profil`, pages de preuve plein écran (`/app/session|reps|reveil|
 photo|capture|lien|controle/[id]`), `/app/niveau`, `/app/succes`, `/app/quete`, `/app/avant-apres`,
 `/classement`, `/u/[pseudo]`, `/art`, `/legal/*`, `/admin/*`.

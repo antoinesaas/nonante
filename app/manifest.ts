@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Nonante",
     short_name: "Nonante",
-    description: "Tiens 90 jours. Prouve-le.",
+    description: "Le jeu de la vraie vie. 90 jours pour maxer tes stats.",
     lang: "fr",
     start_url: "/app",
     scope: "/",

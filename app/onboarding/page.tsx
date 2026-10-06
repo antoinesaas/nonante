@@ -1,87 +1,57 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { z } from "zod";
-import { OnboardingFlow, type OnboardingPrefill } from "@/app/onboarding/OnboardingFlow";
-import { Logo } from "@/components/Logo";
-import { WaitlistForm } from "@/components/WaitlistForm";
-import { getArt, ONBOARDING_ART } from "@/lib/art";
+import { type CollectiveStart, OnboardingFlow, type OnboardingPrefill } from "@/app/onboarding/OnboardingFlow";
+import { getArt, IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
-import { PUBLIC_COHORT_COLUMNS } from "@/lib/cohorts";
 import { todayParis } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Ton arc", robots: { index: false } };
 
-function addDays(date: string, days: number): string {
-  const d = new Date(`${date}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
+export default async function OnboardingPage() {
   const { supabase, user } = await requireUser("/onboarding");
-  const params = await searchParams;
   const today = todayParis();
 
-  const [{ data: profile }, { data: enrollments }] = await Promise.all([
-    supabase.from("profiles").select("pseudo, is_public").eq("id", user.id).maybeSingle(),
+  const [{ data: profile }, { data: enrollments }, { data: starts }] = await Promise.all([
+    supabase.from("profiles").select("pseudo").eq("id", user.id).maybeSingle(),
     supabase
       .from("enrollments")
-      .select("id, cohort_id, status, category, goal_title, goal_public, weak_moments, wake_time, pushups")
-      .eq("user_id", user.id),
+      .select("id, arc_number, status, start_date, category, goal_type, goal_title, goal_target, goal_unit, goal_public, weak_points, wake_time, pushups, focus_minutes")
+      .eq("user_id", user.id)
+      .order("arc_number", { ascending: false }),
+    supabase.rpc("collective_starts"),
   ]);
 
-  // Déjà un arc actif qui n'est pas terminé : direction le tableau de bord.
-  const active = (enrollments ?? []).filter((e) => e.status === "active");
-  if (active.length) {
-    const { data: activeCohorts } = await supabase
-      .from("cohorts")
-      .select("id, end_date")
-      .in("id", active.map((e) => e.cohort_id));
-    if ((activeCohorts ?? []).some((c) => c.end_date >= today)) redirect("/app");
-  }
+  // Arc en cours (jour 1 passé) : il se pilote depuis le tableau de bord.
+  const open = (enrollments ?? []).find((e) => e.status === "draft" || e.status === "active");
+  if (open && open.status === "active" && open.start_date <= today) redirect("/app");
 
-  // Cohorte demandée explicitement (lien de test), sinon le prochain arc ouvert.
-  const requested = z.uuid().safeParse(params.cohorte);
-  let query = supabase.from("cohorts").select(PUBLIC_COHORT_COLUMNS).eq("enroll_open", true).gte("start_date", addDays(today, -6));
-  query = requested.success ? query.eq("id", requested.data) : query.eq("is_test", false);
-  const { data: cohort } = await query.order("start_date", { ascending: true }).limit(1).maybeSingle();
-
-  if (!cohort) {
-    return (
-      <main className="mx-auto min-h-dvh w-full max-w-xl px-5 pt-6 pb-12">
-        <Link href="/" aria-label="Nonante, accueil">
-          <Logo />
-        </Link>
-        <h1 className="mt-20 font-serif text-5xl leading-none">Aucun arc ouvert pour l&apos;instant.</h1>
-        <p className="mt-5 text-mute">Laisse ton email : tu seras prévenu à l&apos;ouverture.</p>
-        <div className="mt-8">
-          <WaitlistForm cohortId={null} cta="Me prévenir" />
-        </div>
-      </main>
-    );
-  }
-
-  const pending = (enrollments ?? []).find((e) => e.cohort_id === cohort.id && e.status === "pending_payment");
-  const prefill: OnboardingPrefill | null = pending
+  const prefill: OnboardingPrefill | null = open
     ? {
-        category: pending.category as OnboardingPrefill["category"],
-        goal: pending.goal_title,
-        goalPublic: pending.goal_public,
-        weakMoments: pending.weak_moments,
-        wakeTime: pending.wake_time.slice(0, 5),
-        pushups: pending.pushups as OnboardingPrefill["pushups"],
+        category: open.category as OnboardingPrefill["category"],
+        goalType: open.goal_type as OnboardingPrefill["goalType"],
+        goal: open.goal_title,
+        goalTarget: open.goal_target,
+        goalUnit: open.goal_unit,
+        goalPublic: open.goal_public,
+        weakPoints: open.weak_points,
+        wakeTime: open.wake_time.slice(0, 5),
+        pushups: open.pushups as OnboardingPrefill["pushups"],
+        focusMinutes: open.focus_minutes as OnboardingPrefill["focusMinutes"],
+        startDate: open.start_date,
       }
     : null;
 
+  const arcNumber = open ? open.arc_number : (enrollments?.[0]?.arc_number ?? 0) + 1;
+
   return (
     <OnboardingFlow
-      cohort={cohort}
-      profile={profile ?? null}
+      hasProfile={Boolean(profile)}
       prefill={prefill}
-      firstArt={getArt(ONBOARDING_ART.first)}
-      lastArt={getArt(ONBOARDING_ART.last)}
+      arts={IMAGES.onboarding.map((slug) => getArt(slug))}
       currentYear={Number(today.slice(0, 4))}
+      today={today}
+      collectiveStarts={(starts as CollectiveStart[] | null) ?? []}
+      arcNumber={arcNumber}
     />
   );
 }

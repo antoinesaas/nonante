@@ -82,9 +82,9 @@ export async function validateLink(_prev: ProofResult, formData: FormData): Prom
   return done(result, "Lien validé.");
 }
 
-/** Photo prise dans l'app : principe, contrôle ou épreuve. */
+/** Photo prise dans l'app (ou capture d'écran) : principe, contrôle ou quête. */
 export async function submitPhoto(_prev: ProofResult, formData: FormData): Promise<ProofResult> {
-  const kind = z.enum(["principle", "audit", "challenge"]).safeParse(formData.get("kind"));
+  const kind = z.enum(["principle", "audit", "challenge", "arc_avant", "arc_apres"]).safeParse(formData.get("kind"));
   const targetId = Id.safeParse(formData.get("targetId"));
   if (!kind.success || !targetId.success) return { ok: false, message: "Requête invalide." };
   const ctx = await context("upload", 10);
@@ -103,7 +103,20 @@ export async function submitPhoto(_prev: ProofResult, formData: FormData): Promi
     }
     const validation = data as ValidationResult;
     if (validation.audit) await notifyAudit(ctx.user.id, ctx.user.email, { validationId: validation.validation_id });
-    result = done(validation, "Photo validée.");
+    result = done(validation, "Preuve validée.");
+  } else if (kind.data === "arc_avant" || kind.data === "arc_apres") {
+    const { data: old, error } = await admin.rpc("set_arc_photo", {
+      p_user: ctx.user.id,
+      p_which: kind.data === "arc_avant" ? "avant" : "apres",
+      p_path: stored.path,
+    });
+    if (error) {
+      await removeProofPhotos([stored.path]);
+      return { ok: false, message: userMessage(error) };
+    }
+    if (old) await removeProofPhotos([old as string]);
+    revalidatePath("/app/avant-apres");
+    return { ok: true, message: kind.data === "arc_avant" ? "Photo du jour 1 enregistrée. Elle reste verrouillée jusqu'à la fin." : "Photo de fin enregistrée." };
   } else if (kind.data === "audit") {
     const { error } = await admin.rpc("submit_audit_photo", { p_user: ctx.user.id, p_audit_id: targetId.data, p_path: stored.path });
     if (error) {
@@ -122,7 +135,7 @@ export async function submitPhoto(_prev: ProofResult, formData: FormData): Promi
       return { ok: false, message: userMessage(error) };
     }
     const r = data as { status: string; audit: boolean };
-    result = { ok: true, message: r.status === "done" ? "Épreuve réussie." : "Preuve enregistrée." };
+    result = { ok: true, message: r.status === "done" ? "Quête réussie." : "Preuve enregistrée." };
   }
   revalidatePath("/app");
   return result;
@@ -247,7 +260,7 @@ export async function validateChallengeDeclaratif(assignmentId: string): Promise
   return {
     ok: true,
     audit: r.audit,
-    message: r.audit ? "Contrôle : envoie une capture ou une photo sous 24 h." : r.status === "done" ? "Épreuve réussie." : "Noté.",
+    message: r.audit ? "Contrôle : envoie une capture ou une photo sous 24 h." : r.status === "done" ? "Quête réussie." : "Noté.",
   };
 }
 
@@ -263,7 +276,7 @@ export async function validateChallengeLink(_prev: ProofResult, formData: FormDa
   if (error) return { ok: false, message: userMessage(error) };
   const r = data as { status: string };
   revalidatePath("/app");
-  return { ok: true, message: r.status === "done" ? "Épreuve réussie." : "Lien enregistré." };
+  return { ok: true, message: r.status === "done" ? "Quête réussie." : "Lien enregistré." };
 }
 
 export async function getDayDetail(day: string): Promise<DayDetail | null> {
@@ -272,4 +285,17 @@ export async function getDayDetail(day: string): Promise<DayDetail | null> {
   if (!user) return null;
   const { data } = await supabase.rpc("day_detail", { p_day: day });
   return (data as DayDetail | null) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Joker : journée neutre (ni points ni pénalité), la série continue
+// ---------------------------------------------------------------------------
+export async function placeJoker(): Promise<ProofResult> {
+  const ctx = await context("joker", 10);
+  if ("error" in ctx) return ctx.error!;
+  const { data, error } = await ctx.supabase.rpc("use_joker");
+  if (error) return { ok: false, message: userMessage(error) };
+  revalidatePath("/app");
+  const left = (data as { jokers_left: number }).jokers_left;
+  return { ok: true, message: `Joker posé : aujourd'hui ne compte pas. ${left ? `Il t'en reste ${left}.` : "C'était ton dernier."}` };
 }

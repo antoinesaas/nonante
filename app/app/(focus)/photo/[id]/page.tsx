@@ -16,7 +16,7 @@ export default async function PhotoPage({ params, searchParams }: PageProps<"/ap
     const { data: assignment } = await supabase.from("challenge_assignments").select("id, challenge_id").eq("id", id).maybeSingle();
     if (!assignment) notFound();
     const { data: challenge } = await supabase.from("challenges").select("title, description, proof_type").eq("id", assignment.challenge_id).single();
-    if (challenge?.proof_type !== "photo") redirect("/app/epreuve");
+    if (challenge?.proof_type !== "photo") redirect("/app/quete");
     return (
       <main className="mx-auto min-h-dvh w-full max-w-xl px-5 pt-10 pb-12">
         <PhotoCapture kind="challenge" targetId={id} title={challenge.title} detail={challenge.description} />
@@ -26,14 +26,20 @@ export default async function PhotoPage({ params, searchParams }: PageProps<"/ap
 
   const { data: principle } = await supabase.from("principles").select("id, if_text, then_text, proof_type").eq("id", id).maybeSingle();
   if (!principle) notFound();
-  if (principle.proof_type !== "photo") redirect("/app");
+  if (principle.proof_type !== "photo" && principle.proof_type !== "capture") redirect("/app");
+  const capture = principle.proof_type === "capture";
   return (
     <main className="mx-auto min-h-dvh w-full max-w-xl px-5 pt-10 pb-12">
       <PhotoCapture
         kind="principle"
         targetId={id}
         title={principle.then_text}
-        detail="Photo prise maintenant, dans l'app. Preuve faible : 50 % des points, et un contrôle peut tomber. Les photos restent privées et sont supprimées après 30 jours."
+        mode={capture ? "file" : "camera"}
+        detail={
+          capture
+            ? "Une capture d'écran qui le prouve : messages envoyés, vente, compteur de pas. Preuve faible : 50 % des points, et un contrôle peut tomber. Privée, supprimée après 30 jours."
+            : "Photo prise maintenant, dans l'app. Preuve faible : 50 % des points, et un contrôle peut tomber. Les photos restent privées et sont supprimées après 30 jours."
+        }
       />
     </main>
   );

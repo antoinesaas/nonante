@@ -23,10 +23,10 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: [...securityHeaders, { key: "Permissions-Policy", value: noCamera }] },
       {
-        source: "/app/:kind(reps|photo|controle|epreuve)/:path*",
+        source: "/app/:kind(reps|photo|controle|quete)/:path*",
         headers: [{ key: "Permissions-Policy", value: camera }],
       },
-      { source: "/app/epreuve", headers: [{ key: "Permissions-Policy", value: camera }] },
+      { source: "/app/:page(quete|avant-apres)", headers: [{ key: "Permissions-Policy", value: camera }] },
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
     ];
   },

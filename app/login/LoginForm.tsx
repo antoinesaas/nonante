@@ -35,7 +35,7 @@ export function LoginForm({ next }: { next: string }) {
           />
         </label>
         <SubmitButton className={btnPrimary} pendingLabel="Envoi…">
-          Recevoir mon code
+          Recevoir mon lien de connexion
         </SubmitButton>
         <FormMessage message={sent.message} />
       </form>
@@ -47,10 +47,11 @@ export function LoginForm({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
       <input type="hidden" name="email" value={email} />
       <p className="text-sm text-mute">
-        Code envoyé à <span className="text-paper">{email}</span>. Tu peux aussi cliquer sur le lien de l&apos;email.
+        Email envoyé à <span className="text-paper">{email}</span>. Ouvre-le et clique sur le lien, sur ce même appareil. S&apos;il
+        contient un code à 6 chiffres, tu peux aussi le saisir ici.
       </p>
       <label className="block">
-        <span className="text-sm text-mute">Code à 6 chiffres</span>
+        <span className="text-sm text-mute">Code à 6 chiffres (si ton email en contient un)</span>
         <input
           name="token"
           required
@@ -67,7 +68,7 @@ export function LoginForm({ next }: { next: string }) {
       </SubmitButton>
       <FormMessage message={checked.message} />
       <button type="button" onClick={() => setDismissed(sent)} className={btnLink}>
-        Changer d&apos;adresse ou renvoyer un code
+        Changer d&apos;adresse ou renvoyer l&apos;email
       </button>
     </form>
   );

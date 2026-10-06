@@ -5,7 +5,7 @@ import { serializeUtm, UTM_COOKIE, UTM_MAX_AGE_SECONDS, utmFromSearchParams } fr
 const isDev = process.env.NODE_ENV === "development";
 
 // Pages réservées aux utilisateurs connectés (vérification complète faite ensuite dans chaque page).
-const PROTECTED = ["/app", "/onboarding", "/checkout", "/admin"];
+const PROTECTED = ["/app", "/onboarding", "/admin"];
 
 function contentSecurityPolicy(nonce: string): string {
   const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL

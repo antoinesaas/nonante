@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReportForm } from "@/app/u/[pseudo]/ReportForm";
-import { ArtCredit } from "@/components/Art";
 import { CalendarLegend, DotCalendar } from "@/components/DotCalendar";
 import { Logo } from "@/components/Logo";
+import { PlayerCard } from "@/components/Player";
 import { SiteFooter } from "@/components/SiteFooter";
-import { DEFAULT_PROFILE_ART, getArt } from "@/lib/art";
 import { getUser } from "@/lib/auth";
-import { CATEGORY_LABEL, plural, points } from "@/lib/proofs";
+import { formatDayFr } from "@/lib/dates";
+import { formatEuros } from "@/lib/money";
+import { CATEGORY_LABEL, GOAL_LABEL, plural, points } from "@/lib/proofs";
+import { titleFor } from "@/lib/rules";
 import type { PublicProfile } from "@/lib/types";
-import { label } from "@/lib/ui";
+import { btnPrimary, label } from "@/lib/ui";
 
 async function load(pseudo: string): Promise<PublicProfile | null> {
   if (!/^[a-z0-9_]{3,20}$/.test(pseudo)) return null;
@@ -26,9 +27,9 @@ export async function generateMetadata({ params }: PageProps<"/u/[pseudo]">): Pr
   if (!profile) return { title: "Profil", robots: { index: false } };
   return {
     title: profile.pseudo,
-    description: profile.day_number
-      ? `Jour ${profile.day_number} sur 90. ${profile.points ?? 0} points.`
-      : `${profile.points ?? 0} points sur Nonante.`,
+    description: `Niveau ${profile.stats.level} (${titleFor(profile.stats.level)}), note globale ${profile.stats.ovr}. ${
+      profile.arc?.day_number ? `Jour ${profile.arc.day_number} sur 90.` : ""
+    }`,
   };
 }
 
@@ -37,60 +38,72 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
   const profile = await load(pseudo);
   if (!profile) notFound();
   const { user } = await getUser();
-  const art = getArt(profile.art) ?? getArt(DEFAULT_PROFILE_ART);
   const todayIndex = profile.calendar.findIndex((d) => d.status === "today");
+  const s = profile.stats;
 
   return (
     <>
-      <div className="relative">
-        {art ? (
-          <>
-            <Image
-              src={`/art/${art.slug}-nb.jpg`}
-              alt=""
-              width={art.width}
-              height={art.height}
-              priority
-              sizes="100vw"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-ink/65" />
-          </>
-        ) : null}
-        <header className="relative mx-auto w-full max-w-xl px-5 pt-6 pb-12">
-          <Link href="/" aria-label="Nonante, accueil">
-            <Logo size="sm" />
-          </Link>
-          <p className={`${label} mt-24`}>{profile.cohort ?? "Nonante"}</p>
-          <h1 className="mt-3 font-serif text-6xl leading-none">{profile.pseudo}</h1>
-          {profile.goal ? <p className="mt-4 text-lg text-paper/85">{profile.goal}</p> : null}
-          {art ? <ArtCredit art={art} className="mt-10" /> : null}
-        </header>
-      </div>
+      <main className="mx-auto w-full max-w-xl px-5 pt-6 pb-16">
+        <Link href="/" aria-label="Nonante, accueil">
+          <Logo size="sm" />
+        </Link>
 
-      <main className="mx-auto w-full max-w-xl px-5 pb-16">
-        <dl className="grid grid-cols-3 gap-4 border-b border-line py-8">
+        <div className="mt-8">
+          <PlayerCard
+            pseudo={profile.pseudo}
+            avatarPath={profile.avatar_path}
+            stats={s}
+            art={profile.art}
+            founder={profile.founder}
+            subtitle={profile.arc?.day_number ? `jour ${profile.arc.day_number}/90` : null}
+          />
+        </div>
+
+        {profile.bio ? <p className="mt-6 text-lg">{profile.bio}</p> : null}
+        {profile.arc?.goal ? (
+          <div className="mt-6">
+            <p className={label}>{GOAL_LABEL[profile.arc.goal_type]}</p>
+            <p className="mt-2 text-lg">{profile.arc.goal}</p>
+          </div>
+        ) : null}
+
+        <dl className="mt-8 grid grid-cols-3 gap-y-6 border-y border-line py-6">
           <div>
             <dt className="text-xs text-mute">Points</dt>
-            <dd className="mt-1 font-serif text-4xl tabular-nums">{points(profile.points ?? 0)}</dd>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{points(profile.points)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-mute">Rang</dt>
-            <dd className="mt-1 font-serif text-4xl tabular-nums">
-              {profile.rank ?? "—"}
-              {profile.total ? <span className="text-base text-mute"> / {profile.total}</span> : null}
-            </dd>
+            <dt className="text-xs text-mute">Rang général</dt>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{profile.rank ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-mute">Niveau</dt>
-            <dd className="mt-1 font-serif text-4xl tabular-nums">{profile.level ?? 1}</dd>
+            <dt className="text-xs text-mute">Série</dt>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{s.streak}</dd>
           </div>
+          <div>
+            <dt className="text-xs text-mute">Jours verts</dt>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{s.green_days}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Heures de focus</dt>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{Math.floor(s.focus_minutes / 60)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Répétitions</dt>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{s.reps.toLocaleString("fr-FR")}</dd>
+          </div>
+          {profile.wallet_proven_cents !== null ? (
+            <div className="col-span-3">
+              <dt className="text-xs text-mute">Revenus prouvés avec son projet</dt>
+              <dd className="mt-1 font-serif text-3xl tabular-nums">{formatEuros(profile.wallet_proven_cents)}</dd>
+            </div>
+          ) : null}
         </dl>
 
-        <p className="mt-6 text-sm text-mute">
-          {profile.day_number ? `Jour ${profile.day_number} sur 90 · ` : null}
-          {profile.category ? `${CATEGORY_LABEL[profile.category]} · ` : null}
-          {plural(profile.refused_proofs, "preuve refusée", "preuves refusées")}
+        <p className="mt-4 text-sm text-mute">
+          {profile.arc ? `Arc n° ${profile.arc.number} · ${CATEGORY_LABEL[profile.arc.category]} · ` : ""}
+          {plural(s.arcs_completed, "arc tenu", "arcs tenus")} · {plural(profile.refused_proofs, "preuve refusée", "preuves refusées")} ·
+          joueur depuis le {formatDayFr(profile.member_since.slice(0, 10))}
         </p>
 
         {profile.calendar.length ? (
@@ -115,6 +128,12 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
             <p className="mt-3 text-mute">Aucun pour l&apos;instant.</p>
           )}
         </section>
+
+        {!user ? (
+          <Link href="/login?next=/onboarding" className={`${btnPrimary} mt-12`}>
+            Créer ma carte de joueur
+          </Link>
+        ) : null}
 
         <section className="mt-12 border-t border-line pt-6">
           {user ? (

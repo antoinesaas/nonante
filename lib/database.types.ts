@@ -1232,6 +1232,7 @@ export type Database = {
       mark_reminded: { Args: { p_user: string | null; p_channel: string | null }; Returns: boolean };
       my_arc_photos: { Args: never; Returns: Json };
       my_dashboard: { Args: never; Returns: Json };
+      my_plan: { Args: never; Returns: Json };
       my_principles: { Args: never; Returns: Json };
       my_profile: { Args: never; Returns: Json };
       my_squads: { Args: never; Returns: Json };

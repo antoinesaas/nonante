@@ -131,6 +131,12 @@ language sql stable set search_path = '' as $$
   from public.profiles pr where pr.id = p_user;
 $$;
 
+-- Plan de l'utilisateur connecté (page des plans, profil).
+create function public.my_plan() returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select public._plan_json(auth.uid());
+$$;
+
 -- ===========================================================================
 -- Tableau de bord : tout ce qu'il faut en un seul appel. Note aussi l'ouverture de l'app.
 -- ===========================================================================
@@ -1585,6 +1591,7 @@ grant execute on function public.validate_challenge_declaratif(uuid) to authenti
 grant execute on function public.validate_challenge_link(uuid, text) to authenticated;
 grant execute on function public.start_challenge_session(uuid, int) to authenticated;
 grant execute on function public.my_dashboard() to authenticated;
+grant execute on function public.my_plan() to authenticated;
 grant execute on function public.day_detail(date) to authenticated;
 grant execute on function public.my_principles() to authenticated;
 grant execute on function public.my_profile() to authenticated;

@@ -50,51 +50,61 @@ export async function resolveReport(reportId: string, status: "dismissed" | "act
   return { ok: true, message: "Traité." };
 }
 
-const Cohort = z.object({
+const Squad = z.object({
   id: z.uuid().nullable(),
-  name: z.string().trim().min(1).max(80),
-  startDate: z.iso.date(),
-  enrollOpen: z.boolean(),
-  isTest: z.boolean(),
-  price: z.coerce.number().min(1).max(10000),
-  earlyPrice: z.coerce.number().min(1).max(10000),
+  name: z.string().trim().min(3).max(40),
+  description: z.string().trim().max(160),
+  startDate: z.iso.date().nullable(),
+  isPublic: z.boolean(),
 });
 
-export async function saveCohort(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  const parsed = Cohort.safeParse({
+/** Escouade officielle (départ collectif possible). */
+export async function saveSquad(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const parsed = Squad.safeParse({
     id: formData.get("id") ? String(formData.get("id")) : null,
     name: formData.get("name"),
-    startDate: formData.get("startDate"),
-    enrollOpen: formData.get("enrollOpen") === "on",
-    isTest: formData.get("isTest") === "on",
-    price: String(formData.get("price") ?? "").replace(",", "."),
-    earlyPrice: String(formData.get("earlyPrice") ?? "").replace(",", "."),
+    description: String(formData.get("description") ?? ""),
+    startDate: formData.get("startDate") ? String(formData.get("startDate")) : null,
+    isPublic: formData.get("isPublic") === "on",
   });
   if (!parsed.success) return { ok: false, message: "Champs invalides." };
   const supabase = await session();
-  const c = parsed.data;
-  const { error } = await supabase.rpc("admin_save_cohort", {
-    p_id: c.id,
-    p_name: c.name,
-    p_start_date: c.startDate,
-    p_enroll_open: c.enrollOpen,
-    p_price_cents: Math.round(c.price * 100),
-    p_early_price_cents: Math.round(c.earlyPrice * 100),
-    p_is_test: c.isTest,
+  const s = parsed.data;
+  const { error } = await supabase.rpc("admin_save_squad", {
+    p_id: s.id,
+    p_name: s.name,
+    p_description: s.description,
+    p_start_date: s.startDate,
+    p_is_public: s.isPublic,
+  });
+  if (error) return { ok: false, message: userMessage(error) };
+  revalidatePath("/admin/escouades");
+  return { ok: true, message: "Escouade enregistrée." };
+}
+
+const Comp = z.object({
+  pseudo: z.string().trim().min(3).max(20),
+  plan: z.enum(["essentiel", "pro"]),
+  until: z.iso.date().nullable(),
+});
+
+/** Accès offert (tests, partenaires) jusqu'à une date ; date vide : retiré. */
+export async function grantComp(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  const parsed = Comp.safeParse({
+    pseudo: formData.get("pseudo"),
+    plan: formData.get("plan"),
+    until: formData.get("until") ? String(formData.get("until")) : null,
+  });
+  if (!parsed.success) return { ok: false, message: "Champs invalides." };
+  const supabase = await session();
+  const { error } = await supabase.rpc("admin_grant_comp", {
+    p_pseudo: parsed.data.pseudo,
+    p_plan: parsed.data.plan,
+    p_until: parsed.data.until,
   });
   if (error) return { ok: false, message: userMessage(error) };
   revalidatePath("/admin");
-  revalidatePath("/");
-  return { ok: true, message: "Cohorte enregistrée." };
-}
-
-export async function markStakeDonated(enrollmentId: string): Promise<ActionResult> {
-  if (!Id.safeParse(enrollmentId).success) return { ok: false, message: "Requête invalide." };
-  const supabase = await session();
-  const { error } = await supabase.rpc("admin_mark_stake_donated", { p_enrollment: enrollmentId });
-  if (error) return { ok: false, message: userMessage(error) };
-  revalidatePath("/admin/mises");
-  return { ok: true, message: "Versement noté." };
+  return { ok: true, message: parsed.data.until ? "Accès offert." : "Accès retiré." };
 }
 
 // ---------------------------------------------------------------------------
