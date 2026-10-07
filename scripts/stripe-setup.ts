@@ -1,6 +1,6 @@
 /**
  * Crée (une seule fois) chez Stripe : les coupons de parrainage (−20 %) et de fidélité (−50 %), les produits
- * Essentiel, Pro et Fondateur, leurs prix (mensuel, annuel, paiement unique) aux montants lus en base
+ * Arc 90 jours, Pro et Fondateur, leurs prix (paiement unique, mensuel, annuel) aux montants lus en base
  * (réglage « plans »), et la configuration du portail client. Range les identifiants en base.
  *
  * Relançable sans risque : un prix n'est recréé que s'il manque ou si son montant a changé.
@@ -22,10 +22,13 @@ const supabase = createClient<Database>(env("NEXT_PUBLIC_SUPABASE_URL"), env("SU
 });
 
 type Entry = { amount: number; price_id: string | null };
-type Plans = { essentiel: { month: Entry; year: Entry }; pro: { month: Entry; year: Entry }; fondateur: { lifetime: Entry; limit: number } };
+type Plans = { arc: { once: Entry }; pro: { month: Entry; year: Entry }; fondateur: { lifetime: Entry; limit: number } };
 
 const PRODUCTS = {
-  essentiel: { name: "Nonante Essentiel", description: "Ton arc de 90 jours, 6 principes, toutes les preuves, classement et escouades." },
+  arc: {
+    name: "Nonante Arc 90 jours",
+    description: "Ton arc de 90 jours : 6 principes personnalisés, toutes les preuves, stats, classement et escouades. Paiement unique, sans renouvellement.",
+  },
   pro: { name: "Nonante Pro", description: "12 principes, portefeuille, création d'escouades, 3 jokers par arc." },
   fondateur: { name: "Nonante Fondateur", description: "Le plan Pro à vie, en un seul paiement. 100 places." },
 } as const;
@@ -68,8 +71,8 @@ async function ensurePrice(product: string, entry: Entry, interval: "month" | "y
     currency: "eur",
     unit_amount: entry.amount,
     ...(interval ? { recurring: { interval } } : {}),
-    nickname: `${plan} · ${interval ?? "à vie"}`,
-    metadata: { nonante_plan: plan, interval: interval ?? "lifetime" },
+    nickname: `${plan} · ${interval ?? (plan === "arc" ? "90 jours" : "à vie")}`,
+    metadata: { nonante_plan: plan, interval: interval ?? (plan === "arc" ? "once" : "lifetime") },
   });
   return price.id;
 }
@@ -82,11 +85,10 @@ async function main() {
   if (error) throw new Error(`Réglage « plans » illisible : ${error.message}`);
   const plans = data.value as unknown as Plans;
 
-  const essentiel = await ensureProduct("essentiel");
+  const arc = await ensureProduct("arc");
   const pro = await ensureProduct("pro");
   const fondateur = await ensureProduct("fondateur");
-  plans.essentiel.month.price_id = await ensurePrice(essentiel, plans.essentiel.month, "month", "essentiel");
-  plans.essentiel.year.price_id = await ensurePrice(essentiel, plans.essentiel.year, "year", "essentiel");
+  plans.arc.once.price_id = await ensurePrice(arc, plans.arc.once, null, "arc");
   plans.pro.month.price_id = await ensurePrice(pro, plans.pro.month, "month", "pro");
   plans.pro.year.price_id = await ensurePrice(pro, plans.pro.year, "year", "pro");
   plans.fondateur.lifetime.price_id = await ensurePrice(fondateur, plans.fondateur.lifetime, null, "fondateur");
@@ -95,7 +97,7 @@ async function main() {
   if (saveError) throw new Error(`Enregistrement des prix impossible : ${saveError.message}`);
   console.log("Prix enregistrés :", JSON.stringify(plans));
 
-  // Portail client : changer de plan ou de période, mettre à jour la carte, résilier, télécharger ses factures.
+  // Portail client : période de l'abonnement Pro, carte, résiliation, factures (Arc 90 jours compris).
   const portal = await stripe.billingPortal.configurations.create({
     business_profile: { headline: "Nonante : gère ton abonnement." },
     features: {
@@ -108,7 +110,6 @@ async function main() {
         default_allowed_updates: ["price"],
         proration_behavior: "create_prorations",
         products: [
-          { product: essentiel, prices: [plans.essentiel.month.price_id!, plans.essentiel.year.price_id!] },
           { product: pro, prices: [plans.pro.month.price_id!, plans.pro.year.price_id!] },
         ],
       },

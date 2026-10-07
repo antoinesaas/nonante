@@ -1,57 +1,70 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { type CollectiveStart, OnboardingFlow, type OnboardingPrefill } from "@/app/onboarding/OnboardingFlow";
+import { type CollectiveStart, Quiz } from "@/app/onboarding/Quiz";
+import { Faq } from "@/components/Faq";
+import { SocialProof } from "@/components/SocialProof";
 import { getArt, IMAGES } from "@/lib/art";
-import { requireUser } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import { todayParis } from "@/lib/dates";
+import { faqItems } from "@/lib/faq";
+import type { PlanId, PublicPlans, SocialProof as Proof } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Ton arc", robots: { index: false } };
+export const metadata: Metadata = {
+  title: "Construis ton arc",
+  description: "Deux minutes de questions, et Nonante construit ton arc de 90 jours : ton objectif, tes principes, ton jour 1.",
+};
 
-export default async function OnboardingPage() {
-  const { supabase, user } = await requireUser("/onboarding");
+// Les objections qui arrivent au moment de payer.
+const OBJECTIONS = ["payant", "renouvellement", "choisir", "temps", "triche", "retractation"];
+
+export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
+  const params = await searchParams;
+  const { supabase, user } = await getUser();
   const today = todayParis();
 
-  const [{ data: profile }, { data: enrollments }, { data: starts }] = await Promise.all([
-    supabase.from("profiles").select("pseudo").eq("id", user.id).maybeSingle(),
-    supabase
-      .from("enrollments")
-      .select("id, arc_number, status, start_date, category, goal_type, goal_title, goal_target, goal_unit, goal_public, weak_points, wake_time, pushups, focus_minutes")
-      .eq("user_id", user.id)
-      .order("arc_number", { ascending: false }),
+  const [{ data: plans }, { data: proof }, { data: starts }] = await Promise.all([
+    supabase.rpc("plans_public"),
+    supabase.rpc("social_proof"),
     supabase.rpc("collective_starts"),
   ]);
 
-  // Arc en cours (jour 1 passé) : il se pilote depuis le tableau de bord.
-  const open = (enrollments ?? []).find((e) => e.status === "draft" || e.status === "active");
-  if (open && open.status === "active" && open.start_date <= today) redirect("/app");
+  let pseudo: string | null = null;
+  let arcNumber = 1;
+  let currentPlan: PlanId | null = null;
+  if (user) {
+    const [{ data: profile }, { data: enrollments }] = await Promise.all([
+      supabase.from("profiles").select("pseudo").eq("id", user.id).maybeSingle(),
+      supabase.from("enrollments").select("arc_number, status, start_date").eq("user_id", user.id).order("arc_number", { ascending: false }),
+    ]);
+    // Arc en cours (jour 1 passé) : il se pilote depuis le tableau de bord.
+    const open = (enrollments ?? []).find((e) => e.status === "draft" || e.status === "active");
+    if (open && open.status === "active" && open.start_date <= today) redirect("/app");
+    pseudo = profile?.pseudo ?? null;
+    arcNumber = open ? open.arc_number : (enrollments?.[0]?.arc_number ?? 0) + 1;
+    if (profile) {
+      const { data: plan } = await supabase.rpc("my_plan");
+      currentPlan = ((plan as { plan: PlanId | null } | null)?.plan ?? null) as PlanId | null;
+    }
+  }
 
-  const prefill: OnboardingPrefill | null = open
-    ? {
-        category: open.category as OnboardingPrefill["category"],
-        goalType: open.goal_type as OnboardingPrefill["goalType"],
-        goal: open.goal_title,
-        goalTarget: open.goal_target,
-        goalUnit: open.goal_unit,
-        goalPublic: open.goal_public,
-        weakPoints: open.weak_points,
-        wakeTime: open.wake_time.slice(0, 5),
-        pushups: open.pushups as OnboardingPrefill["pushups"],
-        focusMinutes: open.focus_minutes as OnboardingPrefill["focusMinutes"],
-        startDate: open.start_date,
-      }
-    : null;
-
-  const arcNumber = open ? open.arc_number : (enrollments?.[0]?.arc_number ?? 0) + 1;
+  const initialPlan = params.plan === "pro" || params.plan === "arc" || params.plan === "fondateur" ? (params.plan as PlanId) : null;
+  const socialProof = proof as Proof | null;
 
   return (
-    <OnboardingFlow
-      hasProfile={Boolean(profile)}
-      prefill={prefill}
-      arts={IMAGES.onboarding.map((slug) => getArt(slug))}
-      currentYear={Number(today.slice(0, 4))}
+    <Quiz
+      loggedIn={Boolean(user)}
+      hasProfile={Boolean(pseudo)}
+      pseudo={pseudo}
       today={today}
       collectiveStarts={(starts as CollectiveStart[] | null) ?? []}
       arcNumber={arcNumber}
+      plans={plans as PublicPlans}
+      currentPlan={currentPlan}
+      initialPlan={initialPlan}
+      arts={IMAGES.onboarding.map((slug) => getArt(slug))}
+      templates={socialProof?.templates ?? 37}
+      proofSlot={<SocialProof proof={socialProof} compact />}
+      faqSlot={<Faq items={faqItems(OBJECTIONS)} />}
     />
   );
 }

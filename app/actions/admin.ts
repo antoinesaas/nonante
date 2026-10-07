@@ -84,7 +84,7 @@ export async function saveSquad(_prev: ActionResult, formData: FormData): Promis
 
 const Comp = z.object({
   pseudo: z.string().trim().min(3).max(20),
-  plan: z.enum(["essentiel", "pro"]),
+  plan: z.enum(["arc", "pro"]),
   until: z.iso.date().nullable(),
 });
 

@@ -4,7 +4,7 @@ insert into public.settings (key, value) values
   ('audit_rate', '0.10'),
   -- Montants en centimes. Les identifiants des prix Stripe sont renseignés après la création des prix.
   ('plans', '{
-    "essentiel": {"month": {"amount": 799, "price_id": null}, "year": {"amount": 5999, "price_id": null}},
+    "arc": {"once": {"amount": 1999, "price_id": null}},
     "pro": {"month": {"amount": 1499, "price_id": null}, "year": {"amount": 9999, "price_id": null}},
     "fondateur": {"lifetime": {"amount": 19900, "price_id": null}, "limit": 100}
   }');

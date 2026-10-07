@@ -93,10 +93,14 @@ const arc = (user, overrides = {}) => as(user, () => rpc("save_arc", {
   p_wake_time: "06:30", p_pushups: "quelques", p_focus_minutes: 90, p_start_date: today, p_squad_id: null, ...overrides,
 }));
 // Abonnement actif (comme le webhook Stripe).
-const subscribe = (user, plan = "essentiel", status = "active") => service(() => rpc("sync_subscription", {
+const subscribe = (user, plan = "pro", status = "active") => service(() => rpc("sync_subscription", {
   p_user: user, p_customer: `cus_${user.slice(0, 4)}`, p_subscription: `sub_${user.slice(0, 4)}_${plan}`, p_plan: plan,
   p_interval: "month", p_status: status, p_period_end: new Date(Date.now() + 30 * 86400000).toISOString(),
   p_cancel_at_period_end: false,
+}));
+// Arc 90 jours payé (comme le webhook Stripe, paiement unique).
+const arcPass = (user, ref = `cs_arc_${user.slice(0, 4)}`, loyalty = false) => service(() => rpc("grant_arc_pass", {
+  p_user: user, p_object_id: ref, p_amount: 1999, p_currency: "eur", p_customer: `cus_${user.slice(0, 4)}`, p_loyalty: loyalty,
 }));
 const principlesOf = (enrollment) => q("select * from public.principles where enrollment_id = $1 and active_until is null order by position", [enrollment]);
 // Dépose une photo « vérifiée par le serveur » dans le stockage.
@@ -108,7 +112,8 @@ const proofFile = async (user) => {
 // Arc commencé il y a `daysAgo` jours (dates reculées après coup).
 async function pastArc(user, daysAgo, overrides = {}) {
   await profile(user);
-  await subscribe(user, overrides.plan ?? "essentiel");
+  // Arc 90 jours payé avant de construire l'arc : gardé en crédit, puis rattaché au nouvel arc.
+  await arcPass(user);
   const enrollment = await arc(user, overrides);
   await q("update public.enrollments set start_date = start_date - $2::int where id = $1", [enrollment, daysAgo]);
   await q("update public.principles set active_from = active_from - $2::int where enrollment_id = $1", [enrollment, daysAgo]);
@@ -182,14 +187,17 @@ check("gabarit ajouté depuis la bibliothèque", (await val("select template_cod
 
 // ---------------------------------------------------------------------------
 console.log("\nAbonnement et lancement");
-await subscribe(A, "essentiel");
+check("Arc 90 jours payé : enregistré", (await arcPass(A)) === true);
+check("Arc 90 jours : paiement compté une seule fois", (await arcPass(A)) === false
+  && Number(await val("select count(*) from public.payments where kind = 'arc' and user_id = $1", [A])) === 1);
 const eA2 = await one("select * from public.enrollments where id = $1", [enrA]);
-check("abonnement : arc lancé", eA2.status === "active" && eA2.start_date.toISOString().slice(0, 10) === today);
-check("Essentiel : 6 principes gardés", (await principlesOf(enrA)).length === 6);
+check("Arc 90 jours : arc lancé", eA2.status === "active" && eA2.arc_paid && eA2.start_date.toISOString().slice(0, 10) === today);
+check("plan effectif : arc", (await val("select public._plan($1)", [A])) === "arc");
+check("Arc 90 jours : 6 principes gardés", (await principlesOf(enrA)).length === 6);
 check("le principe en trop est le dernier ajouté", !(await val("select 1 from public.principles where id = $1", [added])));
-await rejects("Essentiel : pas de 7e principe", () => as(A, () => rpc("add_template_principle", { p_code: "lecture" })), "6 principes");
+await rejects("Arc 90 jours : pas de 7e principe", () => as(A, () => rpc("add_template_principle", { p_code: "lecture" })), "6 principes");
 const plans = await as(null, () => rpc("plans_public"), { role: "anon" });
-check("plans publics sans identifiants Stripe", plans.essentiel.month === 799 && plans.pro.year === 9999 && !JSON.stringify(plans).includes("price_id"));
+check("plans publics sans identifiants Stripe", plans.arc.once === 1999 && plans.pro.year === 9999 && !JSON.stringify(plans).includes("price_id"));
 check("compteur fondateurs réel", plans.fondateur.limit === 100 && plans.fondateur.sold === 0);
 
 // ---------------------------------------------------------------------------
@@ -338,15 +346,15 @@ if (await val("select public.paris_now()::time > '22:59'")) {
 // ---------------------------------------------------------------------------
 console.log("\nJokers");
 const j1 = await as(A, () => rpc("use_joker"));
-check("Essentiel : un joker posé, 0 restant", j1.jokers_left === 0);
-await rejects("pas de second joker en Essentiel", () => as(A, () => rpc("use_joker")), "Plus de joker");
+check("Arc 90 jours : un joker posé, 0 restant", j1.jokers_left === 0);
+await rejects("pas de second joker avec l'Arc 90 jours", () => as(A, () => rpc("use_joker")), "Plus de joker");
 const j2 = await as(B, () => rpc("use_joker"));
 check("Pro : 3 jokers", j2.jokers_left === 2);
 await rejects("un joker par jour", () => as(B, () => rpc("use_joker")), "déjà posé");
 
 // ---------------------------------------------------------------------------
 console.log("\nPortefeuille");
-await rejects("Essentiel : portefeuille réservé à Pro", () => service(() => rpc("add_wallet_entry", {
+await rejects("Arc 90 jours : portefeuille réservé à Pro", () => service(() => rpc("add_wallet_entry", {
   p_user: A, p_amount_cents: 5000, p_source: "vente", p_label: "Site vitrine", p_day: today, p_proof_path: null,
 })), "plan Pro");
 const w1 = await service(() => rpc("add_wallet_entry", { p_user: B, p_amount_cents: 12000, p_source: "client", p_label: "Acompte client", p_day: today, p_proof_path: null }));
@@ -398,7 +406,7 @@ await as(ADMIN, () => rpc("admin_review_audit", { p_audit_id: walletAudit.id, p_
 check("revenu refusé : rejeté, − 30", (await val("select status from public.wallet_entries where id = $1", [w4.id])) === "rejected"
   && (await val("select delta from public.points_ledger where reason = 'wallet_audit_failed' and ref_id = $1", [walletAudit.id])) === -30);
 const overview = await as(ADMIN, () => rpc("admin_overview"), { aal: "aal2" });
-check("vue d'ensemble : abonnés et revenu mensuel", overview.mrr_cents === 799 + 1499, JSON.stringify(overview.subscribers));
+check("vue d'ensemble : revenu mensuel (Pro) et arcs vendus", overview.mrr_cents === 1499 && overview.arc_passes_total >= 1, JSON.stringify(overview.subscribers));
 await as(ADMIN, () => rpc("admin_grant_comp", { p_pseudo: "joueur_5555", p_plan: "pro", p_until: "2099-01-01" }), { aal: "aal2" });
 check("accès offert : l'arc d'E est lancé", (await val("select status from public.enrollments where id = $1", [examArc])) === "active");
 check("action journalisée", Number(await val("select count(*) from public.audit_log where action = 'comp_grant'")) === 1);
@@ -413,14 +421,36 @@ const ref = await service(() => rpc("record_referral", { p_promotion_code_id: "p
 check("parrainage noté, parrain renvoyé", ref?.referrer_id === A);
 check("parrainage compté une fois", (await service(() => rpc("record_referral", { p_promotion_code_id: "promo_A", p_referred: B, p_object_id: "cs_B" }))) === null);
 check("pas d'auto-parrainage", (await service(() => rpc("record_referral", { p_promotion_code_id: "promo_A", p_referred: A, p_object_id: "cs_A" }))) === null);
-await service(() => rpc("sync_subscription", { p_user: null, p_customer: "cus_1111", p_subscription: "sub_old", p_plan: "essentiel", p_interval: "month", p_status: "canceled", p_period_end: null, p_cancel_at_period_end: false }));
-check("événement d'un ancien abonnement ignoré", (await val("select plan_status from public.profiles where id = $1", [A])) === "active");
+await service(() => rpc("sync_subscription", { p_user: null, p_customer: "cus_2222", p_subscription: "sub_old", p_plan: "pro", p_interval: "month", p_status: "canceled", p_period_end: null, p_cancel_at_period_end: false }));
+check("événement d'un ancien abonnement ignoré", (await val("select plan_status from public.profiles where id = $1", [B])) === "active");
 await profile(F);
 await service(() => rpc("grant_lifetime", { p_user: F, p_customer: "cus_F" }));
 check("fondateur : accès à vie", (await val("select public._plan($1)", [F])) === "fondateur");
-await service(() => rpc("sync_subscription", { p_user: F, p_customer: "cus_F", p_subscription: "sub_F", p_plan: "essentiel", p_interval: "month", p_status: "canceled", p_period_end: null, p_cancel_at_period_end: false }));
+await service(() => rpc("sync_subscription", { p_user: F, p_customer: "cus_F", p_subscription: "sub_F", p_plan: "pro", p_interval: "month", p_status: "canceled", p_period_end: null, p_cancel_at_period_end: false }));
 check("un abonnement ne retire pas l'accès à vie", (await val("select public._plan($1)", [F])) === "fondateur");
 check("compteur fondateurs", (await as(null, () => rpc("plans_public"), { role: "anon" })).fondateur.sold === 1);
+check("Arc 90 jours payé d'avance : gardé en crédit", (await arcPass(F, "cs_arc_F")) === true
+  && (await val("select arc_credits from public.profiles where id = $1", [F])) === 1);
+await service(() => rpc("mark_loyalty_applied", { p_enrollment: enrA, p_pending: true }));
+check("fidélité sans abonnement : remise en attente", (await val("select loyalty_pending from public.profiles where id = $1", [A])) === true);
+await arcPass(A, "cs_arc_A_2", true);
+check("remise de fidélité consommée par l'arc suivant", (await val("select loyalty_pending from public.profiles where id = $1", [A])) === false
+  && (await val("select arc_credits from public.profiles where id = $1", [A])) === 1);
+await q("update public.profiles set arc_credits = 0 where id = $1", [A]);
+
+console.log("\nQuestionnaire (visiteur, sans compte)");
+const preview = await as(null, () => rpc("preview_principles", {
+  p_category: "business", p_goal_type: "revenu", p_weak_points: ["telephone", "vente"], p_wake_time: "06:30", p_pushups: "quelques", p_focus_minutes: 90,
+}), { role: "anon" });
+check("aperçu : les 6 mêmes principes que l'arc construit", preview.principles.map((p) => p.code).join() === codesA.join(), JSON.stringify(preview.principles.map((p) => p.code)));
+check("aperçu : textes et difficulté calculés", preview.principles[0].if_text === "S'il est 6 h 30" && preview.principles[1].difficulty === 3 && preview.templates >= 30);
+await rejects("aperçu : réponses invalides refusées", () => as(null, () => rpc("preview_principles", {
+  p_category: "x", p_goal_type: "revenu", p_weak_points: [], p_wake_time: "06:30", p_pushups: "oui", p_focus_minutes: 50,
+}), { role: "anon" }), "incomplètes");
+const proof = await as(null, () => rpc("social_proof"), { role: "anon" });
+check("preuve sociale : chiffres réels", typeof proof.joueurs === "number" && Array.isArray(proof.joueurs_en_forme) && proof.templates >= 30);
+await rejects("réponses en attente : illisibles pour un visiteur", () => as(null, () => q("select * from public.pending_arcs"), { role: "anon" }), "permission denied");
+await rejects("réponses en attente : illisibles pour un joueur", () => as(A, () => q("select * from public.pending_arcs")), "permission denied");
 
 // ---------------------------------------------------------------------------
 console.log("\nClôture des jours");
@@ -475,6 +505,10 @@ await service(() => rpc("cron_close_days"));
 check("7 jours blancs : abandon", (await val("select status from public.enrollments where id = $1", [enrH])) === "abandoned");
 const enrH2 = await arc(H);
 check("après un abandon : on recommence (arc n° 2)", (await val("select arc_number from public.enrollments where id = $1", [enrH2])) === 2);
+check("arc n° 2 : un nouvel Arc 90 jours à payer", (await val("select status from public.enrollments where id = $1", [enrH2])) === "draft"
+  && (await val("select public._plan($1)", [H])) === null);
+await arcPass(H, "cs_arc_H_2");
+check("arc n° 2 payé : lancé", (await val("select status from public.enrollments where id = $1", [enrH2])) === "active");
 
 // Fin d'arc : arc tenu.
 await q("update public.enrollments set start_date = public.paris_today() - 90 where id = $1", [enrH2]);
@@ -495,7 +529,7 @@ check("arc tenu : remise de fidélité à appliquer", loyalty.some((x) => x.enro
 
 // ---------------------------------------------------------------------------
 console.log("\nEscouades");
-await rejects("Essentiel : création réservée à Pro", () => as(A, () => rpc("create_squad", { p_name: "Les lève-tôt", p_description: null, p_is_public: false })), "plan Pro");
+await rejects("Arc 90 jours : création réservée à Pro", () => as(A, () => rpc("create_squad", { p_name: "Les lève-tôt", p_description: null, p_is_public: false })), "plan Pro");
 const code = await as(B, () => rpc("create_squad", { p_name: "Les lève-tôt", p_description: "Debout avant 6 h", p_is_public: false }));
 check("code d'escouade sur 6 caractères", /^[A-Z0-9]{6}$/.test(code));
 const squadId = await as(A, () => rpc("join_squad", { p_code: code.toLowerCase() }));
@@ -545,11 +579,15 @@ await q("update public.challenge_assignments set challenge_id = (select id from 
 const ch1 = await as(B, () => rpc("validate_challenge_declaratif", { p_assignment_id: assignment.id }));
 check("quête déclarative réussie : + 100", ch1.status === "done" && (await val("select delta from public.points_ledger where reason = 'challenge' and ref_id = $1", [assignment.id])) === 100);
 await rejects("quête déjà jugée", () => as(B, () => rpc("validate_challenge_declaratif", { p_assignment_id: assignment.id })), "déjà jugée");
-const locked = await subscribe(E, "essentiel", "canceled");
+const locked = await subscribe(E, "pro", "canceled");
 await q("update public.profiles set comp_until = null, comp_plan = null where id = $1", [E]);
 check("abonnement résilié : arc verrouillé", (await as(E, () => rpc("my_dashboard"))).state === "locked", String(locked));
 const pE = await principlesOf(examArc);
 await rejects("verrouillé : plus rien ne se valide", () => as(E, () => rpc("validate_declaratif", { p_principle_id: pE.find((p) => p.proof_type === "declaratif")?.id ?? pE[0].id })), "");
+
+// ---------------------------------------------------------------------------
+await q("update public.enrollments set status = 'completed', closed_at = now() where id = $1", [enrA]);
+check("Arc 90 jours terminé : plus d'accès sans nouvel arc payé", (await val("select public._plan($1)", [A])) === null);
 
 // ---------------------------------------------------------------------------
 console.log("\nSuppression de compte (RGPD)");

@@ -63,8 +63,8 @@ export default async function PrinciplesPage({ searchParams }: PageProps<"/app/p
         <div className="mt-8 border border-paper p-5">
           <p className="font-serif text-2xl leading-tight">Prêt ? Lance ton arc.</p>
           <p className="mt-2 text-sm text-mute">
-            Payer, c&apos;est déjà s&apos;engager. Ton arc démarre dès que ton abonnement est actif.
-            {principles.length > 6 ? " Le plan Essentiel garde tes 6 premiers principes ; Pro les garde tous." : ""}
+            Payer, c&apos;est déjà s&apos;engager. Ton arc démarre dès le paiement.
+            {principles.length > 6 ? " L&apos;Arc 90 jours garde tes 6 premiers principes ; Pro les garde tous." : ""}
           </p>
           <Link href="/abonnement" className={`${btnPrimary} mt-5`}>
             Choisir mon plan

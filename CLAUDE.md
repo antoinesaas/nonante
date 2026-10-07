@@ -33,7 +33,8 @@ prospection) et c'est **un jeu** (stats de joueur, niveaux, classement, escouade
 ## 3. Esprit de la marque
 
 Discipline sobre et exigeante. Noir et blanc, grain photo, Instrument Serif pour les titres et grands
-chiffres, Inter pour le texte. Pas d'emojis, pas de confettis. Couleurs : fond `#0A0A0A`, surfaces `#141414`,
+chiffres, Inter pour le texte, Caveat (manuscrite) pour quelques mots seulement. Animations courtes et sobres
+(apparition, trait dessiné, coche), coupées si l'utilisateur réduit les animations. Pas d'emojis, pas de confettis. Couleurs : fond `#0A0A0A`, surfaces `#141414`,
 traits `#2A2A2A`, texte `#F2F2F2`, secondaire `#8A8A8A`. Vert `#34C759` et rouge `#FF453A` réservés aux états
 (jour, principe, gain, perte). Tutoiement, phrases courtes : « Prouve-le. », « Jour 23 sur 90. ».
 
@@ -64,7 +65,7 @@ une unité facultatifs. Affiché en haut du tableau de bord.
 - La **difficulté est calculée par le serveur** depuis la preuve et la cible (25/50/90 min → 1/2/3 ; pompes
   ≤ 15/≤ 40/plus ; squats ≤ 25/≤ 60/plus ; réveil ≥ 7 h 30/≥ 6 h 30/avant). Preuves faibles : 1 ou 2 au choix.
 - Pendant l'arc, une modification prend effet **le lendemain** (versions `active_from` / `active_until`).
-- Nombre max : 6 (Essentiel), 12 (Pro et Fondateur).
+- Nombre max : 6 (Arc 90 jours), 12 (Pro et Fondateur).
 
 ### Preuves
 | Type | Force | Comment |
@@ -93,7 +94,7 @@ réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu prouvé + 
   Focus, Corps, Business (dont revenus prouvés), Esprit, Énergie (XP du pilier / 600). **Note globale** =
   moyenne des 6 : pour la maxer il faut tout travailler.
 - **Série** : jours verts d'affilée (un joker ne la casse pas).
-- **Jokers** : 1 par arc (Essentiel), 3 (Pro, Fondateur). Un joker rend la journée neutre : ni points ni pénalité.
+- **Jokers** : 1 par arc (Arc 90 jours), 3 (Pro, Fondateur). Un joker rend la journée neutre : ni points ni pénalité.
 - **Quête de la semaine** (7 jours de l'arc) tirée selon la catégorie et le palier (niveau < 8, < 16, au-delà),
   piège toutes les 4 semaines.
 - **Succès** avec rareté réelle, certains débloquent un fond de carte (œuvre ou photo).
@@ -120,22 +121,33 @@ affiché vient de la base.
 
 ## 5. Modèle économique
 
-Pas de plan gratuit. On construit son arc (investissement), puis on paie pour le lancer.
+Pas de plan gratuit. Le visiteur répond au questionnaire, voit son arc construit (investissement), puis paie pour le
+lancer. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jours, payé une fois par arc.
 
-| Plan | Mensuel | Annuel | Contenu |
-|---|---|---|---|
-| Essentiel | 7,99 € | 59,99 € | Arc personnalisé, 6 principes, toutes les preuves, classement, rejoindre des escouades, 1 joker |
-| Pro | 14,99 € | 99,99 € | 12 principes, portefeuille, créer des escouades, 3 jokers, historique des arcs |
-| Fondateur | 199 € une fois | — | Pro à vie, 100 places (compteur réel) |
+| Plan | Prix | Contenu |
+|---|---|---|
+| Arc 90 jours | 19,99 € une fois, par arc | 6 principes, toutes les preuves, classement, rejoindre des escouades, 1 joker. Aucun renouvellement |
+| Pro | 14,99 €/mois ou 99,99 €/an | Tous les arcs tant que l'abonnement est actif, 12 principes, portefeuille, créer des escouades, 3 jokers |
+| Fondateur | 199 € une fois | Pro à vie, 100 places (compteur réel) |
 
-- Stripe Checkout (`subscription`, ou `payment` pour Fondateur), codes promo, portail client Stripe pour
-  changer de plan ou résilier. Prix et identifiants Stripe dans `settings.plans`.
-- Abonnement inactif : l'arc continue mais plus rien ne se valide (les jours deviennent blancs).
-- **Parrainage** : code perso (−20 % sur le premier paiement de l'ami) et 5 € de crédit Stripe pour le parrain
-  à chaque vente.
-- **Fidélité** : arc tenu = −50 % sur la prochaine facture (coupon appliqué à l'abonnement).
+- Stripe Checkout (`payment` pour l'Arc 90 jours et Fondateur, `subscription` pour Pro), codes promo, portail client
+  Stripe (factures, abonnement Pro). Prix et identifiants Stripe dans `settings.plans`.
+- L'Arc 90 jours se rattache à l'arc ouvert (`enrollments.arc_paid`), ou reste en crédit (`profiles.arc_credits`)
+  pour le prochain arc. L'arc terminé ou lâché, il faut un nouvel Arc 90 jours.
+- Abonnement Pro inactif : l'arc continue mais plus rien ne se valide (les jours deviennent blancs).
+- **Parrainage** : code perso (−20 % sur le premier paiement de l'ami) et 5 € de crédit Stripe pour le parrain.
+- **Fidélité** : arc tenu = −50 % sur la prochaine facture Pro, ou sur le prochain Arc 90 jours (`loyalty_pending`).
 - Droit de rétractation : 14 jours ; case à cocher pour demander l'accès immédiat (paiement au prorata en cas
   de rétractation).
+
+### Parcours du visiteur
+
+Landing → `/onboarding` (sans compte) : questions une par écran (profil, objectif, phrase, points faibles, écran
+« si… alors… », réveil, concentration, pompes, jour 1, engagement, pseudo) → écran de construction (vrai calcul
+`preview_principles`) → résultat personnalisé (arc, 6 principes, stats, preuve sociale, plans, objections) → email
+et code (les réponses sont gardées dans `pending_arcs`, 3 jours max) → `/onboarding/suite` (âge, accès immédiat) →
+Stripe → `/app?paid=1`. Preuve sociale : seulement des chiffres réels (seuils) et des études publiées, jamais de faux
+avis.
 
 ## 6. Stack et sécurité
 
@@ -153,10 +165,10 @@ RLS partout, Storage), Stripe, Web Push (VAPID), Resend facultatif, MediaPipe, s
 
 ## 7. Pages
 
-`/` (landing), `/login`, `/onboarding`, `/abonnement` (plans), `/app` (aujourd'hui), `/app/principes`,
+`/` (landing), `/login`, `/onboarding`, `/onboarding/suite`, `/abonnement` (plans), `/faq`, `/app` (aujourd'hui), `/app/principes`,
 `/app/portefeuille`, `/app/escouades`, `/app/profil`, pages de preuve plein écran (`/app/session|reps|reveil|
 photo|capture|lien|controle/[id]`), `/app/niveau`, `/app/succes`, `/app/quete`, `/app/avant-apres`,
-`/classement`, `/u/[pseudo]`, `/art`, `/legal/*`, `/admin/*`.
+`/classement`, `/u/[pseudo]`, `/art`, `/legal/*` (mentions, CGU, CGV, confidentialité), `/admin/*`.
 
 ## 8. Définition de « terminé »
 

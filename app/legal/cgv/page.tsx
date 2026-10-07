@@ -9,7 +9,7 @@ export default function CgvPage() {
   return (
     <>
       <h1>Conditions générales de vente</h1>
-      <p className="text-sm text-mute">En vigueur au 6 octobre 2026.</p>
+      <p className="text-sm text-mute">En vigueur au 7 octobre 2026.</p>
 
       <h2>1. Vendeur</h2>
       <p>
@@ -26,26 +26,35 @@ export default function CgvPage() {
 
       <h2>3. Plans et prix</h2>
       <ul>
-        <li>Essentiel : 7,99 € par mois, ou 59,99 € par an.</li>
-        <li>Pro : 14,99 € par mois, ou 99,99 € par an.</li>
+        <li>
+          Arc 90 jours : 19,99 € en un seul paiement, pour un arc de 90 jours (à partir du jour 1 choisi). Pas
+          d&apos;abonnement : aucun prélèvement n&apos;a lieu ensuite. Chaque nouvel arc se paie au moment de le lancer.
+        </li>
+        <li>Pro : abonnement à 14,99 € par mois, ou 99,99 € par an, qui couvre tous les arcs tant qu&apos;il est actif.</li>
         <li>Fondateur : 199 € en un seul paiement, accès au plan Pro sans limite de durée, dans la limite de 100 places.</li>
       </ul>
       <p>
         Les prix sont en euros, toutes taxes comprises. Le contenu de chaque plan est décrit sur la page Plans au moment de la
-        commande. Un changement de prix ne s&apos;applique jamais à une période déjà payée ; pour un abonnement en cours, il est
-        annoncé au moins 30 jours à l&apos;avance et tu peux résilier avant qu&apos;il s&apos;applique.
+        commande. Un changement de prix ne s&apos;applique jamais à un arc ou à une période déjà payés ; pour un abonnement en
+        cours, il est annoncé au moins 30 jours à l&apos;avance et tu peux résilier avant qu&apos;il s&apos;applique.
+      </p>
+      <p>
+        L&apos;Arc 90 jours couvre l&apos;arc pour lequel il a été payé, jusqu&apos;à son 90e jour ou jusqu&apos;à ce qu&apos;il
+        soit lâché selon les règles du jeu (7 jours blancs d&apos;affilée). Payé sans arc en construction, il est gardé en
+        crédit et rattaché à ton prochain arc.
       </p>
 
       <h2>4. Commande et paiement</h2>
       <p>
-        Le paiement est traité par Stripe. Nonante n&apos;a jamais accès à tes numéros de carte. L&apos;abonnement mensuel ou
-        annuel se renouvelle automatiquement à la fin de chaque période, au prix en vigueur, jusqu&apos;à résiliation. Une facture
-        est disponible dans ton espace de paiement (Profil, puis « Gérer mon abonnement »).
+        Le paiement est traité par Stripe. Nonante n&apos;a jamais accès à tes numéros de carte. L&apos;abonnement Pro mensuel
+        ou annuel se renouvelle automatiquement à la fin de chaque période, au prix en vigueur, jusqu&apos;à résiliation.
+        L&apos;Arc 90 jours et le plan Fondateur ne se renouvellent jamais. Une facture est disponible pour chaque paiement
+        dans ton espace de paiement (Profil, puis « Mes factures » ou « Gérer mon abonnement »).
       </p>
 
-      <h2>5. Résiliation</h2>
+      <h2>5. Résiliation de l&apos;abonnement Pro</h2>
       <p>
-        Tu peux résilier à tout moment, en un clic, depuis ton profil. La résiliation prend effet à la fin de la période déjà
+        Tu peux résilier Pro à tout moment, en un clic, depuis ton profil. La résiliation prend effet à la fin de la période déjà
         payée : ton accès reste ouvert jusque-là, et aucun nouveau prélèvement n&apos;a lieu. Les périodes entamées ne sont pas
         remboursées, sauf exercice du droit de rétractation (article 6).
       </p>
@@ -56,7 +65,7 @@ export default function CgvPage() {
 
       <h2>6. Droit de rétractation</h2>
       <p>
-        Tu disposes de 14 jours à compter de ta souscription pour te rétracter, sans avoir à te justifier (articles L221-18 et
+        Tu disposes de 14 jours à compter de ton achat (Arc 90 jours, Pro ou Fondateur) pour te rétracter, sans avoir à te justifier (articles L221-18 et
         suivants du Code de la consommation). Au moment du paiement, tu demandes expressément que le service commence tout de
         suite. Si tu te rétractes dans ces 14 jours, tu paies seulement la part du service déjà fournie jusqu&apos;à ta
         rétractation, au prorata (article L221-25), et le reste t&apos;est remboursé dans les 14 jours, par le même moyen de
@@ -67,14 +76,20 @@ export default function CgvPage() {
       </p>
       <blockquote className="border-l border-line pl-4 text-sm text-mute">
         À l&apos;attention de {EDITOR.name}, {EDITOR.address}, {EDITOR.email} : je vous notifie par la présente ma rétractation du
-        contrat portant sur l&apos;abonnement Nonante ci-dessous. Plan : … Souscrit le : … Nom et adresse email du compte : …
+        contrat portant sur le service Nonante ci-dessous. Plan : … Acheté le : … Nom et adresse email du compte : …
         Date : …
       </blockquote>
 
       <h2>7. Remises</h2>
       <ul>
-        <li>Parrainage : le code d&apos;un joueur donne −20 % sur le premier paiement d&apos;un nouvel abonné ; le parrain reçoit 5 € de crédit déduit de sa prochaine facture.</li>
-        <li>Fidélité : un arc tenu donne −50 % sur la prochaine facture de l&apos;abonnement, une seule fois par arc.</li>
+        <li>
+          Parrainage : le code d&apos;un joueur donne −20 % sur le premier paiement d&apos;un nouveau joueur ; le parrain reçoit
+          5 € de crédit, déduit de son prochain paiement Nonante.
+        </li>
+        <li>
+          Fidélité : un arc tenu donne −50 % sur le prochain Arc 90 jours, ou sur la prochaine facture de l&apos;abonnement Pro,
+          une seule fois par arc.
+        </li>
       </ul>
       <p>
         Ces remises sont identiques pour tous, n&apos;ont aucune valeur en argent et ne sont jamais liées au classement.

@@ -9,7 +9,7 @@ export default function ConfidentialitePage() {
   return (
     <>
       <h1>Confidentialité</h1>
-      <p className="text-sm text-mute">En vigueur au 6 octobre 2026.</p>
+      <p className="text-sm text-mute">En vigueur au 7 octobre 2026.</p>
 
       <h2>Responsable du traitement</h2>
       <p>
@@ -20,6 +20,11 @@ export default function ConfidentialitePage() {
       <ul>
         <li>Ton adresse email : pour te connecter (sans mot de passe) et t&apos;envoyer les messages liés au service.</li>
         <li>Ton pseudo, ton année de naissance (vérifier que tu as 18 ans), ta photo de profil et ta bio si tu les ajoutes.</li>
+        <li>
+          Tes réponses au questionnaire (objectif, points faibles, rythme, jour 1) : elles construisent ton arc. Si tu les
+          donnes avant d&apos;avoir un compte, elles sont gardées avec ton email au plus 3 jours, le temps que tu te connectes,
+          puis supprimées.
+        </li>
         <li>Ton objectif, tes principes, tes validations, tes sessions, tes points et tes statistiques : c&apos;est le jeu.</li>
         <li>
           Tes preuves : photos prises dans l&apos;app, captures d&apos;écran, liens. Elles servent aux contrôles et restent

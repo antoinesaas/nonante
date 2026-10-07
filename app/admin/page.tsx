@@ -9,6 +9,8 @@ import type { PlanId } from "@/lib/types";
 type Overview = {
   subscribers: { plan: PlanId; interval: string; count: number }[];
   mrr_cents: number;
+  arc_passes_30d: number;
+  arc_passes_total: number;
   revenue_30d_cents: number;
   revenue_total_cents: number;
   founders: number;
@@ -23,7 +25,7 @@ type Overview = {
   comps: { pseudo: string; plan: string; until: string }[];
 };
 
-const INTERVAL: Record<string, string> = { month: "mensuel", year: "annuel", lifetime: "à vie" };
+const INTERVAL: Record<string, string> = { once: "une fois", month: "mensuel", year: "annuel", lifetime: "à vie" };
 
 function pct(a: number, b: number): string {
   return b ? `${Math.round((100 * a) / b)} %` : "—";
@@ -39,7 +41,9 @@ export default async function AdminPage() {
     <div className="space-y-14">
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          ["Revenu mensuel récurrent", formatEuros(o.mrr_cents)],
+          ["Revenu mensuel récurrent (Pro)", formatEuros(o.mrr_cents)],
+          ["Arcs 90 jours vendus sur 30 jours", String(o.arc_passes_30d)],
+          ["Arcs 90 jours vendus au total", String(o.arc_passes_total)],
           ["Encaissé sur 30 jours", formatEuros(o.revenue_30d_cents)],
           ["Encaissé au total", formatEuros(o.revenue_total_cents)],
           ["Fondateurs", `${o.founders} / 100`],

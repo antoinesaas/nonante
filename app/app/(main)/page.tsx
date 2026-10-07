@@ -108,9 +108,16 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
       </div>
 
       {params.paid === "1" && plan.plan ? (
-        <p role="status" className="mt-6 border border-paper p-4 text-sm">
-          Paiement confirmé. Ton arc est lancé. Prouve-le.
-        </p>
+        <div role="status" className="mt-6 animate-rise border border-paper p-5">
+          <p className="font-hand text-3xl leading-none">C&apos;est parti.</p>
+          <p className="mt-2 text-sm">
+            Paiement confirmé, ton arc est lancé.{" "}
+            {d.state === "running" ? "Ta première preuve t'attend juste en dessous." : `Jour 1 le ${formatDayFr(e.start_date, { weekday: true })}.`}
+          </p>
+          <Link href="/app/principes" className={`${btnLink} mt-3 inline-block`}>
+            Ajuster mes principes
+          </Link>
+        </div>
       ) : params.paid === "1" ? (
         <div className="mt-6 border border-line p-4 text-sm">
           Stripe confirme ton paiement, ça prend quelques secondes.{" "}
@@ -123,7 +130,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
       {d.state === "locked" ? (
         <div className="mt-6 border border-paper p-4">
           <p className="text-sm">
-            Ton abonnement est inactif : ton arc continue, mais plus rien ne se valide. Chaque jour devient blanc.
+            Ton accès est inactif : ton arc continue, mais plus rien ne se valide. Chaque jour devient blanc.
           </p>
           <Link href="/abonnement" className={`${btnSmall} mt-3`}>
             Réactiver
@@ -155,7 +162,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
       ) : null}
 
       {/* L'arc */}
-      <section className="mt-10">
+      <section className="mt-10 animate-rise">
         <p className={label}>
           Arc n° {e.arc_number} · {GOAL_LABEL[e.goal_type]}
         </p>
@@ -207,10 +214,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
         <section className="mt-8 border border-paper p-5">
           <p className="font-serif text-2xl leading-tight">Ton arc est construit. Il ne manque que toi.</p>
           <p className="mt-2 text-sm text-mute">
-            Jour 1 prévu le {formatDayFr(e.start_date, { weekday: true })}. Il démarre dès que ton abonnement est actif.
+            Jour 1 prévu le {formatDayFr(e.start_date, { weekday: true })}. Il démarre dès le paiement : 19,99 € pour les 90
+            jours, une seule fois.
           </p>
           <Link href="/abonnement" className={`${btnPrimary} mt-5`}>
-            Choisir mon plan
+            Lancer mon arc
           </Link>
           <Link href="/app/principes" className={`${btnLink} mt-4 inline-block`}>
             Revoir mes principes
@@ -305,7 +313,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
         <section className="mt-10 border-t border-line pt-8">
           <p className="text-mute">
             {e.status === "completed"
-              ? "90 jours, prouvés. Ta prochaine facture est à −50 %."
+              ? plan.paid_plan === "pro"
+                ? "90 jours, prouvés. Ta prochaine facture est à −50 %."
+                : "90 jours, prouvés. Ton prochain Arc 90 jours est à −50 %."
               : e.status === "abandoned"
                 ? "7 jours blancs d'affilée. Ton calendrier reste visible. Le prochain arc commence quand tu veux."
                 : "Il fallait 75 jours verts, sans plus de 3 jours non verts d'affilée. On recommence ?"}

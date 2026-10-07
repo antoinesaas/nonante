@@ -16,15 +16,19 @@ create table public.profiles (
   stripe_promotion_code_id text,
   stripe_customer_id text unique,
   stripe_subscription_id text unique,
-  -- Plan payé : essentiel, pro (abonnement) ou fondateur (paiement unique, à vie).
-  plan text check (plan in ('essentiel', 'pro', 'fondateur')),
+  -- Abonnement Pro ou accès à vie Fondateur. L'Arc 90 jours, lui, se paie une fois par arc (enrollments.arc_paid).
+  plan text check (plan in ('pro', 'fondateur')),
   plan_interval text check (plan_interval in ('month', 'year', 'lifetime')),
   plan_status text check (length(plan_status) <= 30),
   current_period_end timestamptz,
   cancel_at_period_end boolean not null default false,
   -- Accès offert par l'admin (tests, partenaires), jusqu'à une date.
-  comp_plan text check (comp_plan in ('essentiel', 'pro')),
+  comp_plan text check (comp_plan in ('arc', 'pro')),
   comp_until date,
+  -- Arcs 90 jours payés d'avance, pas encore rattachés à un arc.
+  arc_credits int not null default 0 check (arc_credits between 0 and 10),
+  -- Fidélité sans abonnement : −50 % sur le prochain Arc 90 jours.
+  loyalty_pending boolean not null default false,
   is_admin boolean not null default false,
   refused_proofs int not null default 0,
   email_reminders boolean not null default true,
@@ -37,8 +41,8 @@ create policy "profiles : lecture de son profil" on public.profiles
   for select to authenticated using (id = (select auth.uid()));
 revoke all on public.profiles from anon, authenticated;
 grant select (id, pseudo, birth_year, is_public, avatar_path, bio, profile_art_slug, wallet_public, referral_code,
-  plan, plan_interval, plan_status, current_period_end, cancel_at_period_end, comp_plan, comp_until, is_admin,
-  refused_proofs, email_reminders, created_at) on public.profiles to authenticated;
+  plan, plan_interval, plan_status, current_period_end, cancel_at_period_end, comp_plan, comp_until, arc_credits,
+  loyalty_pending, is_admin, refused_proofs, email_reminders, created_at) on public.profiles to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Arcs (un arc = 90 jours à partir du jour 1 choisi)
@@ -65,6 +69,9 @@ create table public.enrollments (
   before_photo_path text,
   after_photo_path text,
   loyalty_applied_at timestamptz,
+  -- Arc 90 jours payé (paiement unique) : référence Stripe, « credit » ou « comp ».
+  arc_paid boolean not null default false,
+  arc_payment text check (length(arc_payment) <= 255),
   utm_source text check (length(utm_source) <= 100),
   utm_campaign text check (length(utm_campaign) <= 100),
   activated_at timestamptz,
@@ -589,7 +596,7 @@ create table public.payments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles (id) on delete set null,
   stripe_object_id text not null unique,
-  kind text not null check (kind in ('subscription', 'lifetime')),
+  kind text not null check (kind in ('arc', 'subscription', 'lifetime')),
   plan text,
   plan_interval text,
   amount_cents int not null check (amount_cents >= 0),

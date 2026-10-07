@@ -18,7 +18,7 @@ export function CompForm() {
         <span className={label}>Plan</span>
         <select name="plan" defaultValue="pro" className={`${input} mt-2`}>
           <option value="pro">Pro</option>
-          <option value="essentiel">Essentiel</option>
+          <option value="arc">Arc 90 jours</option>
         </select>
       </label>
       <label className="block">

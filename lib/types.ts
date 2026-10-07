@@ -5,8 +5,8 @@ export type Pillar = "focus" | "corps" | "business" | "esprit" | "energie";
 export type DayStatus = "green" | "red" | "white" | "joker" | "future" | "today" | "pending" | "none";
 export type Category = "etudes" | "business" | "mixte";
 export type GoalType = "revenu" | "clients" | "lancement" | "audience" | "examens" | "corps" | "autre";
-export type PlanId = "essentiel" | "pro" | "fondateur";
-export type Interval = "month" | "year" | "lifetime";
+export type PlanId = "arc" | "pro" | "fondateur";
+export type Interval = "once" | "month" | "year" | "lifetime";
 
 export type Target = {
   minutes?: number;
@@ -125,6 +125,12 @@ export type PlanState = {
   period_end: string | null;
   cancel_at_period_end: boolean;
   comp_until: string | null;
+  /** Arc ouvert payé (Arc 90 jours). */
+  arc_paid: boolean;
+  /** Arcs 90 jours payés d'avance, pas encore rattachés. */
+  arc_credits: number;
+  /** Fidélité : −50 % sur le prochain Arc 90 jours. */
+  loyalty_pending: boolean;
   limits: Limits;
 };
 
@@ -308,7 +314,7 @@ export type SquadView = {
 };
 
 export type PublicPlans = {
-  essentiel: { month: number; year: number };
+  arc: { once: number };
   pro: { month: number; year: number };
   fondateur: { lifetime: number; limit: number; sold: number };
 };
@@ -323,4 +329,30 @@ export type StartedSession = {
   server_now: string;
   code: string | null;
   target: Target & ChallengeRule;
+};
+
+/** Aperçu des principes pour un visiteur (preview_principles). */
+export type PreviewPrinciple = {
+  code: string;
+  pillar: Pillar;
+  if_text: string;
+  then_text: string;
+  proof_type: ProofType;
+  days: number[];
+  why: string;
+  source: string;
+  difficulty: number;
+};
+export type Preview = { principles: PreviewPrinciple[]; templates: number };
+
+/** Preuve sociale : chiffres réels de la base (social_proof). */
+export type SocialProof = {
+  joueurs: number;
+  arcs_en_cours: number;
+  verts_aujourdhui: number;
+  arcs_tenus: number;
+  preuves_7j: number;
+  minutes_focus_7j: number;
+  templates: number;
+  joueurs_en_forme: { pseudo: string; avatar_path: string | null; level: number; streak: number; ovr: number }[];
 };

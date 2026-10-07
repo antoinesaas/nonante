@@ -130,7 +130,7 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
         </section>
 
         {!user ? (
-          <Link href="/login?next=/onboarding" className={`${btnPrimary} mt-12`}>
+          <Link href="/onboarding" className={`${btnPrimary} mt-12`}>
             Créer ma carte de joueur
           </Link>
         ) : null}

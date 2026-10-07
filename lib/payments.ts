@@ -6,8 +6,9 @@ import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Interval, PlanId } from "@/lib/types";
 
-// Abonnements et paiement unique (Fondateur). Appelé par le webhook ET au retour de Stripe :
-// tout est idempotent (sync_subscription, record_payment, record_referral).
+// Arc 90 jours (paiement unique par arc), abonnement Pro et Fondateur (paiement unique, à vie).
+// Appelé par le webhook ET au retour de Stripe : tout est idempotent (grant_arc_pass, sync_subscription,
+// record_payment, record_referral).
 
 export const REFERRAL_CREDIT_CENTS = 500;
 
@@ -78,7 +79,7 @@ async function rewardReferral(session: Stripe.Checkout.Session, userId: string) 
   }
 }
 
-/** Checkout terminé : abonnement synchronisé, ou accès à vie (Fondateur). */
+/** Checkout terminé : Arc 90 jours rattaché à l'arc, abonnement synchronisé, ou accès à vie (Fondateur). */
 export async function fulfillCheckout(session: Stripe.Checkout.Session): Promise<string | null> {
   const parsedUser = z.uuid().safeParse(session.client_reference_id ?? session.metadata?.user_id);
   if (!parsedUser.success) return null;
@@ -90,6 +91,17 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session): Promise
     if (!subscriptionId) return null;
     const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
     await syncSubscription(subscription, userId);
+  } else if (session.mode === "payment" && session.metadata?.plan === "arc") {
+    if (session.payment_status !== "paid") return null;
+    const { error } = await admin.rpc("grant_arc_pass", {
+      p_user: userId,
+      p_object_id: session.id,
+      p_amount: session.amount_total ?? 0,
+      p_currency: session.currency ?? "eur",
+      p_customer: idOf(session.customer) ?? "",
+      p_loyalty: session.metadata?.loyalty === "1",
+    });
+    if (error) throw new Error(`Arc 90 jours impossible à rattacher (${error.code})`);
   } else if (session.mode === "payment" && session.metadata?.plan === "fondateur") {
     if (session.payment_status !== "paid") return null;
     const { error } = await admin.rpc("grant_lifetime", { p_user: userId, p_customer: idOf(session.customer) ?? "" });

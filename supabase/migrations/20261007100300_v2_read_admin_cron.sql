@@ -80,6 +80,33 @@ language sql stable security definer set search_path = '' as $$
     (select count(*) from public.enrollments where status = 'completed')::int;
 $$;
 
+-- Preuve sociale du questionnaire et de la landing : uniquement des chiffres réels, tirés de la base.
+create function public.social_proof() returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object(
+    'joueurs', s.joueurs,
+    'arcs_en_cours', s.arcs_en_cours,
+    'verts_aujourdhui', s.verts_aujourdhui,
+    'arcs_tenus', s.arcs_tenus,
+    'preuves_7j', (select count(*) from public.validations v
+      where v.created_at > now() - interval '7 days' and v.status <> 'rejected')::int,
+    'minutes_focus_7j', (select coalesce(sum(ps.minutes), 0) from public.proof_sessions ps
+      where ps.kind = 'session' and ps.status = 'completed' and ps.started_at > now() - interval '7 days')::int,
+    'templates', (select count(*) from public.principle_templates)::int,
+    'joueurs_en_forme', (
+      select coalesce(jsonb_agg(x), '[]'::jsonb) from (
+        select p.pseudo, p.avatar_path, ps.level, ps.streak, ps.ovr
+        from public.player_stats ps join public.profiles p on p.id = ps.user_id
+        where p.is_public and ps.streak >= 3
+          and exists (select 1 from public.enrollments e where e.user_id = p.id and e.status = 'active')
+        order by ps.streak desc, ps.xp desc
+        limit 5
+      ) x
+    )
+  )
+  from public.global_stats() s;
+$$;
+
 create function public.achievement_rarity()
 returns table (code text, title text, description text, points int, art_slug text, holders int, total int, percent int)
 language sql stable security definer set search_path = '' as $$
@@ -126,6 +153,9 @@ language sql stable set search_path = '' as $$
     'paid_plan', pr.plan, 'interval', pr.plan_interval, 'status', pr.plan_status,
     'period_end', pr.current_period_end, 'cancel_at_period_end', pr.cancel_at_period_end,
     'comp_until', case when pr.comp_until >= public.paris_today() then pr.comp_until end,
+    'arc_paid', exists (select 1 from public.enrollments e where e.user_id = p_user and e.status in ('draft', 'active') and e.arc_paid),
+    'arc_credits', pr.arc_credits,
+    'loyalty_pending', pr.loyalty_pending,
     'limits', public._limits(public._plan(p_user))
   )
   from public.profiles pr where pr.id = p_user;
@@ -893,6 +923,7 @@ begin
   delete from public.points_ledger where user_id = v_user;
   delete from public.profiles where id = v_user;
   delete from public.waitlist where email = v_email;
+  delete from public.pending_arcs where email = v_email;
   return v_files;
 end;
 $$;
@@ -904,7 +935,7 @@ create function public.plans_public() returns jsonb
 language sql stable security definer set search_path = '' as $$
   with s as (select value as v from public.settings where key = 'plans')
   select jsonb_build_object(
-    'essentiel', jsonb_build_object('month', (s.v #> '{essentiel,month,amount}'), 'year', (s.v #> '{essentiel,year,amount}')),
+    'arc', jsonb_build_object('once', (s.v #> '{arc,once,amount}')),
     'pro', jsonb_build_object('month', (s.v #> '{pro,month,amount}'), 'year', (s.v #> '{pro,year,amount}')),
     'fondateur', jsonb_build_object('lifetime', (s.v #> '{fondateur,lifetime,amount}'),
       'limit', (s.v #> '{fondateur,limit}'),
@@ -927,6 +958,10 @@ language sql stable security definer set search_path = '' as $$
     'referral_code', p.referral_code, 'stripe_promotion_code_id', p.stripe_promotion_code_id,
     'utm_source', p.utm_source, 'utm_campaign', p.utm_campaign,
     'has_draft', exists (select 1 from public.enrollments e where e.user_id = p.id and e.status = 'draft'),
+    'has_open', exists (select 1 from public.enrollments e where e.user_id = p.id and e.status in ('draft', 'active')),
+    'arc_paid', exists (select 1 from public.enrollments e where e.user_id = p.id and e.status in ('draft', 'active') and e.arc_paid),
+    'arc_credits', p.arc_credits,
+    'loyalty_pending', p.loyalty_pending,
     'principles_count', (select public._principles_count_at(e.id, e.start_date) from public.enrollments e
       where e.user_id = p.id and e.status in ('draft', 'active') limit 1)
   )
@@ -978,7 +1013,7 @@ begin
   update public.profiles
   set stripe_customer_id = coalesce(stripe_customer_id, p_customer),
       stripe_subscription_id = p_subscription,
-      plan = case when p_plan in ('essentiel', 'pro') then p_plan else plan end,
+      plan = case when p_plan = 'pro' then p_plan else plan end,
       plan_interval = case when p_interval in ('month', 'year') then p_interval else plan_interval end,
       plan_status = left(p_status, 30),
       current_period_end = p_period_end,
@@ -1005,6 +1040,46 @@ begin
   if e.id is not null then
     perform public._activate_enrollment(e.id);
   end if;
+end;
+$$;
+
+-- Arc 90 jours payé (paiement unique) : enregistré une seule fois, puis rattaché à l'arc ouvert
+-- (et l'arc démarre), ou gardé en crédit pour le prochain arc. Renvoie false si le paiement était déjà traité.
+create function public.grant_arc_pass(
+  p_user uuid,
+  p_object_id text,
+  p_amount int,
+  p_currency text,
+  p_customer text,
+  p_loyalty boolean default false
+) returns boolean
+language plpgsql security definer set search_path = '' as $$
+declare
+  e public.enrollments;
+begin
+  if not exists (select 1 from public.profiles where id = p_user) then
+    raise exception 'Profil introuvable.';
+  end if;
+  insert into public.payments (user_id, stripe_object_id, kind, plan, plan_interval, amount_cents, currency, utm_source, utm_campaign)
+  select p_user, p_object_id, 'arc', 'arc', 'once', greatest(coalesce(p_amount, 0), 0), coalesce(p_currency, 'eur'),
+    pr.utm_source, pr.utm_campaign
+  from public.profiles pr where pr.id = p_user
+  on conflict (stripe_object_id) do nothing;
+  if not found then
+    return false;
+  end if;
+  update public.profiles
+  set stripe_customer_id = coalesce(stripe_customer_id, nullif(p_customer, '')),
+      loyalty_pending = case when coalesce(p_loyalty, false) then false else loyalty_pending end
+  where id = p_user;
+  e := public._open_enrollment(p_user);
+  if e.id is not null and not e.arc_paid then
+    update public.enrollments set arc_paid = true, arc_payment = left(p_object_id, 255) where id = e.id;
+    perform public._activate_enrollment(e.id);
+  else
+    update public.profiles set arc_credits = least(arc_credits + 1, 10) where id = p_user;
+  end if;
+  return true;
 end;
 $$;
 
@@ -1097,8 +1172,10 @@ begin
         when plan_interval = 'month' then (v_plans -> plan -> 'month' ->> 'amount')::int
         when plan_interval = 'year' then round((v_plans -> plan -> 'year' ->> 'amount')::numeric / 12)::int
         else 0 end), 0)
-      from public.profiles where plan_status in ('active', 'trialing', 'past_due') and plan in ('essentiel', 'pro')
+      from public.profiles where plan_status in ('active', 'trialing', 'past_due') and plan = 'pro'
     ),
+    'arc_passes_30d', (select count(*) from public.payments where kind = 'arc' and paid_at > now() - interval '30 days'),
+    'arc_passes_total', (select count(*) from public.payments where kind = 'arc'),
     'revenue_30d_cents', (select coalesce(sum(amount_cents), 0) from public.payments where paid_at > now() - interval '30 days'),
     'revenue_total_cents', (select coalesce(sum(amount_cents), 0) from public.payments),
     'founders', (select count(*) from public.profiles where plan = 'fondateur' and plan_status = 'lifetime'),
@@ -1106,7 +1183,8 @@ begin
     'funnel', jsonb_build_object(
       'profiles', (select count(*) from public.profiles),
       'arcs_built', (select count(distinct user_id) from public.enrollments),
-      'paying', (select count(*) from public.profiles where plan_status in ('active', 'trialing', 'past_due', 'lifetime'))
+      'paying', (select count(*) from public.profiles pr where pr.plan_status in ('active', 'trialing', 'past_due', 'lifetime')
+        or exists (select 1 from public.enrollments e where e.user_id = pr.id and e.arc_paid))
     ),
     'arcs', (
       select coalesce(jsonb_object_agg(status, n), '{}'::jsonb)
@@ -1310,7 +1388,7 @@ declare
   v_user uuid;
   e public.enrollments;
 begin
-  if p_until is not null and (p_plan is null or p_plan not in ('essentiel', 'pro')) then
+  if p_until is not null and (p_plan is null or p_plan not in ('arc', 'pro')) then
     raise exception 'Plan invalide.';
   end if;
   select id into v_user from public.profiles where pseudo = lower(btrim(coalesce(p_pseudo, '')));
@@ -1511,9 +1589,18 @@ language sql stable security definer set search_path = '' as $$
   where e.status = 'completed' and e.loyalty_applied_at is null;
 $$;
 
-create function public.mark_loyalty_applied(p_enrollment uuid) returns void
-language sql security definer set search_path = '' as $$
-  update public.enrollments set loyalty_applied_at = now() where id = p_enrollment and loyalty_applied_at is null;
+-- p_pending : pas d'abonnement à remiser, la remise attend le prochain Arc 90 jours.
+create function public.mark_loyalty_applied(p_enrollment uuid, p_pending boolean default false) returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_user uuid;
+begin
+  update public.enrollments set loyalty_applied_at = now() where id = p_enrollment and loyalty_applied_at is null
+  returning user_id into v_user;
+  if v_user is not null and coalesce(p_pending, false) then
+    update public.profiles set loyalty_pending = true where id = v_user;
+  end if;
+end;
 $$;
 
 -- Arcs terminés ces 7 derniers jours (email de bilan, envoyé une seule fois grâce à email_log).
@@ -1548,6 +1635,7 @@ $$;
 create function public.cleanup_rate_limits() returns void
 language sql security definer set search_path = '' as $$
   delete from public.rate_limits where reset_at < now() - interval '1 day';
+  delete from public.pending_arcs where created_at < now() - interval '3 days';
 $$;
 
 -- ===========================================================================
@@ -1561,6 +1649,8 @@ grant execute on function public.paris_now() to anon, authenticated, service_rol
 -- Public (sans compte)
 grant execute on function public.leaderboard(text, text, uuid) to anon, authenticated, service_role;
 grant execute on function public.global_stats() to anon, authenticated, service_role;
+grant execute on function public.social_proof() to anon, authenticated, service_role;
+grant execute on function public.preview_principles(text, text, text[], text, text, int) to anon, authenticated, service_role;
 grant execute on function public.achievement_rarity() to anon, authenticated, service_role;
 grant execute on function public.public_profile(text) to anon, authenticated, service_role;
 grant execute on function public.plans_public() to anon, authenticated, service_role;
@@ -1639,6 +1729,7 @@ grant execute on function public.set_stripe_customer(uuid, text) to service_role
 grant execute on function public.set_referral_promo(uuid, text) to service_role;
 grant execute on function public.sync_subscription(uuid, text, text, text, text, text, timestamptz, boolean) to service_role;
 grant execute on function public.grant_lifetime(uuid, text) to service_role;
+grant execute on function public.grant_arc_pass(uuid, text, int, text, text, boolean) to service_role;
 grant execute on function public.record_payment(text, uuid, text, text, text, int, text) to service_role;
 grant execute on function public.record_referral(text, uuid, text) to service_role;
 grant execute on function public.mark_referral_rewarded(uuid, int) to service_role;
@@ -1653,7 +1744,7 @@ grant execute on function public.weekly_recap_targets() to service_role;
 grant execute on function public.cron_photo_cleanup_targets() to service_role;
 grant execute on function public.mark_photos_deleted(text[]) to service_role;
 grant execute on function public.cron_loyalty_targets() to service_role;
-grant execute on function public.mark_loyalty_applied(uuid) to service_role;
+grant execute on function public.mark_loyalty_applied(uuid, boolean) to service_role;
 grant execute on function public.cron_arc_results() to service_role;
 grant execute on function public.log_email_once(uuid, text, text) to service_role;
 grant execute on function public.set_audit_rate(numeric) to service_role;

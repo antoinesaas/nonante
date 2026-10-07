@@ -308,6 +308,8 @@ export type Database = {
           activated_at: string | null;
           after_photo_path: string | null;
           arc_number: number;
+          arc_paid: boolean;
+          arc_payment: string | null;
           before_photo_path: string | null;
           category: string;
           closed_at: string | null;
@@ -335,6 +337,8 @@ export type Database = {
           activated_at?: string | null;
           after_photo_path?: string | null;
           arc_number?: number;
+          arc_paid?: boolean;
+          arc_payment?: string | null;
           before_photo_path?: string | null;
           category: string;
           closed_at?: string | null;
@@ -362,6 +366,8 @@ export type Database = {
           activated_at?: string | null;
           after_photo_path?: string | null;
           arc_number?: number;
+          arc_paid?: boolean;
+          arc_payment?: string | null;
           before_photo_path?: string | null;
           category?: string;
           closed_at?: string | null;
@@ -471,6 +477,30 @@ export type Database = {
           user_id?: string | null;
           utm_campaign?: string | null;
           utm_source?: string | null;
+        };
+        Relationships: [];
+      };
+      pending_arcs: {
+        Row: {
+          answers: Json;
+          created_at: string;
+          email: string;
+          plan: string | null;
+          plan_interval: string | null;
+        };
+        Insert: {
+          answers: Json;
+          created_at?: string;
+          email: string;
+          plan?: string | null;
+          plan_interval?: string | null;
+        };
+        Update: {
+          answers?: Json;
+          created_at?: string;
+          email?: string;
+          plan?: string | null;
+          plan_interval?: string | null;
         };
         Relationships: [];
       };
@@ -689,6 +719,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          arc_credits: number;
           avatar_path: string | null;
           bio: string | null;
           birth_year: number;
@@ -701,6 +732,7 @@ export type Database = {
           id: string;
           is_admin: boolean;
           is_public: boolean;
+          loyalty_pending: boolean;
           plan: string | null;
           plan_interval: string | null;
           plan_status: string | null;
@@ -716,6 +748,7 @@ export type Database = {
           wallet_public: boolean;
         };
         Insert: {
+          arc_credits?: number;
           avatar_path?: string | null;
           bio?: string | null;
           birth_year: number;
@@ -728,6 +761,7 @@ export type Database = {
           id: string;
           is_admin?: boolean;
           is_public?: boolean;
+          loyalty_pending?: boolean;
           plan?: string | null;
           plan_interval?: string | null;
           plan_status?: string | null;
@@ -743,6 +777,7 @@ export type Database = {
           wallet_public?: boolean;
         };
         Update: {
+          arc_credits?: number;
           avatar_path?: string | null;
           bio?: string | null;
           birth_year?: number;
@@ -755,6 +790,7 @@ export type Database = {
           id?: string;
           is_admin?: boolean;
           is_public?: boolean;
+          loyalty_pending?: boolean;
           plan?: string | null;
           plan_interval?: string | null;
           plan_status?: string | null;
@@ -1217,6 +1253,7 @@ export type Database = {
       delete_wallet_entry: { Args: { p_id: string | null }; Returns: undefined };
       export_my_data: { Args: never; Returns: Json };
       global_stats: { Args: never; Returns: { joueurs: number; arcs_en_cours: number; verts_aujourdhui: number; ont_lache: number; arcs_tenus: number }[] };
+      grant_arc_pass: { Args: { p_user: string | null; p_object_id: string | null; p_amount: number | null; p_currency: string | null; p_customer: string | null; p_loyalty?: boolean | null }; Returns: boolean };
       grant_lifetime: { Args: { p_user: string | null; p_customer: string | null }; Returns: undefined };
       heartbeat: { Args: { p_session_id: string | null; p_nonce: string | null; p_visible: boolean | null; p_hidden_ms: number | null }; Returns: Json };
       join_public_squad: { Args: { p_id: string | null }; Returns: undefined };
@@ -1226,7 +1263,7 @@ export type Database = {
       log_email_once: { Args: { p_user: string | null; p_kind: string | null; p_ref: string | null }; Returns: boolean };
       mark_achievements_seen: { Args: never; Returns: undefined };
       mark_level_seen: { Args: never; Returns: undefined };
-      mark_loyalty_applied: { Args: { p_enrollment: string | null }; Returns: undefined };
+      mark_loyalty_applied: { Args: { p_enrollment: string | null; p_pending?: boolean | null }; Returns: undefined };
       mark_photos_deleted: { Args: { p_paths: string[] | null }; Returns: undefined };
       mark_referral_rewarded: { Args: { p_referred: string | null; p_cents: number | null }; Returns: undefined };
       mark_reminded: { Args: { p_user: string | null; p_channel: string | null }; Returns: boolean };
@@ -1242,6 +1279,7 @@ export type Database = {
       paris_today: { Args: never; Returns: string };
       plan_price: { Args: { p_plan: string | null; p_interval: string | null }; Returns: Json };
       plans_public: { Args: never; Returns: Json };
+      preview_principles: { Args: { p_category: string | null; p_goal_type: string | null; p_weak_points: string[] | null; p_wake_time: string | null; p_pushups: string | null; p_focus_minutes: number | null }; Returns: Json };
       public_profile: { Args: { p_pseudo: string | null }; Returns: Json };
       public_squads: { Args: never; Returns: Json };
       push_targets: { Args: { p_user: string | null }; Returns: { endpoint: string; p256dh: string; auth: string }[] };
@@ -1261,6 +1299,7 @@ export type Database = {
       set_referral_promo: { Args: { p_user: string | null; p_promotion_code_id: string | null }; Returns: undefined };
       set_start_date: { Args: { p_date: string | null }; Returns: undefined };
       set_stripe_customer: { Args: { p_user: string | null; p_customer: string | null }; Returns: undefined };
+      social_proof: { Args: never; Returns: Json };
       squad_detail: { Args: { p_id: string | null }; Returns: Json };
       start_challenge_session: { Args: { p_assignment_id: string | null; p_minutes?: number | null }; Returns: Json };
       start_proof_session: { Args: { p_principle_id: string | null }; Returns: Json };

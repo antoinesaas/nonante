@@ -9,7 +9,7 @@ const DOT: Record<DayStatus, string> = {
   white: "bg-paper",
   joker: "border border-paper bg-[radial-gradient(circle,var(--color-paper)_30%,transparent_32%)]",
   future: "border border-mute/50",
-  today: "border border-mute/50 ring-1 ring-paper ring-offset-[3px] ring-offset-ink",
+  today: "animate-breathe border border-mute/50 ring-1 ring-paper ring-offset-[3px] ring-offset-ink",
   pending: "border border-mute",
   none: "border border-line",
 };

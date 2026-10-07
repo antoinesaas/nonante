@@ -95,7 +95,7 @@ export async function taskReminders(admin = createAdminClient()) {
   return { targets: targets.length, push, email };
 }
 
-/** Arcs tenus : −50 % sur la prochaine facture (une fois). Arcs terminés : email de bilan (une fois). */
+/** Arcs tenus : −50 % sur la prochaine facture Pro ou le prochain Arc 90 jours (une fois). Arcs terminés : email de bilan (une fois). */
 export async function taskArcEnd(admin = createAdminClient()) {
   const loyalty = await call<{ enrollment_id: string; user_id: string; email: string | null; subscription_id: string | null; plan: string | null }[]>(
     admin,
@@ -112,11 +112,13 @@ export async function taskArcEnd(admin = createAdminClient()) {
         continue;
       }
     }
-    await call(admin, "mark_loyalty_applied", { p_enrollment: l.enrollment_id });
-    if (ok) applied++;
+    // Pas d'abonnement à remiser (Arc 90 jours) : −50 % sur le prochain Arc 90 jours. Fondateur : rien à payer.
+    const pending = !ok && l.plan !== "fondateur";
+    await call(admin, "mark_loyalty_applied", { p_enrollment: l.enrollment_id, p_pending: pending });
+    if (ok || pending) applied++;
     if (l.email) {
       const first = await call<boolean>(admin, "log_email_once", { p_user: l.user_id, p_kind: "loyalty", p_ref: l.enrollment_id });
-      if (first) await sendLoyalty(l.email, ok);
+      if (first && (ok || pending)) await sendLoyalty(l.email, ok);
     }
   }
 

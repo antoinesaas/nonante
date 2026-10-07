@@ -1,53 +1,44 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtBand } from "@/components/Art";
+import { Faq } from "@/components/Faq";
+import { Hand } from "@/components/Hand";
 import { Logo } from "@/components/Logo";
 import { PlanPicker } from "@/components/PlanPicker";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SocialProof } from "@/components/SocialProof";
 import { IMAGES } from "@/lib/art";
 import { getUser } from "@/lib/auth";
-import type { PlanId, PublicPlans } from "@/lib/types";
+import { FAQ } from "@/lib/faq";
+import type { PlanId, PublicPlans, SocialProof as Proof } from "@/lib/types";
 import { btnLink, label } from "@/lib/ui";
 
 export const metadata: Metadata = {
   title: "Plans",
-  description: "Essentiel, Pro ou Fondateur. Payer, c'est déjà s'engager.",
+  description: "Arc 90 jours à 19,99 € une fois, Pro ou Fondateur. Payer, c'est déjà s'engager.",
 };
 
-const FAQ = [
-  {
-    q: "Pourquoi pas de version gratuite ?",
-    a: "Parce qu'un arc gratuit se lâche au premier soir difficile. Mettre de l'argent sur la table, c'est le premier principe de l'arc : tu t'engages.",
-  },
-  {
-    q: "Je peux résilier quand je veux ?",
-    a: "Oui, en un clic depuis ton profil (portail Stripe). Ton accès reste ouvert jusqu'à la fin de la période payée.",
-  },
-  {
-    q: "Et si j'arrête de payer pendant mon arc ?",
-    a: "Ton arc continue de tourner, mais plus rien ne se valide : les jours deviennent blancs. Tu peux reprendre à tout moment.",
-  },
-  {
-    q: "Le parrainage ?",
-    a: "Ton code donne −20 % à un ami sur son premier paiement, et 5 € de crédit pour toi à chaque ami qui s'abonne.",
-  },
-  {
-    q: "Si je tiens mon arc ?",
-    a: "Ta prochaine facture est à −50 %, appliqué automatiquement. Même règle pour tout le monde, jamais liée au classement.",
-  },
-];
-
-export default async function SubscriptionPage() {
+export default async function SubscriptionPage({ searchParams }: PageProps<"/abonnement">) {
+  const params = await searchParams;
   const { supabase, user } = await getUser();
-  const [{ data: plans }, profile] = await Promise.all([
+  const [{ data: plans }, { data: proof }, profile] = await Promise.all([
     supabase.rpc("plans_public"),
+    supabase.rpc("social_proof"),
     user ? supabase.from("profiles").select("id").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   let current: PlanId | null = null;
+  let hasArc = false;
   if (user && profile.data) {
-    const { data } = await supabase.rpc("my_plan");
+    const [{ data }, { data: open }] = await Promise.all([
+      supabase.rpc("my_plan"),
+      supabase.from("enrollments").select("id").eq("user_id", user.id).in("status", ["draft", "active"]).maybeSingle(),
+    ]);
     current = ((data as { plan: PlanId | null } | null)?.plan ?? null) as PlanId | null;
+    hasArc = Boolean(open);
   }
+  // Un plan se paie pour un arc construit ; sinon, on passe d'abord par le questionnaire.
+  const mode = user && profile.data && (hasArc || current) ? ({ kind: "checkout" } as const) : ({ kind: "link" } as const);
+  const pricing = FAQ.find((g) => g.title === "Prix et paiement")?.items ?? [];
 
   return (
     <>
@@ -59,30 +50,30 @@ export default async function SubscriptionPage() {
           <p className={label}>Plans</p>
           <h1 className="mt-2 font-serif text-5xl leading-[0.95]">Payer, c&apos;est déjà s&apos;engager.</h1>
         </ArtBand>
+
+        {params.annule === "1" ? (
+          <p role="status" className="mt-6 animate-rise border border-line p-4 text-sm">
+            Paiement annulé, rien n&apos;a été prélevé. Ton arc est enregistré : il t&apos;attend.
+          </p>
+        ) : null}
+
         <p className="mt-6 text-lg leading-relaxed text-paper/85">
-          Un arc gratuit, on le lâche. Un arc payé, on le tient. Choisis ton plan : ton arc démarre dès que le paiement
-          est confirmé.
+          Un arc gratuit, on le lâche. Un arc payé, on le tient. L&apos;Arc 90 jours, c&apos;est{" "}
+          <Hand className="text-2xl">un seul paiement</Hand> pour 90 jours de preuves, sans abonnement caché.
         </p>
 
-        {!user ? (
+        {mode.kind === "link" ? (
           <p className="mt-6 text-sm text-mute">
-            Commence par{" "}
-            <Link href="/login?next=/onboarding" className={btnLink}>
-              construire ton arc
-            </Link>
-            , le paiement vient ensuite.
-          </p>
-        ) : !profile.data ? (
-          <p className="mt-6 text-sm text-mute">
+            D&apos;abord,{" "}
             <Link href="/onboarding" className={btnLink}>
-              Construis d&apos;abord ton arc
+              construis ton arc
             </Link>{" "}
-            : deux minutes, avant de choisir ton plan.
+            : 2 minutes de questions, et tu vois tes principes avant de payer.
           </p>
         ) : null}
 
         <div className="mt-10">
-          {plans ? <PlanPicker plans={plans as PublicPlans} current={current} /> : <p className="text-mute">Plans indisponibles.</p>}
+          {plans ? <PlanPicker plans={plans as PublicPlans} current={current} mode={mode} /> : <p className="text-mute">Plans indisponibles.</p>}
         </div>
 
         <p className="mt-6 text-xs text-mute">
@@ -93,16 +84,18 @@ export default async function SubscriptionPage() {
           .
         </p>
 
-        <section className="mt-14">
+        <section className="mt-16">
+          <SocialProof proof={proof as Proof | null} compact />
+        </section>
+
+        <section className="mt-16">
           <h2 className="font-serif text-3xl">Questions</h2>
-          <dl className="mt-6 divide-y divide-line border-y border-line">
-            {FAQ.map((f) => (
-              <div key={f.q} className="py-5">
-                <dt className="font-medium">{f.q}</dt>
-                <dd className="mt-2 text-sm text-mute">{f.a}</dd>
-              </div>
-            ))}
-          </dl>
+          <div className="mt-6">
+            <Faq items={pricing} />
+          </div>
+          <Link href="/faq" className={`${btnLink} mt-6 inline-block`}>
+            Toutes les questions
+          </Link>
         </section>
       </main>
       <SiteFooter />

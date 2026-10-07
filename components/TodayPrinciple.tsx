@@ -10,7 +10,7 @@ import { btnSmall } from "@/lib/ui";
 function Check() {
   return (
     <svg viewBox="0 0 20 20" className="size-5 text-ok" aria-hidden="true">
-      <path d="M4 10.5l4 4 8-9" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 10.5l4 4 8-9" pathLength="1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="stroke-draw" />
     </svg>
   );
 }
@@ -48,7 +48,7 @@ export function TodayPrinciple({ principle, disabled = false }: { principle: Pri
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           {v ? (
-            <span className="flex items-center gap-1.5 tabular-nums">
+            <span className="flex animate-pop items-center gap-1.5 tabular-nums">
               {v.status === "rejected" ? (
                 <span className="text-sm text-ko">refusée</span>
               ) : (

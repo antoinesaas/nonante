@@ -15,7 +15,9 @@ Le cahier des charges est dans [`CLAUDE.md`](CLAUDE.md). Ce README explique comm
 | Jeu | XP, niveaux, titres, 6 stats sur 30 jours (Discipline, Focus, Corps, Business, Esprit, Énergie), note globale, séries, jokers, quête de la semaine, succès avec rareté réelle, fonds de carte à débloquer, avant / après, citation du jour |
 | Portefeuille | Revenus notés avec capture en preuve, +15 XP par jour prouvé, succès 1 € → 10 000 €, suivi de l'objectif de revenu |
 | Social | Classement semaine / général, filtres, onglet par escouade ; escouades privées (code) ou publiques ; profil public avec photo et carte de joueur |
-| Paiement | Essentiel 7,99 €/mois ou 59,99 €/an, Pro 14,99 €/mois ou 99,99 €/an, Fondateur 199 € une fois (100 places) ; portail client ; parrainage (−20 % / 5 € de crédit) ; fidélité (−50 % après un arc tenu) |
+| Parcours | Questionnaire sans compte (une question par écran, mots manuscrits), écran de construction (vrai calcul des principes), résultat personnalisé avec preuve sociale réelle et plans, email + code, dernière étape, paiement |
+| Paiement | Arc 90 jours 19,99 € une fois par arc, Pro 14,99 €/mois ou 99,99 €/an, Fondateur 199 € une fois (100 places) ; portail client ; parrainage (−20 % / 5 € de crédit) ; fidélité (−50 % sur l'arc ou la facture suivante) |
+| Contenu | FAQ (`/faq`), CGU, CGV, confidentialité, mentions légales |
 | Admin | Double authentification, ventes, contrôles (preuves et revenus), signalements, escouades officielles, accès offerts, journal |
 
 ## Démarrer en local
@@ -72,7 +74,7 @@ npm run db:types
 
 ## Stripe
 
-1. `npm run stripe:setup` crée les produits Essentiel, Pro, Fondateur, leurs prix (mensuel, annuel, unique), les coupons de parrainage et de fidélité et la configuration du portail, puis les enregistre dans `settings` (relançable).
+1. `npm run stripe:setup` crée les produits Arc 90 jours, Pro, Fondateur, leurs prix (unique, mensuel, annuel), les coupons de parrainage et de fidélité et la configuration du portail, puis les enregistre dans `settings` (relançable).
 2. Webhook vers `https://<domaine>/api/stripe/webhook`, événements : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`.
 3. En local : `stripe listen --forward-to localhost:3000/api/stripe/webhook`. Carte de test `4242 4242 4242 4242`.
 
@@ -94,10 +96,10 @@ Puis `/admin` : double authentification obligatoire (application d'authentificat
 
 | Commande | Ce qu'elle vérifie |
 |---|---|
-| `npm run test:db` | 183 tests sur Postgres 17 (PGlite) : démarrage libre, principes versionnés, difficulté serveur, chaque preuve, jokers, points, stats, niveaux, quêtes, portefeuille, escouades, classement, plans et limites, abonnements, parrainage, fidélité, RLS, registre en ajout seul, admin, suppression de compte |
+| `npm run test:db` | 198 tests sur Postgres 17 (PGlite) : Arc 90 jours (paiement unique, crédit, fin d'arc), aperçu des principes pour un visiteur, preuve sociale, démarrage libre, principes versionnés, difficulté serveur, chaque preuve, jokers, points, stats, niveaux, quêtes, portefeuille, escouades, classement, plans et limites, abonnements, parrainage, fidélité, RLS, registre en ajout seul, admin, suppression de compte |
 | `npm run lint` / `npm run typecheck` / `npm run build` | ESLint, TypeScript strict, build |
 
-Parcours joué à 375 px contre un Supabase émulé : connexion, onboarding, génération des principes, plans, tableau de bord et calendrier, validation déclarative, capture, revenu prouvé, montée de niveau, succès, photo de profil, escouade, classement, profil public, quête, avant / après.
+Parcours joué à 375 px contre un Supabase émulé : questionnaire visiteur → construction → plans → email et code → dernière étape → paiement simulé → tableau de bord ; arc n° 2 d'un joueur connecté ; connexion, onboarding, génération des principes, plans, tableau de bord et calendrier, validation déclarative, capture, revenu prouvé, montée de niveau, succès, photo de profil, escouade, classement, profil public, quête, avant / après.
 
 ## Choix faits en route
 
@@ -108,7 +110,9 @@ Parcours joué à 375 px contre un Supabase émulé : connexion, onboarding, gé
 5. **Portefeuille** : un revenu sans capture est noté « non prouvé » et ne compte ni pour la stat ni pour les succès. Les revenus prouvés peuvent être contrôlés (refus = retrait des points).
 6. **Photos** : CC0 / domaine public via l'API Openverse (`scripts/fetch-photos.mjs`), œuvres du domaine public via Wikimedia (`npm run art:fetch`), crédits sur `/art`. Les images Pinterest fournies n'ont pas été utilisées (droits d'auteur, visage d'une personne connue, marques, filigranes). Pour utiliser tes propres photos : dépose-les dans `public/art/` et ajoute-les à `lib/art.ts`.
 7. **Droit de rétractation** : case à cocher obligatoire avant paiement pour l'accès immédiat ; formulaire type dans les CGV.
-8. **Aucun chiffre inventé** : les exemples de la landing sont présentés comme exemples ; le compteur Fondateur et les statistiques viennent de la base.
+8. **Aucun chiffre inventé** : les exemples de la landing sont présentés comme exemples ; le compteur Fondateur et les statistiques viennent de la base. La preuve sociale n'affiche les chiffres en direct qu'au-delà de 20 joueurs (sinon seulement les études publiées), et aucun faux avis.
+9. **Questionnaire avant le compte** : on demande l'email au moment où le visiteur a vu son arc et choisi son plan (effet d'investissement). Les réponses sont gardées côté serveur avec l'email, pour que le lien de connexion marche même ouvert dans un autre navigateur (TikTok → Safari), puis supprimées.
+10. **Écran de construction** : il attend le vrai calcul des principes (preview_principles) et dure environ 5 secondes ; pas de faux compte à rebours ni de fausse rareté.
 
 ## Plus tard
 

@@ -94,6 +94,7 @@ export function sendWeeklyRecap(
   });
 }
 
+/** applied : remise posée sur l'abonnement Pro ; sinon elle attend le prochain Arc 90 jours. */
 export function sendLoyalty(to: string, applied: boolean) {
   return sendEmail({
     to,
@@ -103,7 +104,7 @@ export function sendLoyalty(to: string, applied: boolean) {
       "",
       applied
         ? "Merci : ta prochaine facture est à −50 %. Rien à faire, la remise est déjà appliquée."
-        : "Ton prochain arc t'attend dans l'app.",
+        : "Merci : ton prochain Arc 90 jours est à −50 %. La remise s'applique toute seule au paiement.",
       "",
       `${siteUrl()}/app`,
       ...signature,

@@ -64,6 +64,18 @@ create table public.waitlist (
 alter table public.waitlist enable row level security;
 revoke all on public.waitlist from anon, authenticated;
 
+-- Réponses du questionnaire d'un visiteur, gardées le temps qu'il crée son compte (lien ou code par email,
+-- parfois ouvert dans un autre navigateur). Supprimées dès que l'arc est construit, et après 3 jours au plus.
+create table public.pending_arcs (
+  email text primary key check (email = lower(email) and length(email) between 3 and 254),
+  answers jsonb not null check (jsonb_typeof(answers) = 'object' and pg_column_size(answers) < 4000),
+  plan text check (plan in ('arc', 'pro', 'fondateur')),
+  plan_interval text check (plan_interval in ('once', 'month', 'year', 'lifetime')),
+  created_at timestamptz not null default now()
+);
+alter table public.pending_arcs enable row level security;
+revoke all on public.pending_arcs from anon, authenticated;
+
 -- ===========================================================================
 -- Outils
 -- ===========================================================================

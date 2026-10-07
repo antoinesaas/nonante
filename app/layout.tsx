@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Inter } from "next/font/google";
+import { Caveat, Instrument_Serif, Inter } from "next/font/google";
 import { connection } from "next/server";
 import "./globals.css";
 
@@ -14,6 +14,14 @@ const instrumentSerif = Instrument_Serif({
   style: ["normal", "italic"],
   subsets: ["latin"],
   variable: "--font-instrument-serif",
+  display: "swap",
+});
+
+// Écriture manuscrite : quelques mots seulement (annotations du questionnaire, accents de la landing).
+const caveat = Caveat({
+  weight: ["500", "700"],
+  subsets: ["latin"],
+  variable: "--font-caveat",
   display: "swap",
 });
 
@@ -46,7 +54,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   await connection();
 
   return (
-    <html lang="fr" className={`${inter.variable} ${instrumentSerif.variable}`}>
+    <html lang="fr" className={`${inter.variable} ${instrumentSerif.variable} ${caveat.variable}`}>
       <body className="min-h-dvh bg-ink font-sans text-paper antialiased">{children}</body>
     </html>
   );

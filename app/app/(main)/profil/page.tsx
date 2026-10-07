@@ -155,33 +155,45 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
       ) : null}
 
       <section className="mt-12">
-        <h2 className="font-serif text-3xl">Abonnement</h2>
+        <h2 className="font-serif text-3xl">Plan</h2>
         <p className="mt-3">
-          {plan.plan ? `Plan ${PLAN_NAME[plan.plan]}` : "Aucun plan actif"}
-          {plan.interval === "month" ? " · mensuel" : plan.interval === "year" ? " · annuel" : plan.interval === "lifetime" ? " · à vie" : ""}
+          {plan.plan ? PLAN_NAME[plan.plan] : "Aucun plan actif"}
+          {plan.plan === "arc"
+            ? " · payé pour cet arc"
+            : plan.interval === "month"
+              ? " · mensuel"
+              : plan.interval === "year"
+                ? " · annuel"
+                : plan.interval === "lifetime"
+                  ? " · à vie"
+                  : ""}
         </p>
         <p className="mt-1 text-sm text-mute">
           {plan.comp_until
             ? `Accès offert jusqu'au ${formatDayFr(plan.comp_until)}.`
-            : plan.cancel_at_period_end && plan.period_end
-              ? `Résilié : accès jusqu'au ${formatDayFr(plan.period_end.slice(0, 10))}.`
-              : plan.period_end && plan.interval !== "lifetime"
-                ? `Prochain renouvellement le ${formatDayFr(plan.period_end.slice(0, 10))}.`
-                : null}
+            : plan.plan === "arc"
+              ? "Paiement unique : rien ne se renouvelle. Ton prochain arc se paie quand tu le lances."
+              : plan.cancel_at_period_end && plan.period_end
+                ? `Résilié : accès jusqu'au ${formatDayFr(plan.period_end.slice(0, 10))}.`
+                : plan.period_end && plan.interval !== "lifetime"
+                  ? `Prochain renouvellement le ${formatDayFr(plan.period_end.slice(0, 10))}.`
+                  : null}
           {plan.status === "past_due" ? " Paiement en échec : mets ta carte à jour." : ""}
+          {plan.arc_credits > 0 ? ` ${plan.arc_credits > 1 ? `${plan.arc_credits} arcs payés d'avance` : "1 arc payé d'avance"}, utilisé${plan.arc_credits > 1 ? "s" : ""} à ton prochain arc.` : ""}
+          {plan.loyalty_pending ? " Fidélité : ton prochain Arc 90 jours est à −50 %." : ""}
         </p>
         {params.portail === "indisponible" ? <p className="mt-3 text-sm">Le portail de paiement est indisponible. Réessaie plus tard.</p> : null}
         <div className="mt-5 flex flex-wrap gap-3">
           {profile.has_billing ? (
             <form action={openBillingPortal}>
               <button type="submit" className={btnSecondary}>
-                Gérer mon abonnement
+                {plan.paid_plan === "pro" ? "Gérer mon abonnement" : "Mes factures"}
               </button>
             </form>
           ) : null}
           {plan.plan !== "fondateur" ? (
             <Link href="/abonnement" className={plan.plan ? btnSecondary : btnPrimary}>
-              {plan.plan ? "Changer de plan" : "Choisir un plan"}
+              {plan.plan === "arc" ? "Passer Pro" : plan.plan ? "Changer de plan" : "Choisir un plan"}
             </Link>
           ) : null}
         </div>
@@ -191,7 +203,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
         <section className="mt-12">
           <h2 className="font-serif text-3xl">Parrainage</h2>
           <p className="mt-2 text-sm text-mute">
-            −20 % pour ton ami sur son premier paiement, {formatEuros(500)} de crédit pour toi à chaque abonnement.{" "}
+            −20 % pour ton ami sur son premier paiement, {formatEuros(500)} de crédit pour toi à chaque ami qui paie.{" "}
             {plural(profile.referral_sales, "ami inscrit", "amis inscrits")} · {formatEuros(profile.referral_credit_cents)} gagnés.
           </p>
           <div className="mt-4 flex items-center justify-between gap-4">
@@ -251,6 +263,18 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
         ·{" "}
         <Link href="/art" className="underline underline-offset-4">
           Crédits des images
+        </Link>{" "}
+        ·{" "}
+        <Link href="/faq" className="underline underline-offset-4">
+          Questions
+        </Link>{" "}
+        ·{" "}
+        <Link href="/legal/cgu" className="underline underline-offset-4">
+          CGU
+        </Link>{" "}
+        ·{" "}
+        <Link href="/legal/cgv" className="underline underline-offset-4">
+          CGV
         </Link>{" "}
         ·{" "}
         <Link href="/legal/confidentialite" className="underline underline-offset-4">

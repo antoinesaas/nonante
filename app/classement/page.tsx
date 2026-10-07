@@ -152,7 +152,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/clas
           Égalité : la plus longue série, puis la meilleure note. Le classement ne rapporte que des points, jamais d&apos;argent.
         </p>
         {!user ? (
-          <Link href="/login?next=/onboarding" className="mt-8 block border border-paper p-4 text-center">
+          <Link href="/onboarding" className="mt-8 block border border-paper p-4 text-center">
             Entrer dans le classement
           </Link>
         ) : null}

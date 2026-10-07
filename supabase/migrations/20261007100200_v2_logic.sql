@@ -8,24 +8,31 @@
 -- ===========================================================================
 
 -- Plan effectif d'un utilisateur, ou null s'il n'a pas accès.
+-- Pro (abonnement) et Fondateur (à vie) couvrent tous les arcs ; l'Arc 90 jours couvre l'arc ouvert qu'il a payé.
 create function public._plan(p_user uuid) returns text
 language sql stable set search_path = '' as $$
   with p as (select * from public.profiles where id = p_user),
   paid as (
     select case
       when p.plan = 'fondateur' and p.plan_status = 'lifetime' then 'fondateur'
-      when p.plan in ('essentiel', 'pro') and p.plan_status in ('active', 'trialing', 'past_due') then p.plan
+      when p.plan = 'pro' and p.plan_status in ('active', 'trialing', 'past_due') then 'pro'
     end as plan
     from p
   ),
   comp as (
     select case when p.comp_until is not null and p.comp_until >= public.paris_today() then p.comp_plan end as plan from p
+  ),
+  pass as (
+    select 'arc'::text as plan from public.enrollments e
+    where e.user_id = p_user and e.status in ('draft', 'active') and e.arc_paid
+    limit 1
   )
-  select case
-    when (select plan from paid) in ('pro', 'fondateur') then (select plan from paid)
-    when (select plan from comp) = 'pro' then 'pro'
-    else coalesce((select plan from paid), (select plan from comp))
-  end;
+  select coalesce(
+    (select plan from paid),
+    case when (select plan from comp) = 'pro' then 'pro' end,
+    (select plan from pass),
+    (select plan from comp)
+  );
 $$;
 
 -- Limites d'un plan. Sans plan (arc en construction) : on construit librement, mais rien ne se valide.
@@ -33,7 +40,7 @@ create function public._limits(p_plan text) returns jsonb
 language sql immutable set search_path = '' as $$
   select case
     when p_plan in ('pro', 'fondateur') then '{"max_principles":12,"jokers":3,"wallet":true,"create_squad":true}'::jsonb
-    when p_plan = 'essentiel' then '{"max_principles":6,"jokers":1,"wallet":false,"create_squad":false}'::jsonb
+    when p_plan = 'arc' then '{"max_principles":6,"jokers":1,"wallet":false,"create_squad":false}'::jsonb
     else '{"max_principles":12,"jokers":0,"wallet":false,"create_squad":false}'::jsonb
   end;
 $$;
@@ -318,11 +325,10 @@ begin
 end;
 $$;
 
--- Ajoute un gabarit, personnalisé avec les réponses de l'onboarding.
-create function public._add_template(p_user uuid, p_code text) returns uuid
-language plpgsql set search_path = '' as $$
+-- Gabarit personnalisé avec les réponses du questionnaire (heure de lever, durée de concentration, pompes).
+create function public._render_template(p_code text, p_wake time, p_focus int, p_pushups text) returns jsonb
+language plpgsql stable set search_path = '' as $$
 declare
-  e public.enrollments := public._open_enrollment(p_user);
   t public.principle_templates;
   v_target jsonb;
   v_if text;
@@ -330,55 +336,70 @@ declare
   v_reps int;
 begin
   select * into t from public.principle_templates where code = p_code;
-  if t.code is null or e.id is null then
-    raise exception 'Gabarit introuvable.';
+  if t.code is null then
+    return null;
   end if;
   v_target := t.target;
   v_if := t.if_text;
   v_then := t.then_text;
   if t.proof_type = 'reveil' then
-    v_target := jsonb_build_object('before', to_char(e.wake_time, 'HH24:MI'));
-    v_if := 'S''il est ' || public._time_fr(e.wake_time);
+    v_target := jsonb_build_object('before', to_char(p_wake, 'HH24:MI'));
+    v_if := 'S''il est ' || public._time_fr(p_wake);
   elsif t.code = 'bloc_profond' then
-    v_target := jsonb_build_object('minutes', e.focus_minutes);
-    v_then := replace(v_then, '{minutes}', e.focus_minutes::text);
+    v_target := jsonb_build_object('minutes', p_focus);
+    v_then := replace(v_then, '{minutes}', p_focus::text);
   elsif t.proof_type = 'reps' then
     v_reps := case
       when t.target ->> 'exercise' = 'squat' then (t.target ->> 'reps')::int
-      when e.pushups = 'quelques' then 10
+      when p_pushups = 'quelques' then 10
       else (t.target ->> 'reps')::int
     end;
     v_target := jsonb_build_object('exercise', t.target ->> 'exercise', 'reps', v_reps);
     v_then := replace(v_then, '{reps}', v_reps::text);
   end if;
-  return public._save_principle(p_user, null, t.pillar, v_if, v_then, t.proof_type, v_target, t.days, t.difficulty,
-    t.code, t.why);
+  return jsonb_build_object('code', t.code, 'pillar', t.pillar, 'if_text', v_if, 'then_text', v_then,
+    'proof_type', t.proof_type, 'target', v_target, 'days', to_jsonb(t.days), 'difficulty', t.difficulty,
+    'why', t.why, 'source', t.source);
 end;
 $$;
 
--- Propose 6 principes selon l'objectif, les points faibles et le profil. Tout reste modifiable.
-create function public._generate_principles(p_enrollment uuid) returns void
+-- Ajoute un gabarit à l'arc ouvert, personnalisé avec les réponses de l'onboarding.
+create function public._add_template(p_user uuid, p_code text) returns uuid
 language plpgsql set search_path = '' as $$
 declare
-  e public.enrollments;
+  e public.enrollments := public._open_enrollment(p_user);
+  r jsonb;
+begin
+  if e.id is null then
+    raise exception 'Gabarit introuvable.';
+  end if;
+  r := public._render_template(p_code, e.wake_time, e.focus_minutes, e.pushups);
+  if r is null then
+    raise exception 'Gabarit introuvable.';
+  end if;
+  return public._save_principle(p_user, null, r ->> 'pillar', r ->> 'if_text', r ->> 'then_text', r ->> 'proof_type',
+    r -> 'target', array(select jsonb_array_elements_text(r -> 'days')::int), (r ->> 'difficulty')::int, p_code, r ->> 'why');
+end;
+$$;
+
+-- Choisit 6 gabarits selon l'objectif, les points faibles et le profil.
+create function public._pick_templates(p_category text, p_goal_type text, p_weak text[], p_pushups text) returns text[]
+language plpgsql stable set search_path = '' as $$
+declare
   v_codes text[];
   v_pillars text[];
   v_code text;
-  v_pillar text;
   r record;
 begin
-  select * into e from public.enrollments where id = p_enrollment;
-  delete from public.principles where enrollment_id = e.id;
-
   -- Socle : réveil fixe, travail profond, corps.
-  v_codes := array['reveil_fixe', 'bloc_profond', case when e.pushups = 'non' then 'squats' else 'pompes' end];
+  v_codes := array['reveil_fixe', 'bloc_profond', case when p_pushups = 'non' then 'squats' else 'pompes' end];
   v_pillars := array['energie', 'focus', 'corps'];
 
   -- Un principe business dès que l'objectif touche au projet.
-  if e.goal_type in ('revenu', 'clients', 'lancement', 'audience') then
+  if p_goal_type in ('revenu', 'clients', 'lancement', 'audience') then
     select t.code into v_code from public.principle_templates t
-    where t.pillar = 'business' and e.goal_type = any(t.goal_types) and e.category = any(t.categories)
-    order by (select count(*) from unnest(t.weak_points) w where w = any(e.weak_points)) desc, t.sort
+    where t.pillar = 'business' and p_goal_type = any(t.goal_types) and p_category = any(t.categories)
+    order by (select count(*) from unnest(t.weak_points) w where w = any(p_weak)) desc, t.sort
     limit 1;
     if v_code is not null then
       v_codes := v_codes || v_code;
@@ -389,9 +410,9 @@ begin
   -- Puis les mieux notés : objectif (5), points faibles (3), profil (1), sans doubler un pilier plus de 2 fois.
   for r in
     select t.code, t.pillar,
-      (case when e.goal_type = any(t.goal_types) then 5 else 0 end)
-      + 3 * (select count(*) from unnest(t.weak_points) w where w = any(e.weak_points))
-      + (case when e.category = any(t.categories) then 1 else -10 end) as score
+      (case when p_goal_type = any(t.goal_types) then 5 else 0 end)
+      + 3 * (select count(*) from unnest(t.weak_points) w where w = any(p_weak))
+      + (case when p_category = any(t.categories) then 1 else -10 end) as score
     from public.principle_templates t
     where t.code not in ('reveil_fixe', 'bloc_profond', 'pompes', 'squats')
     order by 3 desc, t.sort
@@ -402,10 +423,59 @@ begin
     v_codes := v_codes || r.code;
     v_pillars := v_pillars || r.pillar;
   end loop;
+  return v_codes;
+end;
+$$;
 
-  foreach v_code in array v_codes loop
+-- Propose 6 principes selon l'objectif, les points faibles et le profil. Tout reste modifiable.
+create function public._generate_principles(p_enrollment uuid) returns void
+language plpgsql set search_path = '' as $$
+declare
+  e public.enrollments;
+  v_code text;
+begin
+  select * into e from public.enrollments where id = p_enrollment;
+  delete from public.principles where enrollment_id = e.id;
+  foreach v_code in array public._pick_templates(e.category, e.goal_type, e.weak_points, e.pushups) loop
     perform public._add_template(e.user_id, v_code);
   end loop;
+end;
+$$;
+
+-- Aperçu des principes pour un visiteur (questionnaire, avant tout compte). N'écrit rien.
+create function public.preview_principles(
+  p_category text,
+  p_goal_type text,
+  p_weak_points text[],
+  p_wake_time text,
+  p_pushups text,
+  p_focus_minutes int
+) returns jsonb
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  v_wake time := public._hhmm(p_wake_time);
+  v_weak text[] := array(select distinct w from unnest(coalesce(p_weak_points, '{}')) w limit 7);
+  v_out jsonb := '[]'::jsonb;
+  v_code text;
+  r jsonb;
+begin
+  if p_category is null or p_category not in ('etudes', 'business', 'mixte')
+    or p_goal_type is null or p_goal_type not in ('revenu', 'clients', 'lancement', 'audience', 'examens', 'corps', 'autre')
+    or v_wake is null or v_wake < '04:00' or v_wake > '10:00'
+    or p_pushups is null or p_pushups not in ('oui', 'quelques', 'non')
+    or p_focus_minutes is null or p_focus_minutes not in (25, 50, 90) then
+    raise exception 'Réponses incomplètes.';
+  end if;
+  foreach v_code in array public._pick_templates(p_category, p_goal_type, v_weak, p_pushups) loop
+    r := public._render_template(v_code, v_wake, p_focus_minutes, p_pushups);
+    v_out := v_out || jsonb_build_array(jsonb_build_object(
+      'code', r ->> 'code', 'pillar', r ->> 'pillar',
+      'if_text', public._if_text(r ->> 'if_text'), 'then_text', public._then_text(r ->> 'then_text'),
+      'proof_type', r ->> 'proof_type', 'days', r -> 'days', 'why', r ->> 'why', 'source', r ->> 'source',
+      'difficulty', public._difficulty(r ->> 'proof_type', public._clean_target(r ->> 'proof_type', r -> 'target'),
+        (r ->> 'difficulty')::int)));
+  end loop;
+  return jsonb_build_object('principles', v_out, 'templates', (select count(*) from public.principle_templates));
 end;
 $$;
 
@@ -447,7 +517,7 @@ begin
 end;
 $$;
 
--- Lance un arc construit dès que l'accès est là (abonnement ou accès offert).
+-- Lance un arc construit dès que l'accès est là (Arc 90 jours payé, abonnement Pro, Fondateur ou accès offert).
 create function public._activate_enrollment(p_enrollment uuid) returns boolean
 language plpgsql set search_path = '' as $$
 declare
@@ -462,7 +532,7 @@ begin
   v_start := greatest(e.start_date, public.paris_today());
   update public.enrollments set status = 'active', activated_at = now(), start_date = v_start where id = e.id;
   update public.principles set active_from = v_start where enrollment_id = e.id and active_from < v_start;
-  -- Plan Essentiel : on garde les premiers principes dans la limite du plan.
+  -- Arc 90 jours : on garde les premiers principes dans la limite du plan.
   v_max := (public._limits(public._plan(e.user_id)) ->> 'max_principles')::int;
   delete from public.principles where id in (
     select id from public.principles where enrollment_id = e.id order by position offset v_max
@@ -556,6 +626,11 @@ begin
     from public.profiles pr where pr.id = v_user
     returning * into e;
     perform public._generate_principles(e.id);
+    -- Arc 90 jours payé d'avance : rattaché à ce nouvel arc.
+    update public.profiles set arc_credits = arc_credits - 1 where id = v_user and arc_credits > 0;
+    if found then
+      update public.enrollments set arc_paid = true, arc_payment = 'credit' where id = e.id;
+    end if;
   else
     update public.enrollments
     set category = p_category, goal_type = p_goal_type, goal_title = v_goal, goal_target = p_goal_target,
