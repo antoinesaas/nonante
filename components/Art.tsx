@@ -40,8 +40,8 @@ export function ArtFigure({
 }
 
 /**
- * Image en fond plein écran, assombrie, le texte par-dessus. `tone` règle l'assombrissement
- * (aplat noir, pas de dégradé sur le texte).
+ * Image en fond plein écran : elle se fond dans le noir en bas (masque), un voile garde le texte lisible,
+ * un zoom très lent la fait vivre. Les crédits sont sur la page /art, jamais sur l'image.
  */
 export function ArtBackdrop({
   slug,
@@ -58,7 +58,7 @@ export function ArtBackdrop({
   return (
     <div className={`relative overflow-hidden ${className}`}>
       {art ? (
-        <>
+        <div aria-hidden="true" className="fade-bottom absolute inset-0">
           {/* Pas de `fill` : il pose un style en ligne, bloqué par la CSP stricte. */}
           <Image
             src={artSrc(art, "nb")}
@@ -67,19 +67,19 @@ export function ArtBackdrop({
             height={art.height}
             priority
             sizes="100vw"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full animate-drift object-cover"
           />
-          <div className={`absolute inset-0 ${tone === "dark" ? "bg-ink/75" : "bg-ink/55"}`} />
-          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-ink to-ink/0" />
-        </>
+          <div className={`absolute inset-0 ${tone === "dark" ? "bg-ink/70" : "bg-ink/45"}`} />
+          <div className="absolute inset-x-0 top-0 h-40 bg-linear-to-b from-ink/80 to-ink/0" />
+          <div className="vignette absolute inset-0" />
+        </div>
       ) : null}
       <div className="relative z-10 flex h-full min-h-[inherit] flex-col">{children}</div>
-      {art ? <ArtCredit art={art} className="absolute right-4 bottom-2 z-10 max-w-[70%] text-right" /> : null}
     </div>
   );
 }
 
-/** Bandeau photo (sections, cartes) avec crédit discret. */
+/** Bandeau photo entre deux sections : il se fond dans le noir en haut et en bas, sans bord net. */
 export function ArtBand({
   slug,
   className = "h-56",
@@ -95,18 +95,19 @@ export function ArtBand({
   if (!art) return children ? <div className={className}>{children}</div> : null;
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      <Image
-        src={artSrc(art, "nb")}
-        alt=""
-        width={art.width}
-        height={art.height}
-        sizes="(max-width: 640px) 100vw, 576px"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
-      <div className={`absolute inset-0 ${dark ? "bg-ink/75" : "bg-ink/45"}`} />
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-linear-to-t from-ink to-ink/0" />
+      <div aria-hidden="true" className="fade-y absolute inset-0 grain">
+        <Image
+          src={artSrc(art, "nb")}
+          alt=""
+          width={art.width}
+          height={art.height}
+          sizes="(max-width: 640px) 100vw, 576px"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className={`absolute inset-0 ${dark ? "bg-ink/70" : "bg-ink/35"}`} />
+        <div className="absolute inset-x-0 bottom-0 h-3/4 bg-linear-to-t from-ink via-ink/60 to-ink/0" />
+      </div>
       {children ? <div className="relative z-10 flex h-full flex-col justify-end p-5 pt-10">{children}</div> : null}
-      <ArtCredit art={art} className="absolute top-2 right-3 z-10" />
     </div>
   );
 }

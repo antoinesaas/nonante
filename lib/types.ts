@@ -131,6 +131,8 @@ export type PlanState = {
   arc_credits: number;
   /** Fidélité : −50 % sur le prochain Arc 90 jours. */
   loyalty_pending: boolean;
+  /** Parrainage : remises de −20 % gagnées, pour les prochains Arcs 90 jours. */
+  referral_rewards: number;
   limits: Limits;
 };
 
@@ -236,7 +238,8 @@ export type MyProfile = {
   referral_code: string | null;
   referral_ready: boolean;
   referral_sales: number;
-  referral_credit_cents: number;
+  /** Remises de −20 % gagnées en parrainant, pas encore utilisées. */
+  referral_rewards: number;
   has_billing: boolean;
   plan: PlanState;
   stats: Stats;

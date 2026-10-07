@@ -117,7 +117,7 @@ export default function CguPage() {
         La marque Nonante, le logo, les textes, les règles du jeu et le code de l&apos;application sont protégés. Les images
         viennent de sources libres de droits ou du domaine public, créditées sur la page{" "}
         <Link href="/art" className="underline underline-offset-4">
-          Crédits des images
+          Crédits photos
         </Link>
         .
       </p>

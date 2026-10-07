@@ -30,7 +30,7 @@ export function Dot({ state, today = false }: { state: DayStatus; today?: boolea
   return <span className={`block size-3.5 rounded-full sm:size-4 ${DOT[state]}${ring}`} />;
 }
 
-export const calendarGrid = "grid w-fit grid-cols-10 gap-x-3.5 gap-y-3.5 sm:gap-x-5 sm:gap-y-5";
+export const calendarGrid = "grid w-full grid-cols-[repeat(10,auto)] justify-between gap-y-3.5 sm:gap-y-5";
 
 /** Le calendrier de l'arc : 90 points, 10 colonnes × 9 lignes. */
 export function DotCalendar({ days, today }: { days: DayStatus[]; today?: number }) {

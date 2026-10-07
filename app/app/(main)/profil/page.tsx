@@ -203,8 +203,10 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
         <section className="mt-12">
           <h2 className="font-serif text-3xl">Parrainage</h2>
           <p className="mt-2 text-sm text-mute">
-            −20 % pour ton ami sur son premier paiement, {formatEuros(500)} de crédit pour toi à chaque ami qui paie.{" "}
-            {plural(profile.referral_sales, "ami inscrit", "amis inscrits")} · {formatEuros(profile.referral_credit_cents)} gagnés.
+            Partage ton lien : ton ami a −20 % sur son premier paiement, et toi −20 % sur ton prochain arc (ou ta prochaine
+            facture Pro).{" "}
+            {plural(profile.referral_sales, "ami inscrit", "amis inscrits")}
+            {profile.referral_rewards ? ` · ${plural(profile.referral_rewards, "remise de −20 % en attente", "remises de −20 % en attente")}` : ""}.
           </p>
           <div className="mt-4 flex items-center justify-between gap-4">
             <span className="font-serif text-2xl">{profile.referral_code}</span>
@@ -262,7 +264,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
         </Link>{" "}
         ·{" "}
         <Link href="/art" className="underline underline-offset-4">
-          Crédits des images
+          Crédits photos
         </Link>{" "}
         ·{" "}
         <Link href="/faq" className="underline underline-offset-4">

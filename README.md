@@ -16,7 +16,7 @@ Le cahier des charges est dans [`CLAUDE.md`](CLAUDE.md). Ce README explique comm
 | Portefeuille | Revenus notés avec capture en preuve, +15 XP par jour prouvé, succès 1 € → 10 000 €, suivi de l'objectif de revenu |
 | Social | Classement semaine / général, filtres, onglet par escouade ; escouades privées (code) ou publiques ; profil public avec photo et carte de joueur |
 | Parcours | Questionnaire sans compte (une question par écran, mots manuscrits), écran de construction (vrai calcul des principes), résultat personnalisé avec preuve sociale réelle et plans, email + code, dernière étape, paiement |
-| Paiement | Arc 90 jours 19,99 € une fois par arc, Pro 14,99 €/mois ou 99,99 €/an, Fondateur 199 € une fois (100 places) ; portail client ; parrainage (−20 % / 5 € de crédit) ; fidélité (−50 % sur l'arc ou la facture suivante) |
+| Paiement | Arc 90 jours 19,99 € une fois par arc, Pro 14,99 €/mois ou 99,99 €/an, Fondateur 199 € une fois (100 places) ; portail client ; parrainage (−20 % pour l'ami et −20 % pour le parrain) ; fidélité (−50 % sur l'arc ou la facture suivante) |
 | Contenu | FAQ (`/faq`), CGU, CGV, confidentialité, mentions légales |
 | Admin | Double authentification, ventes, contrôles (preuves et revenus), signalements, escouades officielles, accès offerts, journal |
 
@@ -43,6 +43,7 @@ npm run dev
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend (facultatif) | emails applicatifs ; sans clé, rien n'est envoyé hors connexion |
 | `CRON_SECRET` | `openssl rand -hex 32` | protège `/api/cron/*`, clé HMAC de l'empreinte IP |
 | `NEXT_PUBLIC_SITE_URL` | URL publique | liens des emails et retours Stripe |
+| `NEXT_PUBLIC_GOOGLE_AUTH` | `1` une fois Google activé dans Supabase | bouton « Continuer avec Google » (connexion et questionnaire) |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | `npx web-push generate-vapid-keys` | notifications push |
 | `AUDIT_RATE` | `0.10` | part des preuves faibles contrôlées |
 

@@ -83,8 +83,9 @@ export default function CgvPage() {
       <h2>7. Remises</h2>
       <ul>
         <li>
-          Parrainage : le code d&apos;un joueur donne −20 % sur le premier paiement d&apos;un nouveau joueur ; le parrain reçoit
-          5 € de crédit, déduit de son prochain paiement Nonante.
+          Parrainage : le lien ou le code d&apos;un joueur donne −20 % sur le premier paiement d&apos;un nouveau joueur ; le
+          parrain reçoit à son tour −20 % sur son prochain Arc 90 jours, ou sur sa prochaine facture Pro s&apos;il est abonné.
+          Une remise par filleul, une seule remise par paiement.
         </li>
         <li>
           Fidélité : un arc tenu donne −50 % sur le prochain Arc 90 jours, ou sur la prochaine facture de l&apos;abonnement Pro,

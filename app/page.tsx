@@ -2,10 +2,12 @@ import Link from "next/link";
 import { ArtBackdrop, ArtBand } from "@/components/Art";
 import { DotCalendar, type DayState } from "@/components/DotCalendar";
 import { Faq } from "@/components/Faq";
+import { Founder } from "@/components/Founder";
 import { Hand } from "@/components/Hand";
 import { Logo } from "@/components/Logo";
 import { PlayerCard } from "@/components/Player";
 import { QuoteCard } from "@/components/QuoteCard";
+import { RevealOnScroll } from "@/components/RevealOnScroll";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SocialProof } from "@/components/SocialProof";
 import { IMAGES } from "@/lib/art";
@@ -29,10 +31,11 @@ const EXAMPLE_STATS: Stats = {
 };
 
 const PAINS = [
-  "Tu ouvres TikTok « deux minutes » et la soirée est partie.",
-  "Tu repousses la tâche qui compte, tous les jours un peu.",
-  "Tu bosses ton produit au lieu de parler à des clients.",
-  "Tu commences fort le lundi. Le jeudi, plus rien.",
+  "Tu ouvres TikTok « deux minutes », et la soirée y passe.",
+  "Tu repousses la tâche importante, un peu plus chaque jour.",
+  "Tu peaufines ton produit au lieu d'aller chercher des clients.",
+  "Tu lances trois projets à la fois, et tu n'en finis aucun.",
+  "Tu démarres fort le lundi ; le jeudi, il ne reste plus rien.",
 ];
 
 const STEPS = [
@@ -81,9 +84,11 @@ export default async function Home() {
           </Link>
         </header>
         <section className="mx-auto mt-auto w-full max-w-xl px-5 pb-16">
-          <p className={`${label} animate-rise`}>Pour les jeunes entrepreneurs</p>
-          <h1 className="mt-5 animate-rise font-serif text-[3.7rem] leading-[0.92] tracking-tight [animation-delay:100ms] sm:text-7xl">
-            Le jeu de la vraie vie.
+          <p className={`${label} animate-rise`}>Étudiants et entrepreneurs</p>
+          <h1 className="mt-5 animate-rise font-serif text-[4.2rem] leading-[0.9] tracking-tight [animation-delay:100ms] sm:text-8xl">
+            90 jours.
+            <br />
+            Zéro excuse.
           </h1>
           <p className="mt-4 animate-rise [animation-delay:200ms]">
             <Hand underline className="text-3xl">
@@ -91,8 +96,8 @@ export default async function Home() {
             </Hand>
           </p>
           <p className="mt-6 max-w-md animate-rise text-lg leading-relaxed text-paper/85 [animation-delay:300ms]">
-            90 jours pour atteindre ton objectif. Des principes construits pour toi, chaque jour une preuve, et des stats de
-            joueur à maxer.
+            Un objectif, des principes construits pour toi, et chaque jour une preuve. Tes progrès deviennent des stats de joueur
+            à faire monter.
           </p>
           <div className="mt-10 animate-rise space-y-3 [animation-delay:400ms]">
             <Link href={cta} className={btnPrimary}>
@@ -113,10 +118,11 @@ export default async function Home() {
       </ArtBackdrop>
 
       <main className="mx-auto w-full max-w-xl px-5">
-        <section className="reveal py-20">
-          <h2 className="font-serif text-5xl leading-none">
-            Tu sais quoi faire. Tu ne le <Hand className="text-6xl">fais</Hand> pas.
-          </h2>
+        <section data-reveal className="py-20">
+          <h2 className="font-serif text-5xl leading-none">Tu sais ce que tu dois faire.</h2>
+          <p className="mt-3">
+            <Hand className="text-3xl text-mute">le plus dur, c&apos;est de le faire chaque jour</Hand>
+          </p>
           <ul className="mt-8 space-y-4 text-lg text-paper/85">
             {PAINS.map((p) => (
               <li key={p} className="border-l border-line pl-4">
@@ -125,8 +131,8 @@ export default async function Home() {
             ))}
           </ul>
           <p className="mt-8 text-lg text-mute">
-            La motivation ne dure pas. La discipline, si : elle se construit avec des règles précises et des preuves, jour après
-            jour.
+            La motivation finit toujours par retomber. La discipline, elle, se construit : des règles claires, et une preuve
+            chaque jour.
           </p>
         </section>
 
@@ -134,7 +140,7 @@ export default async function Home() {
           <p className={label}>Comment ça marche</p>
           <h2 className="mt-2 font-serif text-4xl leading-none">Quatre étapes. Quatre-vingt-dix jours.</h2>
         </ArtBand>
-        <ol className="reveal mt-8 space-y-8 pb-20">
+        <ol data-reveal className="mt-8 space-y-8 pb-20">
           {STEPS.map((s) => (
             <li key={s.n} className="flex gap-5">
               <span className="font-serif text-5xl leading-none text-mute">{s.n}</span>
@@ -146,7 +152,7 @@ export default async function Home() {
           ))}
         </ol>
 
-        <section className="reveal pb-20">
+        <section data-reveal className="pb-20">
           <p className={label}>Exemple de carte de joueur</p>
           <div className="mt-4">
             <PlayerCard pseudo="exemple" avatarPath={null} stats={EXAMPLE_STATS} art="pluie-nuit" subtitle="jour 23/90" />
@@ -161,7 +167,7 @@ export default async function Home() {
           <p className={label}>Les preuves</p>
           <h2 className="mt-2 font-serif text-4xl leading-none">Rien ne se valide sur parole.</h2>
         </ArtBand>
-        <dl className="reveal mt-8 divide-y divide-line border-y border-line">
+        <dl data-reveal className="mt-8 divide-y divide-line border-y border-line">
           {PROOFS.map((p) => (
             <div key={p.title} className="py-5">
               <dt className="font-medium">{p.title}</dt>
@@ -170,14 +176,14 @@ export default async function Home() {
           ))}
         </dl>
 
-        <section className="reveal py-20">
+        <section data-reveal className="py-20">
           <p className={label}>Exemple : jour 23</p>
           <div className="mt-6">
             <DotCalendar days={EXAMPLE_DAYS} today={22} />
           </div>
           <p className="mt-6 text-mute">
-            Un point par jour. Vert : tout est prouvé. Rouge : il manque quelque chose. Blanc : tu n&apos;es pas venu, double
-            peine. Un joker, et la journée ne compte pas.
+            Un point par jour. Vert : tout est prouvé. Rouge : il manque une preuve. Blanc : tu n&apos;as rien fait, et ça coûte
+            double. Un joker, et la journée ne compte pas.
           </p>
         </section>
 
@@ -185,21 +191,21 @@ export default async function Home() {
           <p className={label}>Portefeuille</p>
           <h2 className="mt-2 font-serif text-4xl leading-none">Ton argent, prouvé.</h2>
         </ArtBand>
-        <p className="mt-6 pb-20 text-lg text-paper/85">
+        <p data-reveal className="mt-6 pb-20 text-lg text-paper/85">
           Chaque euro gagné grâce à ton projet, avec une capture en preuve. Il fait monter ta stat Business, débloque des
-          succès et suit ton objectif de revenu. Ce que tu gagnes, ce n&apos;est pas un lot : c&apos;est ton business.
+          succès et suit ton objectif de revenu. Ce n&apos;est pas Nonante qui te paie : c&apos;est ton projet qui rapporte.
         </p>
 
         <ArtBand slug={IMAGES.squads} className="-mx-5 h-64">
           <p className={label}>Classement et escouades</p>
           <h2 className="mt-2 font-serif text-4xl leading-none">Seul on lâche. En escouade, on tient.</h2>
         </ArtBand>
-        <p className="mt-6 pb-20 text-lg text-paper/85">
-          Le classement de la semaine repart de zéro chaque lundi. Crée ton escouade avec tes associés ou ta promo, et voyez qui
-          tient vraiment.
+        <p data-reveal className="mt-6 pb-20 text-lg text-paper/85">
+          Le classement de la semaine repart de zéro chaque lundi. Crée ton escouade avec tes associés ou ta promo : vous
+          verrez vite qui tient vraiment.
         </p>
 
-        <section className="reveal pb-20">
+        <section data-reveal className="pb-20">
           <h2 className="font-serif text-4xl leading-none">Pas une app d&apos;habitudes de plus.</h2>
           <table className="mt-8 w-full text-left text-sm">
             <thead className="text-mute">
@@ -221,7 +227,7 @@ export default async function Home() {
           </table>
         </section>
 
-        <section className="reveal pb-20">
+        <section data-reveal className="pb-20">
           <h2 className="font-serif text-4xl leading-none">Pourquoi ça marche.</h2>
           <p className="mt-4 text-mute">Pas de recette miracle : des méthodes étudiées, appliquées tous les jours.</p>
           <div className="mt-10">
@@ -229,11 +235,15 @@ export default async function Home() {
           </div>
         </section>
 
+        <div data-reveal className="pb-20">
+          <Founder />
+        </div>
+
         <ArtBand slug={IMAGES.quote} className="-mx-5 h-auto min-h-64" dark>
           <QuoteCard date={todayParis()} />
         </ArtBand>
 
-        <section className="reveal py-20">
+        <section data-reveal className="py-20">
           <h2 className="font-serif text-5xl leading-none">Payer, c&apos;est déjà s&apos;engager.</h2>
           <p className="mt-5 text-lg text-paper/85">
             Pas de version gratuite : un arc gratuit se lâche au premier soir difficile. Tu construis ton arc gratuitement, tu
@@ -259,10 +269,10 @@ export default async function Home() {
           </Link>
         </section>
 
-        <section className="reveal pb-20">
+        <section data-reveal className="pb-20">
           <h2 className="font-serif text-4xl leading-none">Questions.</h2>
           <div className="mt-8">
-            <Faq items={faqItems(["quoi", "payant", "renouvellement", "preuves", "temps", "installer"])} />
+            <Faq items={faqItems(["quoi", "payant", "renouvellement", "parrainage", "preuves", "installer"])} />
           </div>
           <Link href="/faq" className={`${btnLink} mt-6 inline-block`}>
             Toutes les questions
@@ -270,6 +280,7 @@ export default async function Home() {
         </section>
       </main>
       <SiteFooter />
+      <RevealOnScroll />
     </>
   );
 }

@@ -3,50 +3,23 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { Answers, type ArcAnswers, startDateOf } from "@/lib/answers";
+import { startDateOf } from "@/lib/answers";
 import { getUser } from "@/lib/auth";
-import { billing, checkoutDestination, validChoice } from "@/lib/checkout";
+import { billing, checkoutDestination } from "@/lib/checkout";
 import { userMessage } from "@/lib/errors";
-import { checkEmail, sendOtp, verifyOtp } from "@/lib/otp";
+import { checkEmail, googleUrl, sendOtp, verifyOtp } from "@/lib/otp";
 import { rateLimit } from "@/lib/rate-limit";
 import { ensureReferralCode } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { parseAnswers, parseChoice, PENDING_COOKIE, savePending } from "@/lib/pending";
 import { createClient } from "@/lib/supabase/server";
-import type { Interval, PlanId, Preview } from "@/lib/types";
+import type { Preview } from "@/lib/types";
 import { parseUtm, UTM_COOKIE } from "@/lib/utm";
 
 // Le parcours du visiteur : questionnaire → construction → plans → compte (email) → dernière étape → paiement.
 // Les réponses sont gardées en base le temps de la connexion (le lien peut s'ouvrir dans un autre navigateur).
 
 const SUITE = "/onboarding/suite";
-
-const Choice = z.object({
-  plan: z.enum(["arc", "pro", "fondateur"]),
-  interval: z.enum(["once", "month", "year", "lifetime"]),
-});
-
-function parseAnswers(raw: unknown): ArcAnswers | null {
-  try {
-    const parsed = Answers.safeParse(typeof raw === "string" ? JSON.parse(raw) : raw);
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
-
-function parseChoice(plan: unknown, interval: unknown): { plan: PlanId; interval: Interval } | null {
-  const parsed = Choice.safeParse({ plan, interval });
-  if (!parsed.success || !validChoice(parsed.data.plan, parsed.data.interval)) return null;
-  return parsed.data;
-}
-
-async function savePending(email: string, answers: ArcAnswers, choice: { plan: PlanId; interval: Interval }): Promise<boolean> {
-  const { error } = await createAdminClient()
-    .from("pending_arcs")
-    .upsert({ email, answers, plan: choice.plan, plan_interval: choice.interval, created_at: new Date().toISOString() }, { onConflict: "email" });
-  if (error) console.error(`[parcours] réponses non gardées (${error.code})`);
-  return !error;
-}
 
 /** Aperçu des principes, calculé par Postgres à partir des réponses (rien n'est écrit). */
 export async function previewArc(raw: string): Promise<Preview | { error: string }> {
@@ -90,6 +63,23 @@ export async function verifyAccountCode(_prev: AccountState, formData: FormData)
   const error = await verifyOtp(email, formData.get("token"));
   if (error) return { step: error.startsWith("Recommence") ? "email" : "code", email, message: error };
   redirect(SUITE);
+}
+
+/** Visiteur : continuer avec Google. Les réponses suivent dans un cookie, rangées en base au retour (/auth/callback). */
+export async function continueWithGoogle(rawAnswers: string, plan: string, interval: string): Promise<{ error: string }> {
+  const answers = parseAnswers(rawAnswers);
+  const choice = parseChoice(plan, interval);
+  if (!answers || !choice) return { error: "Il manque une réponse. Reviens au questionnaire." };
+  const url = await googleUrl(SUITE);
+  if (!url) return { error: "La connexion Google n'est pas disponible. Utilise ton email." };
+  (await cookies()).set(PENDING_COOKIE, JSON.stringify({ answers, plan: choice.plan, interval: choice.interval }), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60,
+  });
+  redirect(url);
 }
 
 /** Déjà connecté : garde les réponses et le plan, puis dernière étape. */

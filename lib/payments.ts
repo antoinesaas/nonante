@@ -1,16 +1,15 @@
 import "server-only";
 import type Stripe from "stripe";
 import { z } from "zod";
-import { sendReferralCredit, sendWelcome } from "@/lib/emails";
+import { sendReferralReward, sendWelcome } from "@/lib/emails";
 import { getStripe } from "@/lib/stripe";
+import { applyReferralDiscount } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Interval, PlanId } from "@/lib/types";
 
 // Arc 90 jours (paiement unique par arc), abonnement Pro et Fondateur (paiement unique, à vie).
 // Appelé par le webhook ET au retour de Stripe : tout est idempotent (grant_arc_pass, sync_subscription,
 // record_payment, record_referral).
-
-export const REFERRAL_CREDIT_CENTS = 500;
 
 type PlansSetting = Record<string, Record<string, { amount: number; price_id: string | null }>>;
 
@@ -59,23 +58,30 @@ export async function syncSubscription(subscription: Stripe.Subscription, userHi
   return (data as string | null) ?? null;
 }
 
-/** Vente parrainée : crédit de 5 € pour le parrain (solde client Stripe), une seule fois. */
+/**
+ * Vente parrainée : le parrain gagne −20 % lui aussi. Abonné Pro : sur sa prochaine facture ;
+ * sinon (ou si sa facture a déjà une remise) : gardé pour son prochain Arc 90 jours. Une seule fois par filleul.
+ */
 async function rewardReferral(session: Stripe.Checkout.Session, userId: string) {
   const promo = idOf(session.discounts?.find((d) => d.promotion_code)?.promotion_code);
   if (!promo) return;
   const admin = createAdminClient();
   const { data } = await admin.rpc("record_referral", { p_promotion_code_id: promo, p_referred: userId, p_object_id: session.id });
-  const referral = data as { referrer_id: string; referrer_customer: string | null; email: string | null } | null;
-  if (!referral?.referrer_customer) return;
-  await getStripe().customers.createBalanceTransaction(
-    referral.referrer_customer,
-    { amount: -REFERRAL_CREDIT_CENTS, currency: "eur", description: "Parrainage Nonante" },
-    { idempotencyKey: `referral-${userId}` },
-  );
-  await admin.rpc("mark_referral_rewarded", { p_referred: userId, p_cents: REFERRAL_CREDIT_CENTS });
+  const referral = data as { referrer_id: string; subscription_id: string | null; email: string | null } | null;
+  if (!referral) return;
+  let onSubscription = false;
+  if (referral.subscription_id) {
+    try {
+      onSubscription = await applyReferralDiscount(referral.subscription_id);
+    } catch (e) {
+      console.error(`[paiement] remise de parrainage sur l'abonnement impossible : ${e instanceof Error ? e.name : "erreur"}`);
+    }
+  }
+  if (!onSubscription) await admin.rpc("add_referral_reward", { p_user: referral.referrer_id });
+  await admin.rpc("mark_referral_rewarded", { p_referred: userId, p_cents: 0 });
   if (referral.email) {
     const { data: first } = await admin.rpc("log_email_once", { p_user: referral.referrer_id, p_kind: "referral", p_ref: userId });
-    if (first) await sendReferralCredit(referral.email, REFERRAL_CREDIT_CENTS);
+    if (first) await sendReferralReward(referral.email, onSubscription);
   }
 }
 
@@ -100,6 +106,7 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session): Promise
       p_currency: session.currency ?? "eur",
       p_customer: idOf(session.customer) ?? "",
       p_loyalty: session.metadata?.loyalty === "1",
+      p_referral: session.metadata?.referral_reward === "1",
     });
     if (error) throw new Error(`Arc 90 jours impossible à rattacher (${error.code})`);
   } else if (session.mode === "payment" && session.metadata?.plan === "fondateur") {

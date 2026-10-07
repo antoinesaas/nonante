@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { safeNext } from "@/lib/auth";
-import { checkEmail, sendOtp, verifyOtp } from "@/lib/otp";
+import { checkEmail, googleUrl, sendOtp, verifyOtp } from "@/lib/otp";
 
 export type LoginState = { step: "email" | "code"; email: string; message: string | null };
 
@@ -22,4 +22,10 @@ export async function verifyLoginCode(_prev: LoginState, formData: FormData): Pr
   const error = await verifyOtp(email, formData.get("token"));
   if (error) return { step: error.startsWith("Recommence") ? "email" : "code", email, message: error };
   redirect(safeNext(formData.get("next")));
+}
+
+/** Connexion avec Google (un toucher, pas d'email à ouvrir). */
+export async function signInWithGoogle(formData: FormData): Promise<void> {
+  const url = await googleUrl(safeNext(formData.get("next")));
+  redirect(url ?? "/login?erreur=google");
 }

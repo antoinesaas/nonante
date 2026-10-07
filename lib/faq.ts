@@ -65,7 +65,7 @@ export const FAQ: FaqGroup[] = [
       {
         id: "payant",
         q: "Pourquoi ce n'est pas gratuit ?",
-        a: "Parce qu'un arc gratuit se lâche au premier soir difficile. Mettre de l'argent sur la table, c'est déjà un engagement : tu as une raison de plus de tenir. Et ça nous permet de construire l'app sans publicité ni revente de données.",
+        a: "Parce qu'un arc gratuit se lâche au premier soir difficile. Mettre de l'argent sur la table, c'est déjà un engagement : tu as une raison de plus de tenir. Et c'est ce qui permet de faire grandir l'app, sans aucune publicité.",
       },
       {
         id: "choisir",
@@ -83,9 +83,14 @@ export const FAQ: FaqGroup[] = [
         a: "Tu as 14 jours pour te rétracter. Comme tu demandes à commencer tout de suite, seule la part déjà utilisée reste due, au prorata des jours écoulés. Il suffit d'écrire à l'adresse indiquée dans les conditions de vente.",
       },
       {
+        id: "parrainage",
+        q: "Comment marche le parrainage ?",
+        a: "Chaque joueur a un lien et un code à partager. Si tu t'inscris grâce à un ami, vous avez tous les deux −20 % : toi sur ton premier paiement, lui sur son prochain arc (ou sa prochaine facture Pro). La remise s'applique toute seule.",
+      },
+      {
         id: "remises",
-        q: "Il y a des réductions ?",
-        a: "Oui, les mêmes pour tout le monde. Le code d'un ami te donne −20 % sur ton premier paiement (et lui fait gagner 5 € de crédit). Et si tu tiens ton arc, ton prochain arc ou ta prochaine facture Pro est à −50 %.",
+        q: "Il y a d'autres réductions ?",
+        a: "Oui, la même pour tout le monde : si tu tiens ton arc, ton prochain Arc 90 jours (ou ta prochaine facture Pro) est à −50 %.",
       },
       {
         id: "classement-argent",
@@ -100,12 +105,12 @@ export const FAQ: FaqGroup[] = [
       {
         id: "installer",
         q: "Il faut installer une app ?",
-        a: "Non. Nonante marche dans le navigateur de ton téléphone. Pour l'avoir comme une app, ajoute-la à ton écran d'accueil (Partager, puis « Sur l'écran d'accueil » sur iPhone).",
+        a: "Pas besoin : Nonante marche dès maintenant dans le navigateur de ton téléphone. Pour l'avoir comme une app, ajoute-la à ton écran d'accueil (Partager, puis « Sur l'écran d'accueil » sur iPhone). L'application iPhone arrive bientôt sur l'App Store, avec le même compte.",
       },
       {
         id: "donnees",
         q: "Qu'est-ce que vous faites de mes données ?",
-        a: "Le strict nécessaire pour faire tourner ton arc : ton email, tes réponses, tes preuves. Pas de publicité, pas de revente, aucun cookie de suivi. Tu peux exporter ou supprimer ton compte à tout moment depuis ton profil.",
+        a: "Le strict nécessaire pour faire tourner ton arc : ton email, tes réponses, tes preuves. Aucune publicité, aucun cookie de suivi. Tu peux exporter ou supprimer ton compte à tout moment depuis ton profil.",
       },
       {
         id: "public",

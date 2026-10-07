@@ -156,6 +156,7 @@ language sql stable set search_path = '' as $$
     'arc_paid', exists (select 1 from public.enrollments e where e.user_id = p_user and e.status in ('draft', 'active') and e.arc_paid),
     'arc_credits', pr.arc_credits,
     'loyalty_pending', pr.loyalty_pending,
+    'referral_rewards', pr.referral_rewards,
     'limits', public._limits(public._plan(p_user))
   )
   from public.profiles pr where pr.id = p_user;
@@ -462,7 +463,7 @@ begin
     'referral_code', prof.referral_code,
     'referral_ready', prof.stripe_promotion_code_id is not null,
     'referral_sales', (select count(*) from public.referrals r where r.referrer_id = v_user),
-    'referral_credit_cents', (select coalesce(sum(reward_cents), 0) from public.referrals r where r.referrer_id = v_user),
+    'referral_rewards', prof.referral_rewards,
     'has_billing', prof.stripe_customer_id is not null,
     'plan', public._plan_json(v_user),
     'stats', public._stats_json(ps),
@@ -962,6 +963,7 @@ language sql stable security definer set search_path = '' as $$
     'arc_paid', exists (select 1 from public.enrollments e where e.user_id = p.id and e.status in ('draft', 'active') and e.arc_paid),
     'arc_credits', p.arc_credits,
     'loyalty_pending', p.loyalty_pending,
+    'referral_rewards', p.referral_rewards,
     'principles_count', (select public._principles_count_at(e.id, e.start_date) from public.enrollments e
       where e.user_id = p.id and e.status in ('draft', 'active') limit 1)
   )
@@ -1051,7 +1053,8 @@ create function public.grant_arc_pass(
   p_amount int,
   p_currency text,
   p_customer text,
-  p_loyalty boolean default false
+  p_loyalty boolean default false,
+  p_referral boolean default false
 ) returns boolean
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -1070,7 +1073,8 @@ begin
   end if;
   update public.profiles
   set stripe_customer_id = coalesce(stripe_customer_id, nullif(p_customer, '')),
-      loyalty_pending = case when coalesce(p_loyalty, false) then false else loyalty_pending end
+      loyalty_pending = case when coalesce(p_loyalty, false) then false else loyalty_pending end,
+      referral_rewards = case when coalesce(p_referral, false) then greatest(referral_rewards - 1, 0) else referral_rewards end
   where id = p_user;
   e := public._open_enrollment(p_user);
   if e.id is not null and not e.arc_paid then
@@ -1120,8 +1124,25 @@ begin
     return null;
   end if;
   return jsonb_build_object('referrer_id', v_referrer.id, 'referrer_customer', v_referrer.stripe_customer_id,
+    'subscription_id', case when v_referrer.plan = 'pro' and v_referrer.plan_status in ('active', 'trialing')
+      then v_referrer.stripe_subscription_id end,
     'email', (select u.email from auth.users u where u.id = v_referrer.id));
 end;
+$$;
+
+-- Parrain sans abonnement Pro actif : une remise de −20 % gardée pour son prochain Arc 90 jours.
+create function public.add_referral_reward(p_user uuid) returns void
+language sql security definer set search_path = '' as $$
+  update public.profiles set referral_rewards = least(referral_rewards + 1, 20) where id = p_user;
+$$;
+
+-- Code de parrainage d'un autre joueur (lien partagé) : son code promo Stripe, si le filleul n'a encore rien payé.
+create function public.referral_promo_for(p_user uuid, p_code text) returns jsonb
+language sql stable security definer set search_path = '' as $$
+  select jsonb_build_object('promotion_code_id', r.stripe_promotion_code_id, 'pseudo', r.pseudo)
+  from public.profiles r
+  where r.referral_code = upper(btrim(coalesce(p_code, ''))) and r.stripe_promotion_code_id is not null
+    and (p_user is null or (r.id <> p_user and not exists (select 1 from public.payments pay where pay.user_id = p_user)));
 $$;
 
 create function public.mark_referral_rewarded(p_referred uuid, p_cents int) returns void
@@ -1729,7 +1750,9 @@ grant execute on function public.set_stripe_customer(uuid, text) to service_role
 grant execute on function public.set_referral_promo(uuid, text) to service_role;
 grant execute on function public.sync_subscription(uuid, text, text, text, text, text, timestamptz, boolean) to service_role;
 grant execute on function public.grant_lifetime(uuid, text) to service_role;
-grant execute on function public.grant_arc_pass(uuid, text, int, text, text, boolean) to service_role;
+grant execute on function public.grant_arc_pass(uuid, text, int, text, text, boolean, boolean) to service_role;
+grant execute on function public.add_referral_reward(uuid) to service_role;
+grant execute on function public.referral_promo_for(uuid, text) to service_role;
 grant execute on function public.record_payment(text, uuid, text, text, text, int, text) to service_role;
 grant execute on function public.record_referral(text, uuid, text) to service_role;
 grant execute on function public.mark_referral_rewarded(uuid, int) to service_role;

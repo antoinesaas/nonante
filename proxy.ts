@@ -28,8 +28,8 @@ function contentSecurityPolicy(nonce: string): string {
     "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
-    // Le paiement redirige vers Stripe Checkout.
-    "form-action 'self' https://checkout.stripe.com",
+    // Connexion Google : passage par Supabase Auth puis Google.
+    `form-action 'self' https://checkout.stripe.com https://accounts.google.com${supabaseOrigin ? ` ${supabaseOrigin}` : ""}`,
     "frame-ancestors 'none'",
     ...(isDev ? [] : ["upgrade-insecure-requests"]),
   ].join("; ");

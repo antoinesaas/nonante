@@ -30,6 +30,22 @@ export async function sendOtp(email: string, next: string): Promise<string | nul
   return error.status === 429 ? "Trop de demandes. Réessaie dans une minute." : "Envoi impossible pour le moment. Réessaie.";
 }
 
+/** Connexion Google activée ? (fournisseur à configurer dans Supabase, puis NEXT_PUBLIC_GOOGLE_AUTH=1). */
+export function googleEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";
+}
+
+/** Adresse de connexion Google (flux PKCE : le retour passe par /auth/callback). Null si indisponible. */
+export async function googleUrl(next: string): Promise<string | null> {
+  if (!googleEnabled()) return null;
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(next)}`, queryParams: { prompt: "select_account" } },
+  });
+  return error ? null : data.url;
+}
+
 /** Vérifie le code reçu. Renvoie un message d'erreur ou null. */
 export async function verifyOtp(email: string, rawToken: unknown): Promise<string | null> {
   const token = String(rawToken ?? "").replace(/\s/g, "");

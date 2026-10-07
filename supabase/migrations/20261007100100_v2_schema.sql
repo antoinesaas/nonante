@@ -29,6 +29,8 @@ create table public.profiles (
   arc_credits int not null default 0 check (arc_credits between 0 and 10),
   -- Fidélité sans abonnement : −50 % sur le prochain Arc 90 jours.
   loyalty_pending boolean not null default false,
+  -- Parrainage : remises de −20 % gagnées (un ami a payé), à utiliser sur les prochains Arcs 90 jours.
+  referral_rewards int not null default 0 check (referral_rewards between 0 and 20),
   is_admin boolean not null default false,
   refused_proofs int not null default 0,
   email_reminders boolean not null default true,
@@ -42,7 +44,7 @@ create policy "profiles : lecture de son profil" on public.profiles
 revoke all on public.profiles from anon, authenticated;
 grant select (id, pseudo, birth_year, is_public, avatar_path, bio, profile_art_slug, wallet_public, referral_code,
   plan, plan_interval, plan_status, current_period_end, cancel_at_period_end, comp_plan, comp_until, arc_credits,
-  loyalty_pending, is_admin, refused_proofs, email_reminders, created_at) on public.profiles to authenticated;
+  loyalty_pending, referral_rewards, is_admin, refused_proofs, email_reminders, created_at) on public.profiles to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Arcs (un arc = 90 jours à partir du jour 1 choisi)

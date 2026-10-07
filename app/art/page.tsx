@@ -6,7 +6,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { allArt } from "@/lib/art";
 
 export const metadata: Metadata = {
-  title: "Crédits des images",
+  title: "Crédits photos",
   description: "Les photos CC0 et les œuvres du domaine public utilisées par Nonante, avec leurs auteurs et leurs sources.",
 };
 
@@ -20,7 +20,7 @@ export default function ArtPage() {
         <Link href="/" aria-label="Nonante, accueil">
           <Logo size="sm" />
         </Link>
-        <h1 className="mt-14 font-serif text-5xl leading-none">Crédits des images.</h1>
+        <h1 className="mt-14 font-serif text-5xl leading-none">Crédits photos.</h1>
         <p className="mt-5 leading-relaxed text-mute">
           Nonante n&apos;utilise que des images libres : des photographies publiées sous licence CC0 ou marquées « domaine
           public », trouvées via Openverse, et des œuvres dont les auteurs sont morts depuis plus de 70 ans, vérifiées sur

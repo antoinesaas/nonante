@@ -5,7 +5,8 @@ import { Hand } from "@/components/Hand";
 import { Logo } from "@/components/Logo";
 import { Answers, startDateOf } from "@/lib/answers";
 import { requireUser } from "@/lib/auth";
-import { billing } from "@/lib/checkout";
+import { billing, upcomingDiscount } from "@/lib/checkout";
+import { formatEuros } from "@/lib/money";
 import { formatDayFr, todayParis } from "@/lib/dates";
 import { PLAN_NAME, priceLabel } from "@/lib/plans";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -45,6 +46,8 @@ export default async function SuitePage() {
     (plan === "arc" && (b?.effective_plan === "pro" || Boolean(b?.arc_credits))) ||
     (plan === "pro" && b?.effective_plan === "pro");
 
+  const discount = covered ? null : await upcomingDiscount(user.id, plan, b);
+  const total = discount ? Math.round(price * (1 - discount.percent / 100)) : price;
   const today = todayParis();
   const start = startDateOf(a.start, today);
   const startLabel = a.start.startsWith("squad:") ? "départ collectif" : formatDayFr(start.date, { weekday: true, year: false });
@@ -71,11 +74,17 @@ export default async function SuitePage() {
             <dt className={label}>{PLAN_NAME[plan]}</dt>
             <dd className="font-serif text-2xl">{covered ? "déjà inclus" : priceLabel(price, interval)}</dd>
           </div>
-          {!covered && plan === "arc" && b?.loyalty_pending ? (
-            <div className="flex items-baseline justify-between gap-4 py-4">
-              <dt className={label}>Fidélité</dt>
-              <dd>−50 % appliqués au paiement</dd>
-            </div>
+          {discount ? (
+            <>
+              <div className="flex items-baseline justify-between gap-4 py-4">
+                <dt className={label}>{discount.label}</dt>
+                <dd>−{discount.percent} %</dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-4 py-4">
+                <dt className={label}>À payer</dt>
+                <dd className="font-serif text-3xl">{formatEuros(total)}</dd>
+              </div>
+            </>
           ) : null}
         </dl>
 
@@ -85,7 +94,7 @@ export default async function SuitePage() {
             pseudo={profile?.pseudo ?? a.pseudo ?? ""}
             isPublic={a.isPublic}
             needsPayment={!covered}
-            cta={covered ? "Lancer mon arc" : `Payer ${priceLabel(price, interval).replace(" pour 90 jours", "")} et lancer mon arc`}
+            cta={covered ? "Lancer mon arc" : `Payer ${priceLabel(total, interval).replace(" pour 90 jours", "")} et lancer mon arc`}
             currentYear={Number(today.slice(0, 4))}
           />
         </div>

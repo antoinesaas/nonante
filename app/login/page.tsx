@@ -25,10 +25,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <div className="my-auto py-16">
         <Hand className="animate-rise text-3xl text-mute">content de te revoir</Hand>
         <h1 className="mt-3 animate-rise font-serif text-5xl leading-none [animation-delay:80ms]">Reprends ton arc.</h1>
-        <p className="mt-5 animate-rise text-paper/80 [animation-delay:140ms]">Pas de mot de passe : un code et un lien de connexion arrivent par email.</p>
+        <p className="mt-5 animate-rise text-paper/80 [animation-delay:140ms]">Pas de mot de passe à retenir.</p>
         {params.erreur === "lien" ? (
           <p role="alert" className="mt-6 text-sm">
             Ce lien a expiré ou a déjà servi. Demande un nouveau code.
+          </p>
+        ) : params.erreur === "google" ? (
+          <p role="alert" className="mt-6 text-sm">
+            La connexion Google n&apos;est pas disponible pour le moment. Utilise ton email.
           </p>
         ) : null}
         <div className="mt-10 animate-rise [animation-delay:200ms]">

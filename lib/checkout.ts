@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import type Stripe from "stripe";
 import { siteUrl } from "@/lib/env";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
-import { ensureCoupons, LOYALTY_COUPON } from "@/lib/stripe-codes";
+import { ensureCoupons, LOYALTY_COUPON, REFERRAL_COUPON } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Interval, PlanId, PublicPlans } from "@/lib/types";
 import { parseUtm, UTM_COOKIE } from "@/lib/utm";
@@ -33,9 +33,32 @@ export type Billing = {
   arc_paid: boolean;
   arc_credits: number;
   loyalty_pending: boolean;
+  referral_rewards: number;
   utm_source: string | null;
   utm_campaign: string | null;
 };
+
+/** Lien de parrainage d'un ami (code gardé dans le cookie de source) : son code promo, si c'est le premier paiement. */
+export async function referralPromo(userId: string | null, code: string | null | undefined): Promise<{ promotion_code_id: string; pseudo: string } | null> {
+  if (!code) return null;
+  const { data } = await createAdminClient().rpc("referral_promo_for", { p_user: userId, p_code: code });
+  return (data as { promotion_code_id: string; pseudo: string } | null) ?? null;
+}
+
+/** La remise qui s'appliquera au paiement (même ordre que checkoutDestination), pour l'afficher avant. */
+export async function upcomingDiscount(
+  userId: string,
+  plan: PlanId,
+  b: Billing | null,
+): Promise<{ percent: number; label: string } | null> {
+  if (plan === "arc" && b?.loyalty_pending) return { percent: 50, label: "Fidélité (arc tenu)" };
+  if (plan === "arc" && (b?.referral_rewards ?? 0) > 0) return { percent: 20, label: "Parrainage" };
+  const utm = parseUtm((await cookies()).get(UTM_COOKIE)?.value);
+  const source = b?.utm_source ?? utm.source;
+  const campaign = b?.utm_campaign ?? utm.campaign;
+  const friend = await referralPromo(userId, source === "parrainage" ? campaign : null);
+  return friend ? { percent: 20, label: `Invité par ${friend.pseudo}` } : null;
+}
 
 export async function billing(userId: string): Promise<Billing | null> {
   const { data } = await createAdminClient().rpc("billing_profile", { p_user: userId });
@@ -112,9 +135,13 @@ export async function checkoutDestination(
   const campaign = b.utm_campaign ?? utm.campaign;
   if (source) metadata.utm_source = source;
   if (campaign) metadata.utm_campaign = campaign;
-  // Fidélité sans abonnement : −50 % sur cet Arc 90 jours (Stripe n'accepte pas de code promo en plus).
+  // Une seule remise par paiement (Stripe n'accepte pas de code promo en plus), dans cet ordre :
+  // fidélité (−50 % sur l'Arc 90 jours), remise de parrain gagnée (−20 %), lien de parrainage d'un ami (−20 %).
   const loyalty = plan === "arc" && b.loyalty_pending;
+  const reward = !loyalty && plan === "arc" && b.referral_rewards > 0;
+  const friend = loyalty || reward ? null : await referralPromo(userId, source === "parrainage" ? campaign : null);
   if (loyalty) metadata.loyalty = "1";
+  if (reward) metadata.referral_reward = "1";
 
   try {
     const customer = await ensureCustomer(userId, b);
@@ -135,9 +162,11 @@ export async function checkoutDestination(
       success_url: `${siteUrl()}/app?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl()}/abonnement?annule=1`,
     };
-    if (loyalty) {
+    if (loyalty || reward) {
       await ensureCoupons();
-      params.discounts = [{ coupon: LOYALTY_COUPON }];
+      params.discounts = [{ coupon: loyalty ? LOYALTY_COUPON : REFERRAL_COUPON }];
+    } else if (friend) {
+      params.discounts = [{ promotion_code: friend.promotion_code_id }];
     } else {
       params.allow_promotion_codes = true;
     }

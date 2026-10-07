@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { type LoginState, sendLoginCode, verifyLoginCode } from "@/app/actions/auth";
+import { type LoginState, sendLoginCode, signInWithGoogle, verifyLoginCode } from "@/app/actions/auth";
+import { GoogleLabel, googleAuthEnabled, googleButtonClass, OrDivider } from "@/components/GoogleButton";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { btnLink, btnPrimary, input } from "@/lib/ui";
 
@@ -19,6 +20,18 @@ export function LoginForm({ next }: { next: string }) {
 
   if (!codeStep) {
     return (
+      <div className="space-y-6">
+      {googleAuthEnabled ? (
+        <>
+          <form action={signInWithGoogle}>
+            <input type="hidden" name="next" value={next} />
+            <SubmitButton className={googleButtonClass} pendingLabel="Redirection…">
+              <GoogleLabel />
+            </SubmitButton>
+          </form>
+          <OrDivider />
+        </>
+      ) : null}
       <form action={sendAction} className="space-y-4">
         <input type="hidden" name="next" value={next} />
         <label className="block">
@@ -39,6 +52,7 @@ export function LoginForm({ next }: { next: string }) {
         </SubmitButton>
         <FormMessage message={sent.message} />
       </form>
+      </div>
     );
   }
 

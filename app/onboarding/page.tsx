@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { type CollectiveStart, Quiz } from "@/app/onboarding/Quiz";
 import { Faq } from "@/components/Faq";
+import { Founder } from "@/components/Founder";
 import { SocialProof } from "@/components/SocialProof";
 import { getArt, IMAGES } from "@/lib/art";
+import { cookies } from "next/headers";
 import { getUser } from "@/lib/auth";
+import { referralPromo } from "@/lib/checkout";
+import { parseUtm, UTM_COOKIE } from "@/lib/utm";
 import { todayParis } from "@/lib/dates";
 import { faqItems } from "@/lib/faq";
 import type { PlanId, PublicPlans, SocialProof as Proof } from "@/lib/types";
@@ -47,6 +51,10 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
     }
   }
 
+  // Arrivé par le lien d'un ami : −20 % sur le premier paiement, annoncé avant les plans.
+  const utm = parseUtm((await cookies()).get(UTM_COOKIE)?.value);
+  const friend = utm.source === "parrainage" ? await referralPromo(user?.id ?? null, utm.campaign) : null;
+
   const initialPlan = params.plan === "pro" || params.plan === "arc" || params.plan === "fondateur" ? (params.plan as PlanId) : null;
   const socialProof = proof as Proof | null;
 
@@ -63,6 +71,8 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
       initialPlan={initialPlan}
       arts={IMAGES.onboarding.map((slug) => getArt(slug))}
       templates={socialProof?.templates ?? 37}
+      invitedBy={friend?.pseudo ?? null}
+      founderSlot={<Founder compact />}
       proofSlot={<SocialProof proof={socialProof} compact />}
       faqSlot={<Faq items={faqItems(OBJECTIONS)} />}
     />

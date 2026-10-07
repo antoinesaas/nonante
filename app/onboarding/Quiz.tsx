@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { type AccountState, continueWithPlan, previewArc, sendAccountCode, verifyAccountCode } from "@/app/actions/onboarding";
+import { type AccountState, continueWithGoogle, continueWithPlan, previewArc, sendAccountCode, verifyAccountCode } from "@/app/actions/onboarding";
+import { GoogleLabel, googleAuthEnabled, googleButtonClass, OrDivider } from "@/components/GoogleButton";
 import { Hand, HandArrow } from "@/components/Hand";
 import { Logo } from "@/components/Logo";
 import { PlanPicker } from "@/components/PlanPicker";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { addDays, type ArcAnswers, COMMITMENTS, nextMonday } from "@/lib/answers";
-import { type Artwork, creditLine } from "@/lib/art";
+import type { Artwork } from "@/lib/art";
 import { formatDayFr } from "@/lib/dates";
 import { formatEuros } from "@/lib/money";
 import { perDay, PLAN_NAME, priceLabel } from "@/lib/plans";
@@ -31,7 +32,9 @@ type Props = {
   initialPlan: PlanId | null;
   arts: (Artwork | null)[];
   templates: number;
+  invitedBy: string | null;
   proofSlot: React.ReactNode;
+  founderSlot: React.ReactNode;
   faqSlot: React.ReactNode;
 };
 
@@ -124,10 +127,11 @@ function Choice({ selected, onClick, index = 0, children }: { selected: boolean;
   );
 }
 
+/** Photo de fond : elle change toutes les deux questions, en fondu, et se perd dans le noir vers le bas. */
 function Backdrop({ art }: { art: Artwork | null }) {
   if (!art) return null;
   return (
-    <>
+    <div aria-hidden="true" className="fade-bottom absolute inset-x-0 top-0 h-[70dvh]">
       <Image
         key={art.slug}
         src={`/art/${art.slug}-nb.jpg`}
@@ -138,9 +142,9 @@ function Backdrop({ art }: { art: Artwork | null }) {
         sizes="100vw"
         className="absolute inset-0 h-full w-full animate-fade object-cover"
       />
-      <div className="absolute inset-0 bg-linear-to-b from-ink/70 via-ink/85 to-ink" />
-      <p className="absolute right-4 bottom-2 z-10 text-right text-[10px] text-mute">{creditLine(art)}</p>
-    </>
+      <div className="absolute inset-0 bg-linear-to-b from-ink/75 via-ink/70 to-ink/90" />
+      <div className="vignette absolute inset-0" />
+    </div>
   );
 }
 
@@ -217,6 +221,8 @@ function AccountStep({ answers, plan, interval, price, onBack }: { answers: stri
   const [sent, sendAction] = useActionState(sendAccountCode, accountInitial);
   const [checked, verifyAction] = useActionState(verifyAccountCode, accountInitial);
   const [dismissed, setDismissed] = useState<AccountState | null>(null);
+  const [googlePending, startGoogle] = useTransition();
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const codeStep = sent.step === "code" && sent !== dismissed;
 
   return (
@@ -226,13 +232,32 @@ function AccountStep({ answers, plan, interval, price, onBack }: { answers: stri
       </Hand>
       <h1 className="mt-6 animate-rise font-serif text-5xl leading-[0.95] [animation-delay:80ms]">Sauvegarde ton arc.</h1>
       <p className="mt-5 animate-rise text-paper/85 [animation-delay:140ms]">
-        Ton email suffit, sans mot de passe : on t&apos;envoie un code pour retrouver ton arc sur tous tes appareils.
+        Pour retrouver ton arc sur tous tes appareils. Pas de mot de passe à retenir.
       </p>
       <div className="mt-6 flex animate-rise items-baseline justify-between border-y border-line py-4 text-sm [animation-delay:200ms]">
         <span>{PLAN_NAME[plan]}</span>
         <span className="font-serif text-2xl">{priceLabel(price, interval)}</span>
       </div>
 
+      {!codeStep && googleAuthEnabled ? (
+        <div className="mt-8 animate-rise space-y-6 [animation-delay:260ms]">
+          <button
+            type="button"
+            disabled={googlePending}
+            onClick={() =>
+              startGoogle(async () => {
+                const r = await continueWithGoogle(answers, plan, interval);
+                if (r?.error) setGoogleError(r.error);
+              })
+            }
+            className={googleButtonClass}
+          >
+            {googlePending ? "Redirection…" : <GoogleLabel />}
+          </button>
+          <FormMessage message={googleError} />
+          <OrDivider />
+        </div>
+      ) : null}
       {!codeStep ? (
         <form action={sendAction} className="mt-8 animate-rise space-y-4 [animation-delay:260ms]">
           <input type="hidden" name="answers" value={answers} />
@@ -305,7 +330,9 @@ export function Quiz({
   initialPlan,
   arts,
   templates,
+  invitedBy,
   proofSlot,
+  founderSlot,
   faqSlot,
 }: Props) {
   const steps = useMemo(
@@ -608,12 +635,20 @@ export function Quiz({
 
           <section className="mt-16">{proofSlot}</section>
 
+          <section className="mt-14">{founderSlot}</section>
+
           <section ref={plansRef} id="plans" className="mt-16 scroll-mt-6">
             <Hand className="text-3xl text-mute">plus qu&apos;une étape</Hand>
             <h2 className="mt-2 font-serif text-5xl leading-[0.95]">Lance ton arc.</h2>
             <p className="mt-4 text-paper/85">
               Ton arc est construit. Payer, c&apos;est le premier engagement : un arc gratuit se lâche au premier soir difficile.
             </p>
+            {invitedBy ? (
+              <p className="mt-6 animate-rise border border-paper p-4 text-sm">
+                <Hand className="mr-1 text-2xl">invité par {invitedBy}</Hand> : −20 % sur ton premier paiement, appliqués
+                automatiquement.
+              </p>
+            ) : null}
             {error ? (
               <p role="alert" className="mt-4 text-sm">
                 {error}
@@ -855,8 +890,8 @@ export function Quiz({
 
           {step === "focus" ? (
             <>
-              <h1 className="animate-rise font-serif text-5xl leading-[0.95]">Concentré, sans téléphone, tu tiens…</h1>
-              <Hand className="mt-3 animate-rise text-2xl text-mute [animation-delay:80ms]">sois réaliste, ça montera</Hand>
+              <h1 className="animate-rise font-serif text-5xl leading-[0.95]">Combien de temps tu tiens concentré ?</h1>
+              <Hand className="mt-3 animate-rise text-2xl text-mute [animation-delay:80ms]">sans téléphone. sois réaliste, ça montera</Hand>
               <div className="mt-8 space-y-2">
                 {FOCUS.map((f, i) => (
                   <Choice key={f.value} index={i + 1} selected={d.focusMinutes === f.value} onClick={() => pick(() => set("focusMinutes", f.value))}>
@@ -870,7 +905,7 @@ export function Quiz({
 
           {step === "pompes" ? (
             <>
-              <h1 className="animate-rise font-serif text-5xl leading-[0.95]">Des pompes, tu en fais ?</h1>
+              <h1 className="animate-rise font-serif text-5xl leading-[0.95]">Tu fais des pompes ?</h1>
               <Hand className="mt-3 animate-rise text-2xl text-mute [animation-delay:80ms]">la caméra les comptera pour toi</Hand>
               <div className="mt-8 space-y-2">
                 {PUSHUPS.map((p, i) => (
@@ -928,7 +963,7 @@ export function Quiz({
 
           {step === "engagement" ? (
             <>
-              <h1 className="animate-rise font-serif text-5xl leading-[0.95]">Et toi, tu en es où ?</h1>
+              <h1 className="animate-rise font-serif text-5xl leading-[0.95]">Honnêtement, tu en es où ?</h1>
               <Hand className="mt-3 animate-rise text-2xl text-mute [animation-delay:80ms]">pas de mauvaise réponse</Hand>
               <div className="mt-8 space-y-2">
                 {COMMITMENTS.map((c, i) => (

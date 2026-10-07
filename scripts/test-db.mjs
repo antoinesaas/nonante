@@ -99,8 +99,8 @@ const subscribe = (user, plan = "pro", status = "active") => service(() => rpc("
   p_cancel_at_period_end: false,
 }));
 // Arc 90 jours payé (comme le webhook Stripe, paiement unique).
-const arcPass = (user, ref = `cs_arc_${user.slice(0, 4)}`, loyalty = false) => service(() => rpc("grant_arc_pass", {
-  p_user: user, p_object_id: ref, p_amount: 1999, p_currency: "eur", p_customer: `cus_${user.slice(0, 4)}`, p_loyalty: loyalty,
+const arcPass = (user, ref = `cs_arc_${user.slice(0, 4)}`) => service(() => rpc("grant_arc_pass", {
+  p_user: user, p_object_id: ref, p_amount: 1999, p_currency: "eur", p_customer: `cus_${user.slice(0, 4)}`, p_loyalty: false, p_referral: false,
 }));
 const principlesOf = (enrollment) => q("select * from public.principles where enrollment_id = $1 and active_until is null order by position", [enrollment]);
 // Dépose une photo « vérifiée par le serveur » dans le stockage.
@@ -419,6 +419,12 @@ check("la source UTM suit le paiement", (await val("select utm_source from publi
 await service(() => rpc("set_referral_promo", { p_user: A, p_promotion_code_id: "promo_A" }));
 const ref = await service(() => rpc("record_referral", { p_promotion_code_id: "promo_A", p_referred: B, p_object_id: "cs_B" }));
 check("parrainage noté, parrain renvoyé", ref?.referrer_id === A);
+await service(() => rpc("add_referral_reward", { p_user: A }));
+check("parrain : remise de −20 % gardée pour son prochain arc", (await val("select referral_rewards from public.profiles where id = $1", [A])) === 1);
+check("lien de parrainage : code promo du parrain pour un nouveau joueur",
+  (await service(() => rpc("referral_promo_for", { p_user: G, p_code: "joueur-1111" })))?.promotion_code_id === "promo_A");
+check("lien de parrainage : pas pour soi-même", (await service(() => rpc("referral_promo_for", { p_user: A, p_code: "JOUEUR-1111" }))) === null);
+check("lien de parrainage : pas après un premier paiement", (await service(() => rpc("referral_promo_for", { p_user: B, p_code: "JOUEUR-1111" }))) === null);
 check("parrainage compté une fois", (await service(() => rpc("record_referral", { p_promotion_code_id: "promo_A", p_referred: B, p_object_id: "cs_B" }))) === null);
 check("pas d'auto-parrainage", (await service(() => rpc("record_referral", { p_promotion_code_id: "promo_A", p_referred: A, p_object_id: "cs_A" }))) === null);
 await service(() => rpc("sync_subscription", { p_user: null, p_customer: "cus_2222", p_subscription: "sub_old", p_plan: "pro", p_interval: "month", p_status: "canceled", p_period_end: null, p_cancel_at_period_end: false }));
@@ -433,9 +439,11 @@ check("Arc 90 jours payé d'avance : gardé en crédit", (await arcPass(F, "cs_a
   && (await val("select arc_credits from public.profiles where id = $1", [F])) === 1);
 await service(() => rpc("mark_loyalty_applied", { p_enrollment: enrA, p_pending: true }));
 check("fidélité sans abonnement : remise en attente", (await val("select loyalty_pending from public.profiles where id = $1", [A])) === true);
-await arcPass(A, "cs_arc_A_2", true);
+await service(() => rpc("grant_arc_pass", { p_user: A, p_object_id: "cs_arc_A_2", p_amount: 999, p_currency: "eur", p_customer: "cus_1111", p_loyalty: true, p_referral: false }));
 check("remise de fidélité consommée par l'arc suivant", (await val("select loyalty_pending from public.profiles where id = $1", [A])) === false
   && (await val("select arc_credits from public.profiles where id = $1", [A])) === 1);
+await service(() => rpc("grant_arc_pass", { p_user: A, p_object_id: "cs_arc_A_3", p_amount: 1599, p_currency: "eur", p_customer: "cus_1111", p_loyalty: false, p_referral: true }));
+check("remise de parrain consommée par un Arc 90 jours", (await val("select referral_rewards from public.profiles where id = $1", [A])) === 0);
 await q("update public.profiles set arc_credits = 0 where id = $1", [A]);
 
 console.log("\nQuestionnaire (visiteur, sans compte)");

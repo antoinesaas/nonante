@@ -340,7 +340,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
       {referralLink && d.profile.referral_code ? (
         <section className="mt-10 border-t border-line pt-6">
           <p className={label}>Parrainage</p>
-          <p className="mt-3 text-sm text-mute">−20 % pour ton ami sur son premier paiement, 5 € de crédit pour toi.</p>
+          <p className="mt-3 text-sm text-mute">Ton ami et toi : −20 % chacun. Lui sur son premier paiement, toi sur ton prochain arc.</p>
           <div className="mt-4 flex items-center justify-between gap-4">
             <span className="font-serif text-2xl">{d.profile.referral_code}</span>
             <CopyButton value={`${d.profile.referral_code} · ${referralLink}`} label="Copier" />

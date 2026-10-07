@@ -2,7 +2,6 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { sendEmail } from "@/lib/email";
 import { siteUrl } from "@/lib/env";
-import { formatEuros } from "@/lib/money";
 import { plural } from "@/lib/proofs";
 
 // Emails : texte sobre, une seule action par email, lien de désinscription des rappels.
@@ -128,13 +127,16 @@ export function sendArcResult(to: string, green: number) {
   });
 }
 
-export function sendReferralCredit(to: string, cents: number) {
+/** Parrainage : un ami a payé. onSubscription : remise posée sur la facture Pro, sinon gardée pour le prochain arc. */
+export function sendReferralReward(to: string, onSubscription: boolean) {
   return sendEmail({
     to,
     subject: "Quelqu'un a rejoint Nonante grâce à toi.",
     text: [
-      `Ton code de parrainage a servi. ${formatEuros(cents)} de crédit sont ajoutés à ton abonnement.`,
-      "Ils seront déduits de ta prochaine facture.",
+      "Ton code de parrainage a servi : ton ami a lancé son arc avec −20 %.",
+      onSubscription
+        ? "Toi aussi : −20 % sur ta prochaine facture Pro, déjà appliqués."
+        : "Toi aussi : −20 % sur ton prochain Arc 90 jours. La remise s'applique toute seule au paiement.",
       "",
       `${siteUrl()}/app/profil`,
       ...signature,

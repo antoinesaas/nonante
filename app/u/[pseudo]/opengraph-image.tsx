@@ -52,7 +52,7 @@ export default async function Image({ params }: { params: Promise<{ pseudo: stri
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: 64, width: "100%" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 30 }}>
             <span>nonante</span>
-            <span style={{ color: "#8A8A8A" }}>le jeu de la vraie vie</span>
+            <span style={{ color: "#8A8A8A" }}>90 jours. zéro excuse.</span>
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 48 }}>
             <div style={{ display: "flex", flexDirection: "column" }}>

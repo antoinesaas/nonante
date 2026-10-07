@@ -19,7 +19,7 @@ export function SiteFooter() {
           Questions
         </Link>
         <Link href="/art" className="hover:text-paper">
-          Crédits des images
+          Crédits photos
         </Link>
         <Link href="/legal/mentions" className="hover:text-paper">
           Mentions légales

@@ -22,7 +22,7 @@ export async function ensureCoupons(): Promise<void> {
 }
 
 /**
- * Code de parrainage personnel : −20 % pour un ami, réservé à un premier achat.
+ * Code de parrainage personnel : −20 % pour un ami, réservé à un premier achat (le parrain gagne aussi −20 %).
  * Idempotent : réutilise le code s'il existe déjà chez Stripe.
  */
 export async function ensureReferralCode(userId: string, code: string): Promise<boolean> {
@@ -42,15 +42,26 @@ export async function ensureReferralCode(userId: string, code: string): Promise<
   return true;
 }
 
+/** Remise à usage unique sur la prochaine facture d'un abonnement actif, s'il n'en a pas déjà une. */
+async function applySubscriptionCoupon(subscriptionId: string, coupon: string): Promise<boolean> {
+  const stripe = getStripe();
+  await ensureCoupons();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  if (!["active", "trialing", "past_due"].includes(subscription.status)) return false;
+  if (subscription.discounts?.length) return false;
+  await stripe.subscriptions.update(subscriptionId, { discounts: [{ coupon }] });
+  return true;
+}
+
 /**
  * Fidélité : arc tenu = −50 % sur la prochaine facture de l'abonnement (coupon à usage unique).
  * Sans abonnement (Fondateur, accès offert) : rien à appliquer.
  */
-export async function applyLoyaltyDiscount(subscriptionId: string): Promise<boolean> {
-  const stripe = getStripe();
-  await ensureCoupon(LOYALTY_COUPON, 50, "Fidélité Nonante (−50 %)");
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  if (!["active", "trialing", "past_due"].includes(subscription.status)) return false;
-  await stripe.subscriptions.update(subscriptionId, { discounts: [{ coupon: LOYALTY_COUPON }] });
-  return true;
+export function applyLoyaltyDiscount(subscriptionId: string): Promise<boolean> {
+  return applySubscriptionCoupon(subscriptionId, LOYALTY_COUPON);
+}
+
+/** Parrainage : −20 % sur la prochaine facture Pro du parrain. */
+export function applyReferralDiscount(subscriptionId: string): Promise<boolean> {
+  return applySubscriptionCoupon(subscriptionId, REFERRAL_COUPON);
 }

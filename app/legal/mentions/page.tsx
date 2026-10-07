@@ -38,7 +38,7 @@ export default function MentionsPage() {
         Les images affichées sont des photographies sous licence CC0 ou marquées « domaine public », et des œuvres du domaine
         public. Leurs auteurs et sources sont indiqués sur la page{" "}
         <Link href="/art" className="underline underline-offset-4">
-          Crédits des images
+          Crédits photos
         </Link>
         . Les citations du jour viennent d&apos;auteurs du domaine public ; les traductions sont de Nonante.
       </p>

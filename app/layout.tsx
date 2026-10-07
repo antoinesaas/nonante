@@ -26,17 +26,17 @@ const caveat = Caveat({
 });
 
 const description =
-  "Le jeu de la vraie vie pour les jeunes entrepreneurs : 90 jours, tes principes, chaque jour prouvé. Maxe tes stats.";
+  "Pour les étudiants et les entrepreneurs : un objectif, des principes construits pour toi, et chaque jour une preuve. 90 jours, zéro excuse.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: { default: "Nonante · Le jeu de la vraie vie", template: "%s · Nonante" },
+  title: { default: "Nonante · 90 jours. Zéro excuse.", template: "%s · Nonante" },
   description,
   applicationName: "Nonante",
   appleWebApp: { capable: true, title: "Nonante", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
   openGraph: {
-    title: "Le jeu de la vraie vie. 90 jours pour maxer tes stats.",
+    title: "90 jours. Zéro excuse.",
     description,
     siteName: "Nonante",
     locale: "fr_FR",

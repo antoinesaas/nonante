@@ -33,6 +33,7 @@
   --animate-breathe: breathe 2.4s ease-in-out infinite;
   --animate-tick: tick 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
   --animate-slide: slide 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-drift: drift 28s ease-in-out infinite alternate;
 
   @keyframes rise {
     from {
@@ -97,6 +98,14 @@
       transform: none;
     }
   }
+  @keyframes drift {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.08) translate3d(-1%, -1%, 0);
+    }
+  }
   @keyframes slide {
     from {
       opacity: 0;
@@ -116,16 +125,15 @@
   animation: var(--animate-draw);
 }
 
-/* Apparition au défilement, sans JavaScript (navigateurs qui gèrent les animations liées au défilement). */
-@utility reveal {
-  @supports (animation-timeline: view()) {
-    animation: rise linear both;
-    animation-timeline: view();
-    animation-range: entry 0% entry 35%;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
+/* Images qui se fondent dans le fond noir (pas de bord net). */
+@utility fade-bottom {
+  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+}
+@utility fade-y {
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 22%, #000 70%, transparent 100%);
+}
+@utility vignette {
+  background: radial-gradient(ellipse at 50% 40%, transparent 40%, rgb(10 10 10 / 0.65) 100%);
 }
 
 /* Reflet qui passe (écran de construction). */
@@ -197,5 +205,26 @@
   button,
   a {
     -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Apparition au défilement : une seule fois, en douceur (RevealOnScroll pose html.reveal-ready).
+   Sans JavaScript, tout reste visible. */
+html.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition:
+    opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+html.reveal-ready [data-reveal][data-shown] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.reveal-ready [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

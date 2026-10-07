@@ -7,7 +7,7 @@
 
 ## 1. Le produit en une phrase
 
-**Le jeu de la vraie vie pour les jeunes entrepreneurs** : un arc de 90 jours, des principes « si… alors… »
+**« 90 jours. Zéro excuse. »** Pour les étudiants et les entrepreneurs : un arc de 90 jours, des principes « si… alors… »
 construits pour ton objectif, chaque jour prouvé (caméra, minuteur, réveil, photo, lien), et des stats de
 joueur à maxer. Payant dès le départ : payer, c'est déjà s'engager.
 
@@ -135,7 +135,9 @@ lancer. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jour
 - L'Arc 90 jours se rattache à l'arc ouvert (`enrollments.arc_paid`), ou reste en crédit (`profiles.arc_credits`)
   pour le prochain arc. L'arc terminé ou lâché, il faut un nouvel Arc 90 jours.
 - Abonnement Pro inactif : l'arc continue mais plus rien ne se valide (les jours deviennent blancs).
-- **Parrainage** : code perso (−20 % sur le premier paiement de l'ami) et 5 € de crédit Stripe pour le parrain.
+- **Parrainage** : lien ou code perso. L'ami a −20 % sur son premier paiement (code promo appliqué tout seul s'il
+  arrive par le lien) ; le parrain a −20 % lui aussi, sur sa prochaine facture Pro ou sur son prochain Arc 90 jours
+  (`profiles.referral_rewards`). Une seule remise par paiement : fidélité, puis parrain, puis ami.
 - **Fidélité** : arc tenu = −50 % sur la prochaine facture Pro, ou sur le prochain Arc 90 jours (`loyalty_pending`).
 - Droit de rétractation : 14 jours ; case à cocher pour demander l'accès immédiat (paiement au prorata en cas
   de rétractation).

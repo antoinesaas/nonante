@@ -739,6 +739,7 @@ export type Database = {
           profile_art_slug: string | null;
           pseudo: string;
           referral_code: string | null;
+          referral_rewards: number;
           refused_proofs: number;
           stripe_customer_id: string | null;
           stripe_promotion_code_id: string | null;
@@ -768,6 +769,7 @@ export type Database = {
           profile_art_slug?: string | null;
           pseudo: string;
           referral_code?: string | null;
+          referral_rewards?: number;
           refused_proofs?: number;
           stripe_customer_id?: string | null;
           stripe_promotion_code_id?: string | null;
@@ -797,6 +799,7 @@ export type Database = {
           profile_art_slug?: string | null;
           pseudo?: string;
           referral_code?: string | null;
+          referral_rewards?: number;
           refused_proofs?: number;
           stripe_customer_id?: string | null;
           stripe_promotion_code_id?: string | null;
@@ -1218,6 +1221,7 @@ export type Database = {
       abandon_session: { Args: { p_session_id: string | null; p_nonce: string | null }; Returns: Json };
       achievement_rarity: { Args: never; Returns: { code: string; title: string; description: string; points: number; art_slug: string; holders: number; total: number; percent: number }[] };
       activate_my_arc: { Args: never; Returns: boolean };
+      add_referral_reward: { Args: { p_user: string | null }; Returns: undefined };
       add_template_principle: { Args: { p_code: string | null }; Returns: string };
       add_wallet_entry: { Args: { p_user: string | null; p_amount_cents: number | null; p_source: string | null; p_label: string | null; p_day: string | null; p_proof_path: string | null }; Returns: Json };
       admin_audit_queue: { Args: never; Returns: Json };
@@ -1253,7 +1257,7 @@ export type Database = {
       delete_wallet_entry: { Args: { p_id: string | null }; Returns: undefined };
       export_my_data: { Args: never; Returns: Json };
       global_stats: { Args: never; Returns: { joueurs: number; arcs_en_cours: number; verts_aujourdhui: number; ont_lache: number; arcs_tenus: number }[] };
-      grant_arc_pass: { Args: { p_user: string | null; p_object_id: string | null; p_amount: number | null; p_currency: string | null; p_customer: string | null; p_loyalty?: boolean | null }; Returns: boolean };
+      grant_arc_pass: { Args: { p_user: string | null; p_object_id: string | null; p_amount: number | null; p_currency: string | null; p_customer: string | null; p_loyalty?: boolean | null; p_referral?: boolean | null }; Returns: boolean };
       grant_lifetime: { Args: { p_user: string | null; p_customer: string | null }; Returns: undefined };
       heartbeat: { Args: { p_session_id: string | null; p_nonce: string | null; p_visible: boolean | null; p_hidden_ms: number | null }; Returns: Json };
       join_public_squad: { Args: { p_id: string | null }; Returns: undefined };
@@ -1286,6 +1290,7 @@ export type Database = {
       rate_limit_hit: { Args: { p_bucket: string | null; p_max: number | null; p_window_seconds: number | null }; Returns: boolean };
       record_payment: { Args: { p_object_id: string | null; p_user: string | null; p_kind: string | null; p_plan: string | null; p_interval: string | null; p_amount: number | null; p_currency: string | null }; Returns: boolean };
       record_referral: { Args: { p_promotion_code_id: string | null; p_referred: string | null; p_object_id: string | null }; Returns: Json };
+      referral_promo_for: { Args: { p_user: string | null; p_code: string | null }; Returns: Json };
       regenerate_principles: { Args: never; Returns: undefined };
       remove_principle: { Args: { p_id: string | null }; Returns: undefined };
       report_user: { Args: { p_pseudo: string | null; p_reason: string | null }; Returns: undefined };
