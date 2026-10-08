@@ -149,10 +149,16 @@ lancer. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jour
 Landing → `/onboarding` (sans compte) : questions une par écran (profil, activité si business, école si études,
 objectif, phrase, points faibles, écran « si… alors… », réveil, concentration, sport facultatif, jour 1, engagement,
 pseudo) → écran de construction (vrai calcul
-`preview_principles`) → résultat personnalisé (arc, 6 principes, stats, preuve sociale, plans, objections) → email
-et code (les réponses sont gardées dans `pending_arcs`, 3 jours max) → `/onboarding/suite` (âge, accès immédiat) →
+`preview_principles`) → résultat personnalisé (arc, 6 principes, stats, preuve sociale, plans, objections) → « Continuer
+avec Google » (les réponses suivent dans un cookie d'une heure, puis `pending_arcs`, 3 jours max) → `/onboarding/suite` (âge, accès immédiat) →
 Stripe → `/app?paid=1`. Preuve sociale : seulement des chiffres réels (seuils) et des études publiées, jamais de faux
 avis.
+
+### Connexion et aide
+Connexion **uniquement avec Google** (Supabase OAuth, flux PKCE, retour par `/auth/callback`) : pas d'email, pas de
+code, pas de mot de passe. Onglet **Aide** dans la barre de navigation : ouvre un email vers l'adresse de contact
+(`EDITOR.email`). Parrainage : bouton « Partager mon profil » (feuille de partage du téléphone, sinon copie) avec le
+lien du profil public et le code de parrainage ; visible seulement si le profil est public.
 
 ### Langues
 Français (source), anglais, allemand, espagnol : toute l'app, les emails, les notifications et les pages légales

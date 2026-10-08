@@ -29,7 +29,7 @@ export const de: LegalSet = {
 
   cgu: {
     title: "Nutzungsbedingungen",
-    updated: "Gültig ab 8. Oktober 2026.",
+    updated: "Gültig ab 9. Oktober 2026.",
     blocks: [
       {
         p: "Diese Bedingungen regeln die Nutzung der Website und der App Nonante, herausgegeben von {name}, {address} (Kontakt: {email}). Die Zahlungsbedingungen stehen in den [Verkaufsbedingungen](/legal/cgv), die Datenverarbeitung in der [Datenschutzerklärung](/legal/confidentialite).",
@@ -42,7 +42,7 @@ export const de: LegalSet = {
       {
         ul: [
           "Nonante ist nur für Volljährige (ab 18 Jahren).",
-          "Das Konto wird mit einer E-Mail-Adresse ohne Passwort erstellt (bei jeder Anmeldung werden ein Link und ein Code gesendet) oder mit einem Apple- oder Google-Konto. Du bist für den Zugang zu deinem Postfach und zu diesen Konten verantwortlich.",
+          "Das Konto wird mit einem Google-Konto erstellt, ohne eigenes Nonante-Passwort. Du bist für den Zugang zu deinem Google-Konto verantwortlich.",
           "Ein Konto pro Person. Wegwerf-E-Mail-Adressen werden nicht akzeptiert.",
           "Dein Benutzername und dein Profilfoto dürfen niemanden imitieren und nicht beleidigend, diskriminierend, sexuell oder rechtswidrig sein.",
         ],
@@ -177,14 +177,14 @@ export const de: LegalSet = {
 
   privacy: {
     title: "Datenschutz",
-    updated: "Gültig ab 8. Oktober 2026.",
+    updated: "Gültig ab 9. Oktober 2026.",
     blocks: [
       { h2: "Verantwortlicher" },
       { p: "{name}, {address}. Für Fragen zu deinen Daten: {email}." },
       { h2: "Was erhoben wird, und warum" },
       {
         ul: [
-          "Deine E-Mail-Adresse: um dich anzumelden und dir Nachrichten zum Dienst zu senden. Meldest du dich mit Apple oder Google an, erhält Nonante die E-Mail-Adresse dieses Kontos (oder die von Apple bereitgestellte Weiterleitungsadresse), sonst nichts.",
+          "Deine E-Mail-Adresse: um dich anzumelden und dir Nachrichten zum Dienst zu senden. Die Anmeldung läuft über Google: Nonante erhält die E-Mail-Adresse, den Namen und das Profilbild deines Google-Kontos, sonst nichts.",
           "Dein Benutzername, dein Geburtsjahr (um zu prüfen, dass du 18 bist), dein Profilfoto und deine Bio, wenn du sie hinzufügst.",
           "Deine Sprache und dein Land (aus deiner Verbindung abgeleitet, nur auf Länderebene): um die App in deiner Sprache und die Rangliste nach Land anzuzeigen.",
           "Deine Antworten im Fragebogen (Profil, Tätigkeit, Schule, Ziel, Schwachpunkte, Rhythmus, Sport, Tag 1): Sie bauen deinen Arc. Gibst du sie vor der Kontoerstellung ein, werden sie mit deiner E-Mail höchstens 3 Tage aufbewahrt, bis du dich anmeldest, und dann gelöscht.",
@@ -220,7 +220,7 @@ export const de: LegalSet = {
           "Vercel: Hosting der Website (USA).",
           "Stripe: Zahlung.",
           "Resend: E-Mail-Versand, falls aktiviert.",
-          "Apple und Google: Anmeldung, wenn du dich mit ihnen anmeldest.",
+          "Google: Anmeldung mit deinem Konto.",
           "Die Benachrichtigungsdienste deines Browsers (Apple, Google, Mozilla, Microsoft), wenn du Benachrichtigungen aktivierst.",
         ],
       },
@@ -238,7 +238,7 @@ export const de: LegalSet = {
       },
       { h2: "Cookies" },
       {
-        p: "Nonante nutzt weder Werbung noch Tracking durch Dritte. Nur notwendige Cookies von Nonante, die nie geteilt werden: deine Anmeldesitzung; deine Sprache, wenn du sie wählst; die Quelle deines Besuchs, 30 Tage lang; und höchstens eine Stunde lang deine Antworten im Fragebogen während einer Anmeldung mit Apple oder Google.",
+        p: "Nonante nutzt weder Werbung noch Tracking durch Dritte. Nur notwendige Cookies von Nonante, die nie geteilt werden: deine Anmeldesitzung; deine Sprache, wenn du sie wählst; die Quelle deines Besuchs, 30 Tage lang; und höchstens eine Stunde lang deine Antworten im Fragebogen während deiner Anmeldung mit Google.",
       },
       { h2: "Deine Rechte" },
       {

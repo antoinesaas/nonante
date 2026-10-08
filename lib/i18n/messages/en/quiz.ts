@@ -188,15 +188,8 @@ export const quiz: typeof fr = {
   account: {
     hand: "home stretch",
     title: "Save your arc.",
-    text: "To find your arc on all your devices. No password to remember.",
-    email: "Your email",
-    emailPlaceholder: "you@email.com",
-    sendCode: "Get my code",
-    sent: "Email sent to {email}. Enter the code you received, or tap the link in the email: your arc will be waiting.",
-    spam: "Nothing yet? Check your spam or promotions folder; the email can take a minute.",
-    code: "6-digit code",
-    verifying: "Checking…",
-    change: "Change address or resend the email",
+    text: "To find your arc on all your devices. One tap, no password.",
+    privacy: "Nonante only receives your Google email, name and photo. Nothing is ever posted on your behalf.",
     backToPlans: "Back to the plans",
   },
   suite: {

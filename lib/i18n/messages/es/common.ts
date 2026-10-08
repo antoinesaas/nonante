@@ -11,6 +11,8 @@ export const common: typeof fr = {
     leaderboard: "Clasificación",
     wallet: "Cartera",
     profile: "Perfil",
+    help: "Ayuda",
+    helpSubject: "Ayuda Nonante",
   },
   actions: {
     save: "Guardar",
@@ -67,5 +69,11 @@ export const common: typeof fr = {
   quoteTranslated: " (trad.)",
   errorPage: { title: "Ha surgido un problema.", text: "Inténtalo de nuevo en un momento." },
   notFound: { title: "Esta página no existe.", back: "Volver al inicio" },
-  oauth: { google: "Continuar con Google", apple: "Continuar con Apple", or: "o con tu email" },
+  share: {
+    profile: "Compartir mi perfil",
+    copied: "Enlace copiado",
+    text: "Me apunto al reto Nonante: 90 días, cero excusas. Aquí está mi carta de jugador. Con mi código {code}, tienes −20 % en tu primer arco.",
+    private: "Tu perfil es privado: marca «Perfil público» en los ajustes para compartirlo.",
+  },
+  oauth: { google: "Continuar con Google" },
 };

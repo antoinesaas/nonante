@@ -187,15 +187,8 @@ export const quiz = {
   account: {
     hand: "dernière ligne droite",
     title: "Sauvegarde ton arc.",
-    text: "Pour retrouver ton arc sur tous tes appareils. Pas de mot de passe à retenir.",
-    email: "Ton email",
-    emailPlaceholder: "ton@email.fr",
-    sendCode: "Recevoir mon code",
-    sent: "Email envoyé à {email}. Entre le code reçu, ou clique sur le lien de l'email : ton arc t'attendra.",
-    spam: "Rien reçu ? Regarde dans les spams ou les promotions, l'email peut mettre une minute.",
-    code: "Code à 6 chiffres",
-    verifying: "Vérification…",
-    change: "Changer d'adresse ou renvoyer l'email",
+    text: "Pour retrouver ton arc sur tous tes appareils. Un toucher, aucun mot de passe.",
+    privacy: "Nonante reçoit seulement ton email, ton nom et ta photo Google. Rien n'est publié en ton nom.",
     backToPlans: "Revenir aux plans",
   },
   suite: {

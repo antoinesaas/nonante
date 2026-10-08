@@ -9,7 +9,7 @@ import { billing, checkoutDestination } from "@/lib/checkout";
 import { userMessage } from "@/lib/errors";
 import { fmt } from "@/lib/i18n/format";
 import { getCountry, getI18n } from "@/lib/i18n/server";
-import { checkEmail, oauthUrl, parseProvider, sendOtp, verifyOtp } from "@/lib/otp";
+import { googleUrl } from "@/lib/oauth";
 import { rateLimit } from "@/lib/rate-limit";
 import { ensureReferralCode } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,8 +18,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { Preview } from "@/lib/types";
 import { parseUtm, UTM_COOKIE } from "@/lib/utm";
 
-// Le parcours du visiteur : questionnaire → construction → plans → compte (email) → dernière étape → paiement.
-// Les réponses sont gardées en base le temps de la connexion (le lien peut s'ouvrir dans un autre navigateur).
+// Le parcours du visiteur : questionnaire → construction → plans → compte (Google) → dernière étape → paiement.
+// Les réponses sont gardées le temps de la connexion (cookie, puis table pending_arcs avec l'email du compte).
 
 const SUITE = "/onboarding/suite";
 
@@ -45,42 +45,13 @@ export async function previewArc(raw: string): Promise<Preview | { error: string
   return data as Preview;
 }
 
-export type AccountState = { step: "email" | "code"; email: string; message: string | null };
-
-/** Visiteur : garde ses réponses et son plan, puis envoie le code de connexion. */
-export async function sendAccountCode(_prev: AccountState, formData: FormData): Promise<AccountState> {
+/** Visiteur : continuer avec Google. Les réponses suivent dans un cookie, rangées en base au retour (/auth/callback). */
+export async function continueWithGoogle(rawAnswers: string, plan: string, interval: string): Promise<{ error: string }> {
   const { m } = await getI18n();
-  const typed = String(formData.get("email") ?? "").trim().toLowerCase();
-  const checked = checkEmail(typed);
-  if ("error" in checked) return { step: "email", email: typed, message: m.actions.auth[checked.error] };
-  const answers = parseAnswers(formData.get("answers"));
-  const choice = parseChoice(formData.get("plan"), formData.get("interval"));
-  if (!answers || !choice) return { step: "email", email: typed, message: m.actions.onboarding.missingBack };
-  if (!(await savePending(checked.email, answers, choice))) {
-    return { step: "email", email: typed, message: m.actions.onboarding.saveFailed };
-  }
-  const error = await sendOtp(checked.email, SUITE);
-  if (error) return { step: "email", email: typed, message: m.actions.auth[error] };
-  return { step: "code", email: checked.email, message: null };
-}
-
-/** Visiteur : vérifie le code, puis dernière étape. */
-export async function verifyAccountCode(_prev: AccountState, formData: FormData): Promise<AccountState> {
-  const { m } = await getI18n();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const error = await verifyOtp(email, formData.get("token"));
-  if (error) return { step: error === "restart" ? "email" : "code", email, message: m.actions.auth[error] };
-  redirect(SUITE);
-}
-
-/** Visiteur : continuer avec Apple ou Google. Les réponses suivent dans un cookie, rangées en base au retour (/auth/callback). */
-export async function continueWithProvider(rawProvider: string, rawAnswers: string, plan: string, interval: string): Promise<{ error: string }> {
-  const { m } = await getI18n();
-  const provider = parseProvider(rawProvider);
   const answers = parseAnswers(rawAnswers);
   const choice = parseChoice(plan, interval);
-  if (!answers || !choice || !provider) return { error: m.actions.onboarding.missingBack };
-  const url = await oauthUrl(provider, SUITE);
+  if (!answers || !choice) return { error: m.actions.onboarding.missingBack };
+  const url = await googleUrl(SUITE);
   if (!url) return { error: m.actions.onboarding.oauthUnavailable };
   (await cookies()).set(PENDING_COOKIE, JSON.stringify({ answers, plan: choice.plan, interval: choice.interval }), {
     httpOnly: true,

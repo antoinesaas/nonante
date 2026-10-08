@@ -1,20 +1,11 @@
-// Connexion (page /login).
+// Connexion (page /login) : uniquement avec Google.
 export const auth = {
   title: "Connexion",
   hand: "content de te revoir",
   heading: "Reprends ton arc.",
-  text: "Pas de mot de passe à retenir.",
-  errorLink: "Ce lien a expiré ou a déjà servi. Demande un nouveau code.",
-  errorOauth: "Cette connexion n'est pas disponible pour le moment. Utilise ton email.",
+  text: "Un toucher avec Google, pas de mot de passe.",
+  errorLink: "La connexion n'a pas abouti. Réessaie.",
+  errorOauth: "La connexion avec Google n'est pas disponible pour le moment. Réessaie dans un instant.",
   noArc: "Pas encore d'arc ?",
   buildYours: "Construis le tien en 2 minutes",
-  email: "Ton email",
-  emailPlaceholder: "ton@email.fr",
-  sendCode: "Recevoir mon code",
-  sent: "Email envoyé à {email}. Entre le code à 6 chiffres, ou clique sur le lien de l'email depuis ce même appareil.",
-  code: "Code à 6 chiffres",
-  verifying: "Vérification…",
-  signIn: "Se connecter",
-  spam: "Rien reçu ? Regarde dans les spams ou les promotions, l'email peut mettre une minute.",
-  change: "Changer d'adresse ou renvoyer l'email",
 };

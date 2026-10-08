@@ -188,15 +188,8 @@ export const quiz: typeof fr = {
   account: {
     hand: "die letzte Etappe",
     title: "Sichere deinen Arc.",
-    text: "Damit du deinen Arc auf all deinen Geräten wiederfindest. Kein Passwort zum Merken.",
-    email: "Deine E-Mail",
-    emailPlaceholder: "du@email.de",
-    sendCode: "Code erhalten",
-    sent: "E-Mail an {email} gesendet. Gib den erhaltenen Code ein oder tippe auf den Link in der E-Mail: Dein Arc wartet auf dich.",
-    spam: "Nichts erhalten? Schau im Spam- oder Werbeordner nach, die E-Mail kann eine Minute brauchen.",
-    code: "6-stelliger Code",
-    verifying: "Wird geprüft…",
-    change: "Adresse ändern oder E-Mail erneut senden",
+    text: "Damit du deinen Arc auf all deinen Geräten wiederfindest. Ein Tipp, kein Passwort.",
+    privacy: "Nonante erhält nur deine Google-E-Mail, deinen Namen und dein Foto. Nichts wird in deinem Namen gepostet.",
     backToPlans: "Zurück zu den Plänen",
   },
   suite: {

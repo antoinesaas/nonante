@@ -8,6 +8,7 @@ import { ProfileCard } from "@/app/app/(main)/profil/ProfileCard";
 import { PushToggle } from "@/app/app/(main)/profil/PushToggle";
 import { SettingsForm } from "@/app/app/(main)/profil/SettingsForm";
 import { CopyButton } from "@/components/CopyButton";
+import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { getArt } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
@@ -240,6 +241,15 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
               <span className="font-serif text-2xl">{profile.referral_code}</span>
               <CopyButton value={`${profile.referral_code} · ${siteUrl()}/?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`} />
             </div>
+            {profile.is_public ? (
+              <ShareProfileButton
+                url={`${siteUrl()}/u/${encodeURIComponent(profile.pseudo)}?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`}
+                code={profile.referral_code}
+                className="mt-5"
+              />
+            ) : (
+              <p className="mt-5 text-xs text-mute">{m.common.share.private}</p>
+            )}
           </section>
         ) : null}
       </div>

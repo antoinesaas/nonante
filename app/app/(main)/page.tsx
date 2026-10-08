@@ -4,6 +4,7 @@ import { JokerButton, StartTodayButton } from "@/app/app/(main)/DayActions";
 import { ArtBand } from "@/components/Art";
 import { CalendarInteractive } from "@/components/CalendarInteractive";
 import { CopyButton } from "@/components/CopyButton";
+import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { Countdown } from "@/components/Countdown";
 import { CalendarLegend } from "@/components/DotCalendar";
 import { Hand } from "@/components/Hand";
@@ -338,6 +339,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
                 <span className="font-serif text-2xl">{d.profile.referral_code}</span>
                 <CopyButton value={`${d.profile.referral_code} · ${referralLink}`} label={t.copy} />
               </div>
+              {d.profile.is_public ? (
+                <ShareProfileButton
+                  url={`${siteUrl()}/u/${encodeURIComponent(d.profile.pseudo)}?utm_source=parrainage&utm_campaign=${encodeURIComponent(d.profile.referral_code)}`}
+                  code={d.profile.referral_code}
+                  className="mt-4"
+                />
+              ) : null}
             </section>
           ) : null}
         </div>

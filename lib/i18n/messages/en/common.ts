@@ -11,6 +11,8 @@ export const common: typeof fr = {
     leaderboard: "Leaderboard",
     wallet: "Wallet",
     profile: "Profile",
+    help: "Help",
+    helpSubject: "Nonante help",
   },
   actions: {
     save: "Save",
@@ -67,5 +69,11 @@ export const common: typeof fr = {
   quoteTranslated: " (transl.)",
   errorPage: { title: "Something went wrong.", text: "Try again in a moment." },
   notFound: { title: "This page doesn't exist.", back: "Back to home" },
-  oauth: { google: "Continue with Google", apple: "Continue with Apple", or: "or with your email" },
+  share: {
+    profile: "Share my profile",
+    copied: "Link copied",
+    text: "I'm taking the Nonante challenge: 90 days, zero excuses. Here's my player card. With my code {code}, you get −20% on your first arc.",
+    private: "Your profile is private: tick “Public profile” in the settings to share it.",
+  },
+  oauth: { google: "Continue with Google" },
 };

@@ -44,8 +44,6 @@ npm run dev
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend (facultatif) | emails applicatifs ; sans clé, rien n'est envoyé hors connexion |
 | `CRON_SECRET` | `openssl rand -hex 32` | protège `/api/cron/*`, clé HMAC de l'empreinte IP |
 | `NEXT_PUBLIC_SITE_URL` | URL publique | liens des emails et retours Stripe |
-| `NEXT_PUBLIC_GOOGLE_AUTH` | `1` une fois Google activé dans Supabase | bouton « Continuer avec Google » (connexion et questionnaire) |
-| `NEXT_PUBLIC_APPLE_AUTH` | `1` une fois Apple activé dans Supabase (compte Apple Developer payant) | bouton « Continuer avec Apple » |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | `npx web-push generate-vapid-keys` | notifications push |
 | `AUDIT_RATE` | `0.10` | part des preuves faibles contrôlées |
 
@@ -70,10 +68,10 @@ Les migrations v3 à v5 sont regroupées dans `../deploy-v3-v5.sql` (une transac
 
 ### Réglages Auth
 
-- URL Configuration : Site URL = domaine ; Redirect URLs `https://<domaine>/auth/callback` et `/auth/confirm`.
-- Email OTP à 6 chiffres ; modèles **Magic Link et Confirm signup** avec `{{ .Token }}` (sinon le code n'arrive pas, seulement le lien) et un lien `/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/app`.
-- Google : Authentication > Providers > Google, avec l'ID et le secret du client OAuth du projet Google Cloud « Nonante » (redirection autorisée `https://<projet>.supabase.co/auth/v1/callback`), puis `NEXT_PUBLIC_GOOGLE_AUTH=1` sur Vercel.
-- **SMTP** : le serveur d'email intégré de Supabase est limité à quelques messages par heure. Avant le lancement, branche un SMTP (Project Settings > Authentication > SMTP Settings).
+- URL Configuration : Site URL = domaine ; Redirect URL `https://<domaine>/auth/callback`.
+- **Connexion uniquement avec Google** (pas d'email ni de mot de passe). Fournisseur Email désactivé dans Authentication > Sign In / Providers, pour que personne ne crée de compte par email via l'API.
+- Google : Authentication > Providers > Google, avec l'ID et le secret du client OAuth « Nonante Web » du projet Google Cloud « nonante » (origine `https://<domaine>`, redirection autorisée `https://<projet>.supabase.co/auth/v1/callback`). Dans Google Auth Platform > Audience, l'application doit être publiée (en mode test, seuls les utilisateurs test passent).
+- **SMTP** : inutile pour la connexion (Google). Seulement pour les emails applicatifs, via `RESEND_API_KEY`.
 
 ### Types
 
@@ -108,7 +106,7 @@ Puis `/admin` : double authentification obligatoire (application d'authentificat
 | `npm run test:db` | Plus de 230 tests sur Postgres 17 (PGlite) : langues et pays, parcours métier et école, carnet de notes, session quittée, Arc 90 jours (paiement unique, crédit, fin d'arc), aperçu des principes pour un visiteur, preuve sociale, démarrage libre, principes versionnés, difficulté serveur, chaque preuve, jokers, points, stats, niveaux, quêtes, portefeuille, escouades, classement, plans et limites, abonnements, parrainage, fidélité, RLS, registre en ajout seul, admin, suppression de compte |
 | `npm run lint` / `npm run typecheck` / `npm run build` | ESLint, TypeScript strict, build |
 
-Parcours joué à 375 px contre un Supabase émulé : questionnaire visiteur → construction → plans → email et code → dernière étape → paiement simulé → tableau de bord ; arc n° 2 d'un joueur connecté ; connexion, onboarding, génération des principes, plans, tableau de bord et calendrier, validation déclarative, capture, revenu prouvé, montée de niveau, succès, photo de profil, escouade, classement, profil public, quête, avant / après.
+Parcours joué à 375 px contre un Supabase émulé : questionnaire visiteur → construction → plans → connexion → dernière étape → paiement simulé → tableau de bord ; arc n° 2 d'un joueur connecté ; connexion, onboarding, génération des principes, plans, tableau de bord et calendrier, validation déclarative, capture, revenu prouvé, montée de niveau, succès, photo de profil, escouade, classement, profil public, quête, avant / après.
 
 ## Choix faits en route
 
@@ -120,7 +118,7 @@ Parcours joué à 375 px contre un Supabase émulé : questionnaire visiteur →
 6. **Photos** : CC0 / domaine public via l'API Openverse (`scripts/fetch-photos.mjs`), œuvres du domaine public via Wikimedia (`npm run art:fetch`), et images fournies par l'éditeur (type « fournie » dans `public/art/credits.json`), toutes listées sur `/art`. Les images fournies avec un visage connu, une marque ou un filigrane n'ont pas été utilisées.
 7. **Droit de rétractation** : case à cocher obligatoire avant paiement pour l'accès immédiat ; formulaire type dans les CGV.
 8. **Aucun chiffre inventé** : les exemples de la landing sont présentés comme exemples ; le compteur Fondateur et les statistiques viennent de la base. La preuve sociale n'affiche les chiffres en direct qu'au-delà de 20 joueurs (sinon seulement les études publiées), et aucun faux avis.
-9. **Questionnaire avant le compte** : on demande l'email au moment où le visiteur a vu son arc et choisi son plan (effet d'investissement). Les réponses sont gardées côté serveur avec l'email, pour que le lien de connexion marche même ouvert dans un autre navigateur (TikTok → Safari), puis supprimées.
+9. **Questionnaire avant le compte** : on demande la connexion Google au moment où le visiteur a vu son arc et choisi son plan (effet d'investissement). Les réponses suivent dans un cookie pendant l'aller-retour chez Google, puis sont gardées côté serveur avec l'email du compte et supprimées une fois l'arc créé.
 10. **Écran de construction** : il attend le vrai calcul des principes (preview_principles) et dure environ 5 secondes ; pas de faux compte à rebours ni de fausse rareté.
 11. **Fluidité** : une seule vérification de session par requête (`getUser` en cache), écrans de chargement instantanés, « Fait » coché avant la réponse du serveur, transitions du questionnaire par View Transitions (transform et opacité seulement), flou limité à la barre d'onglets.
 12. **Retour** : chaque question du questionnaire est une entrée de l'historique ; pendant une session, le geste retour ouvre la confirmation « −5 points » au lieu de quitter.

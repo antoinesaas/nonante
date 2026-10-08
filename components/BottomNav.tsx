@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
 import { Logo } from "@/components/Logo";
+import { EDITOR } from "@/lib/legal";
 
-type Key = "today" | "leaderboard" | "wallet" | "grades" | "profile";
+type Key = "today" | "leaderboard" | "wallet" | "grades" | "profile" | "help";
 
 const ICONS: Record<Key, React.ReactNode> = {
   today: (
@@ -42,6 +43,13 @@ const ICONS: Record<Key, React.ReactNode> = {
       <path d="M4.75 19.5 C5.6 16.2 8.5 14.25 12 14.25 C15.5 14.25 18.4 16.2 19.25 19.5" />
     </>
   ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M9.6 9.6 C9.6 8.3 10.7 7.5 12 7.5 C13.3 7.5 14.4 8.4 14.4 9.6 C14.4 11.3 12 11.4 12 13.3" />
+      <path d="M12 16.4 V16.5" />
+    </>
+  ),
 };
 
 const MATCH: Record<Key, (p: string) => boolean> = {
@@ -50,6 +58,7 @@ const MATCH: Record<Key, (p: string) => boolean> = {
   wallet: (p) => p.startsWith("/app/portefeuille"),
   grades: (p) => p.startsWith("/app/notes"),
   profile: (p) => p.startsWith("/app/profil"),
+  help: () => false,
 };
 
 const HREF: Record<Key, string> = {
@@ -58,39 +67,44 @@ const HREF: Record<Key, string> = {
   wallet: "/app/portefeuille",
   grades: "/app/notes",
   profile: "/app/profil",
+  help: `mailto:${EDITOR.email}`,
 };
 
 /**
  * Navigation de l'app, façon iPhone : une capsule de verre qui flotte en bas de l'écran, icône et libellé.
  * Sur ordinateur : barre en haut. Les onglets Portefeuille et Notes suivent le profil de l'arc.
+ * Aide ouvre un email à l'adresse de contact (pas de page : une question, une réponse humaine).
  */
 export function BottomNav({ wallet, grades }: { wallet: boolean; grades: boolean }) {
   const { m } = useI18n();
   const pathname = usePathname();
-  const keys: Key[] = ["today", "leaderboard", ...(wallet ? (["wallet"] as const) : []), ...(grades ? (["grades"] as const) : []), "profile"];
+  const keys: Key[] = ["today", "leaderboard", ...(wallet ? (["wallet"] as const) : []), ...(grades ? (["grades"] as const) : []), "profile", "help"];
   const label = (k: Key) => (k === "grades" ? m.app.grades.nav : m.common.nav[k]);
+  const href = (k: Key) => (k === "help" ? `${HREF.help}?subject=${encodeURIComponent(m.common.nav.helpSubject)}` : HREF[k]);
+  // Six onglets (profil mixte) : libellés un peu plus petits pour tenir sur un iPhone de 375 px.
+  const crowded = keys.length > 5;
 
   return (
     <>
       {/* Téléphone */}
       <nav aria-label={m.common.nav.aria} className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
-        <ul className="glass pointer-events-auto mx-auto flex max-w-md items-stretch justify-between gap-1 rounded-full p-1.5">
+        <ul className={`glass pointer-events-auto mx-auto flex max-w-md items-stretch justify-between rounded-full p-1.5 ${crowded ? "gap-0.5" : "gap-1"}`}>
           {keys.map((k) => {
             const active = MATCH[k](pathname);
             return (
-              <li key={k} className="flex-1">
-                <Link
-                  href={HREF[k]}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex h-14 flex-col items-center justify-center gap-0.5 rounded-full text-[10px] font-medium tracking-wide transition-[background-color,color,transform] duration-200 active:scale-90 ${
-                    active ? "bg-paper/12 text-paper" : "text-mute hover:text-paper"
-                  }`}
+              <li key={k} className="min-w-0 flex-1">
+                <NavLink
+                  href={href(k)}
+                  active={active}
+                  className={`flex h-14 flex-col items-center justify-center gap-0.5 rounded-full font-medium transition-[background-color,color,transform] duration-200 active:scale-90 ${
+                    crowded ? "text-[9px]" : "text-[10px] tracking-wide"
+                  } ${active ? "bg-paper/12 text-paper" : "text-mute hover:text-paper"}`}
                 >
                   <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     {ICONS[k]}
                   </svg>
-                  <span className="max-w-full truncate px-1">{label(k)}</span>
-                </Link>
+                  <span className="max-w-full truncate px-0.5">{label(k)}</span>
+                </NavLink>
               </li>
             );
           })}
@@ -103,21 +117,21 @@ export function BottomNav({ wallet, grades }: { wallet: boolean; grades: boolean
           <Link href="/app" aria-label={m.common.homeAria}>
             <Logo size="sm" />
           </Link>
-          <ul className="flex items-center gap-1">
+          <ul className="flex flex-1 items-center gap-1">
             {keys.map((k) => {
               const active = MATCH[k](pathname);
               return (
-                <li key={k}>
-                  <Link
-                    href={HREF[k]}
-                    aria-current={active ? "page" : undefined}
+                <li key={k} className={k === "help" ? "ml-auto" : undefined}>
+                  <NavLink
+                    href={href(k)}
+                    active={active}
                     className={`flex h-10 items-center gap-2 rounded-full px-4 text-sm transition-colors ${active ? "bg-paper/12 text-paper" : "text-mute hover:text-paper"}`}
                   >
                     <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       {ICONS[k]}
                     </svg>
                     {label(k)}
-                  </Link>
+                  </NavLink>
                 </li>
               );
             })}
@@ -125,5 +139,21 @@ export function BottomNav({ wallet, grades }: { wallet: boolean; grades: boolean
         </div>
       </nav>
     </>
+  );
+}
+
+/** Lien interne (navigation de l'app) ou adresse mailto: (Aide, ouvre l'app d'email). */
+function NavLink({ href, active, className, children }: { href: string; active: boolean; className: string; children: React.ReactNode }) {
+  if (href.startsWith("mailto:")) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} aria-current={active ? "page" : undefined} className={className}>
+      {children}
+    </Link>
   );
 }

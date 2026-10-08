@@ -2,15 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { flushSync } from "react-dom";
-import { type AccountState, continueWithPlan, continueWithProvider, previewArc, sendAccountCode, verifyAccountCode } from "@/app/actions/onboarding";
+import { continueWithGoogle, continueWithPlan, previewArc } from "@/app/actions/onboarding";
+import { GoogleLabel, googleButtonClass } from "@/components/GoogleButton";
 import { Hand, HandArrow } from "@/components/Hand";
 import { useI18n } from "@/components/I18nProvider";
 import { Logo } from "@/components/Logo";
-import { OAUTH_PROVIDERS, type OAuthProvider, oauthButtonClass, OrDivider, ProviderLabel } from "@/components/OAuthButtons";
 import { PlanPicker } from "@/components/PlanPicker";
-import { FormMessage, SubmitButton } from "@/components/SubmitButton";
+import { FormMessage } from "@/components/SubmitButton";
 import { addDays, type ArcAnswers, BUSINESS_TYPES, COMMITMENT_KEYS, nextMonday, SCHOOLS } from "@/lib/answers";
 import type { Artwork } from "@/lib/art";
 import { fmt, formatDay, formatMoney, formatNumber, formatTime } from "@/lib/i18n/format";
@@ -271,19 +271,12 @@ function Building({ ready, steps, onDone }: { ready: boolean; steps: string[]; o
   );
 }
 
-const accountInitial: AccountState = { step: "email", email: "", message: null };
-
-/** Visiteur : email puis code, sur le même écran. Les réponses partent avec l'email. */
+/** Visiteur : un toucher sur Google. Les réponses partent dans un cookie et sont rangées en base au retour. */
 function AccountStep({ answers, plan, interval, price, onBack }: { answers: string; plan: PlanId; interval: Interval; price: number; onBack: () => void }) {
   const { m, locale } = useI18n();
   const t = m.quiz.account;
-  const [sent, sendAction] = useActionState(sendAccountCode, accountInitial);
-  const [checked, verifyAction] = useActionState(verifyAccountCode, accountInitial);
-  const [dismissed, setDismissed] = useState<AccountState | null>(null);
-  const [oauthPending, startOauth] = useTransition();
-  const [oauthChoice, setOauthChoice] = useState<OAuthProvider | null>(null);
-  const [oauthError, setOauthError] = useState<string | null>(null);
-  const codeStep = sent.step === "code" && sent !== dismissed;
+  const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="flex flex-1 flex-col justify-center py-10">
@@ -296,74 +289,23 @@ function AccountStep({ answers, plan, interval, price, onBack }: { answers: stri
         <span>{m.game.plans.name[plan]}</span>
         <span className="font-serif text-2xl">{fmt(m.game.plans.price[interval], { price: formatMoney(price, locale) })}</span>
       </div>
-
-      {!codeStep && OAUTH_PROVIDERS.length ? (
-        <div className="mt-8 animate-rise space-y-3 [animation-delay:260ms]">
-          {OAUTH_PROVIDERS.map((provider) => (
-            <button
-              key={provider}
-              type="button"
-              disabled={oauthPending}
-              onClick={() => {
-                setOauthChoice(provider);
-                startOauth(async () => {
-                  const r = await continueWithProvider(provider, answers, plan, interval);
-                  if (r?.error) setOauthError(r.error);
-                });
-              }}
-              className={oauthButtonClass(provider)}
-            >
-              {oauthPending && oauthChoice === provider ? m.common.actions.redirecting : <ProviderLabel provider={provider} />}
-            </button>
-          ))}
-          <FormMessage message={oauthError} />
-          <div className="pt-3">
-            <OrDivider />
-          </div>
-        </div>
-      ) : null}
-      {!codeStep ? (
-        <form action={sendAction} className="mt-8 animate-rise space-y-4 [animation-delay:260ms]">
-          <input type="hidden" name="answers" value={answers} />
-          <input type="hidden" name="plan" value={plan} />
-          <input type="hidden" name="interval" value={interval} />
-          <label className="block">
-            <span className="text-sm text-mute">{t.email}</span>
-            <input name="email" type="email" required autoComplete="email" inputMode="email" defaultValue={sent.email} placeholder={t.emailPlaceholder} className={`${input} mt-2`} />
-          </label>
-          <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.sending}>
-            {t.sendCode}
-          </SubmitButton>
-          <FormMessage message={sent.message} />
-        </form>
-      ) : (
-        <form action={verifyAction} className="mt-8 animate-step space-y-4">
-          <input type="hidden" name="email" value={sent.email} />
-          <p className="text-sm text-mute">{fmt(t.sent, { email: sent.email })}</p>
-          <label className="block">
-            <span className="text-sm text-mute">{t.code}</span>
-            <input
-              name="token"
-              required
-              autoFocus
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              pattern="[0-9 ]{6,12}"
-              maxLength={12}
-              placeholder="123456"
-              className={`${input} mt-2 font-serif text-3xl tracking-[0.3em]`}
-            />
-          </label>
-          <SubmitButton className={btnPrimary} pendingLabel={t.verifying}>
-            {m.common.actions.continue}
-          </SubmitButton>
-          <FormMessage message={checked.message} />
-          <p className="text-xs text-mute">{t.spam}</p>
-          <button type="button" onClick={() => setDismissed(sent)} className={btnLink}>
-            {t.change}
-          </button>
-        </form>
-      )}
+      <div className="mt-8 animate-rise space-y-3 [animation-delay:260ms]">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              const r = await continueWithGoogle(answers, plan, interval);
+              if (r?.error) setError(r.error);
+            })
+          }
+          className={googleButtonClass}
+        >
+          {pending ? m.common.actions.redirecting : <GoogleLabel />}
+        </button>
+        <FormMessage message={error} />
+        <p className="text-xs text-mute">{t.privacy}</p>
+      </div>
       <button type="button" onClick={onBack} className={`${btnLink} mt-8 self-start`}>
         {t.backToPlans}
       </button>

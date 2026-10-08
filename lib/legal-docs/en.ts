@@ -29,7 +29,7 @@ export const en: LegalSet = {
 
   cgu: {
     title: "Terms of use",
-    updated: "Effective 8 October 2026.",
+    updated: "Effective 9 October 2026.",
     blocks: [
       {
         p: "These terms govern the use of the Nonante website and app, published by {name}, {address} (contact: {email}). Payment terms are in the [terms of sale](/legal/cgv), data processing in the [privacy policy](/legal/confidentialite).",
@@ -42,7 +42,7 @@ export const en: LegalSet = {
       {
         ul: [
           "Nonante is for adults only (18 or older).",
-          "Accounts are created with an email address, without a password (a sign-in link and code are sent each time), or with an Apple or Google account. You are responsible for access to your inbox and to those accounts.",
+          "Accounts are created with a Google account, with no Nonante-specific password. You are responsible for access to your Google account.",
           "One account per person. Disposable email addresses are not accepted.",
           "Your username and profile photo must not impersonate anyone, nor be insulting, discriminatory, sexual or unlawful.",
         ],
@@ -177,14 +177,14 @@ export const en: LegalSet = {
 
   privacy: {
     title: "Privacy",
-    updated: "Effective 8 October 2026.",
+    updated: "Effective 9 October 2026.",
     blocks: [
       { h2: "Data controller" },
       { p: "{name}, {address}. For any question about your data: {email}." },
       { h2: "What is collected, and why" },
       {
         ul: [
-          "Your email address: to sign you in and send you service messages. If you sign in with Apple or Google, Nonante receives that account's email address (or the relay address provided by Apple), nothing else.",
+          "Your email address: to sign you in and send you service messages. Sign-in goes through Google: Nonante receives your Google account's email address, name and profile picture, nothing else.",
           "Your username, year of birth (to check you are 18), profile photo and bio if you add them.",
           "Your language and country (derived from your connection, at country level only): to show the app in your language and the leaderboard by country.",
           "Your questionnaire answers (profile, business, school, goal, weak points, rhythm, sport, day 1): they build your arc. If you give them before having an account, they are kept with your email for 3 days at most, while you sign in, then deleted.",
@@ -220,7 +220,7 @@ export const en: LegalSet = {
           "Vercel: website hosting (United States).",
           "Stripe: payment.",
           "Resend: sending emails, if enabled.",
-          "Apple and Google: sign-in, if you choose to sign in with them.",
+          "Google: sign-in to your account.",
           "Your browser's notification services (Apple, Google, Mozilla, Microsoft), if you turn on notifications.",
         ],
       },
@@ -238,7 +238,7 @@ export const en: LegalSet = {
       },
       { h2: "Cookies" },
       {
-        p: "Nonante uses no advertising and no third-party tracking. Only necessary cookies, Nonante's own and never shared: your sign-in session; your language, if you choose it; the source of your visit, for 30 days; and, for one hour at most, your questionnaire answers while you sign in with Apple or Google.",
+        p: "Nonante uses no advertising and no third-party tracking. Only necessary cookies, Nonante's own and never shared: your sign-in session; your language, if you choose it; the source of your visit, for 30 days; and, for one hour at most, your questionnaire answers while you sign in with Google.",
       },
       { h2: "Your rights" },
       {

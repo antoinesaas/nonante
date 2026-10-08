@@ -10,6 +10,8 @@ export const common = {
     leaderboard: "Classement",
     wallet: "Portefeuille",
     profile: "Profil",
+    help: "Aide",
+    helpSubject: "Aide Nonante",
   },
   actions: {
     save: "Enregistrer",
@@ -66,5 +68,11 @@ export const common = {
   quoteTranslated: " (trad.)",
   errorPage: { title: "Un problème est survenu.", text: "Réessaie dans un instant." },
   notFound: { title: "Cette page n'existe pas.", back: "Retour à l'accueil" },
-  oauth: { google: "Continuer avec Google", apple: "Continuer avec Apple", or: "ou avec ton email" },
+  share: {
+    profile: "Partager mon profil",
+    copied: "Lien copié",
+    text: "Je relève le défi Nonante : 90 jours, zéro excuse. Voici ma carte de joueur. Avec mon code {code}, tu as −20 % sur ton premier arc.",
+    private: "Ton profil est privé : coche « Profil public » dans les réglages pour le partager.",
+  },
+  oauth: { google: "Continuer avec Google" },
 };

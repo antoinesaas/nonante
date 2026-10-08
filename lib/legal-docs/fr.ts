@@ -31,7 +31,7 @@ export const fr: LegalSet = {
 
   cgu: {
     title: "Conditions générales d'utilisation",
-    updated: "En vigueur au 8 octobre 2026.",
+    updated: "En vigueur au 9 octobre 2026.",
     blocks: [
       {
         p: "Ces conditions encadrent l'utilisation du site et de l'application Nonante, édités par {name}, {address} (contact : {email}). Les conditions de paiement sont dans les [conditions générales de vente](/legal/cgv), le traitement des données dans la [politique de confidentialité](/legal/confidentialite).",
@@ -44,7 +44,7 @@ export const fr: LegalSet = {
       {
         ul: [
           "Nonante est réservé aux personnes majeures (18 ans ou plus).",
-          "Le compte se crée avec une adresse email, sans mot de passe (un lien et un code de connexion sont envoyés à chaque connexion), ou avec un compte Apple ou Google. Tu es responsable de l'accès à ta boîte email et à ces comptes.",
+          "Le compte se crée avec un compte Google, sans mot de passe propre à Nonante. Tu es responsable de l'accès à ton compte Google.",
           "Un compte par personne. Les adresses email jetables ne sont pas acceptées.",
           "Ton pseudo et ta photo de profil ne doivent ni usurper l'identité de quelqu'un, ni être injurieux, discriminatoires, sexuels ou contraires à la loi.",
         ],
@@ -179,14 +179,14 @@ export const fr: LegalSet = {
 
   privacy: {
     title: "Confidentialité",
-    updated: "En vigueur au 8 octobre 2026.",
+    updated: "En vigueur au 9 octobre 2026.",
     blocks: [
       { h2: "Responsable du traitement" },
       { p: "{name}, {address}. Pour toute question sur tes données : {email}." },
       { h2: "Ce qui est collecté, et pourquoi" },
       {
         ul: [
-          "Ton adresse email : pour te connecter et t'envoyer les messages liés au service. Si tu te connectes avec Apple ou Google, Nonante reçoit l'adresse email de ce compte (ou l'adresse relais fournie par Apple), rien d'autre.",
+          "Ton adresse email : pour te connecter et t'envoyer les messages liés au service. La connexion passe par Google : Nonante reçoit l'adresse email de ton compte Google, ton nom et ta photo de profil Google, rien d'autre.",
           "Ton pseudo, ton année de naissance (vérifier que tu as 18 ans), ta photo de profil et ta bio si tu les ajoutes.",
           "Ta langue et ton pays (déduit de ta connexion, au niveau du pays seulement) : pour afficher l'app dans ta langue et le classement par pays.",
           "Tes réponses au questionnaire (profil, activité, école, objectif, points faibles, rythme, sport, jour 1) : elles construisent ton arc. Si tu les donnes avant d'avoir un compte, elles sont gardées avec ton email au plus 3 jours, le temps que tu te connectes, puis supprimées.",
@@ -222,7 +222,7 @@ export const fr: LegalSet = {
           "Vercel : hébergement du site (États-Unis).",
           "Stripe : paiement.",
           "Resend : envoi d'emails, s'il est activé.",
-          "Apple et Google : connexion, si tu choisis de te connecter avec eux.",
+          "Google : connexion à ton compte.",
           "Les services de notification de ton navigateur (Apple, Google, Mozilla, Microsoft), si tu actives les notifications.",
         ],
       },
@@ -240,7 +240,7 @@ export const fr: LegalSet = {
       },
       { h2: "Cookies" },
       {
-        p: "Nonante n'utilise ni publicité ni pistage tiers. Seulement des cookies nécessaires, propres à Nonante et jamais partagés : ta session de connexion ; ta langue, si tu la choisis ; la source de ta visite, pendant 30 jours ; et, pendant une heure au plus, tes réponses au questionnaire le temps d'une connexion avec Apple ou Google.",
+        p: "Nonante n'utilise ni publicité ni pistage tiers. Seulement des cookies nécessaires, propres à Nonante et jamais partagés : ta session de connexion ; ta langue, si tu la choisis ; la source de ta visite, pendant 30 jours ; et, pendant une heure au plus, tes réponses au questionnaire le temps de ta connexion avec Google.",
       },
       { h2: "Tes droits" },
       {

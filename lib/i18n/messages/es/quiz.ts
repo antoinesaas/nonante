@@ -188,15 +188,8 @@ export const quiz: typeof fr = {
   account: {
     hand: "última recta",
     title: "Guarda tu arco.",
-    text: "Para encontrar tu arco en todos tus dispositivos. Ninguna contraseña que recordar.",
-    email: "Tu email",
-    emailPlaceholder: "tu@email.com",
-    sendCode: "Recibir mi código",
-    sent: "Email enviado a {email}. Escribe el código recibido o toca el enlace del email: tu arco te esperará.",
-    spam: "¿No te llega? Mira en spam o en promociones, el email puede tardar un minuto.",
-    code: "Código de 6 cifras",
-    verifying: "Comprobando…",
-    change: "Cambiar de dirección o reenviar el email",
+    text: "Para encontrar tu arco en todos tus dispositivos. Un toque, sin contraseña.",
+    privacy: "Nonante solo recibe tu email, tu nombre y tu foto de Google. Nunca se publica nada en tu nombre.",
     backToPlans: "Volver a los planes",
   },
   suite: {
