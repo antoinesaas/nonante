@@ -1,138 +1,20 @@
 import type { Metadata } from "next";
-import { EDITOR } from "@/lib/legal";
+import { LegalArticle } from "@/components/LegalArticle";
+import { isLocale } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
+import { legalDocs } from "@/lib/legal-docs";
 
-export const metadata: Metadata = { title: "Conditions générales de vente" };
+async function pick(lang?: string | string[]) {
+  const locale = lang === "fr" ? "fr" : await getLocale();
+  return legalDocs(isLocale(locale) ? locale : "fr");
+}
 
-const mail = <a href={`mailto:${EDITOR.email}`} className="underline underline-offset-4">{EDITOR.email}</a>;
+export async function generateMetadata({ searchParams }: PageProps<"/legal/cgv">): Promise<Metadata> {
+  const docs = await pick((await searchParams).lang);
+  return { title: docs.cgv.title };
+}
 
-export default function CgvPage() {
-  return (
-    <>
-      <h1>Conditions générales de vente</h1>
-      <p className="text-sm text-mute">En vigueur au 7 octobre 2026.</p>
-
-      <h2>1. Vendeur</h2>
-      <p>
-        {EDITOR.name}, {EDITOR.address}. Contact : {mail}.
-      </p>
-
-      <h2>2. Le service</h2>
-      <p>
-        Nonante est une application web qui accompagne un arc de 90 jours : un objectif, des principes « si… alors… »
-        personnalisés, des preuves quotidiennes (minuteur, comptage de répétitions à la caméra, code de réveil, photo, capture
-        d&apos;écran, lien), des statistiques, un classement et des escouades. Le service est accessible depuis un navigateur,
-        sur téléphone ou ordinateur.
-      </p>
-
-      <h2>3. Plans et prix</h2>
-      <ul>
-        <li>
-          Arc 90 jours : 19,99 € en un seul paiement, pour un arc de 90 jours (à partir du jour 1 choisi). Pas
-          d&apos;abonnement : aucun prélèvement n&apos;a lieu ensuite. Chaque nouvel arc se paie au moment de le lancer.
-        </li>
-        <li>Pro : abonnement à 14,99 € par mois, ou 99,99 € par an, qui couvre tous les arcs tant qu&apos;il est actif.</li>
-        <li>Fondateur : 199 € en un seul paiement, accès au plan Pro sans limite de durée, dans la limite de 100 places.</li>
-      </ul>
-      <p>
-        Les prix sont en euros, toutes taxes comprises. Le contenu de chaque plan est décrit sur la page Plans au moment de la
-        commande. Un changement de prix ne s&apos;applique jamais à un arc ou à une période déjà payés ; pour un abonnement en
-        cours, il est annoncé au moins 30 jours à l&apos;avance et tu peux résilier avant qu&apos;il s&apos;applique.
-      </p>
-      <p>
-        L&apos;Arc 90 jours couvre l&apos;arc pour lequel il a été payé, jusqu&apos;à son 90e jour ou jusqu&apos;à ce qu&apos;il
-        soit lâché selon les règles du jeu (7 jours blancs d&apos;affilée). Payé sans arc en construction, il est gardé en
-        crédit et rattaché à ton prochain arc.
-      </p>
-
-      <h2>4. Commande et paiement</h2>
-      <p>
-        Le paiement est traité par Stripe. Nonante n&apos;a jamais accès à tes numéros de carte. L&apos;abonnement Pro mensuel
-        ou annuel se renouvelle automatiquement à la fin de chaque période, au prix en vigueur, jusqu&apos;à résiliation.
-        L&apos;Arc 90 jours et le plan Fondateur ne se renouvellent jamais. Une facture est disponible pour chaque paiement
-        dans ton espace de paiement (Profil, puis « Mes factures » ou « Gérer mon abonnement »).
-      </p>
-
-      <h2>5. Résiliation de l&apos;abonnement Pro</h2>
-      <p>
-        Tu peux résilier Pro à tout moment, en un clic, depuis ton profil. La résiliation prend effet à la fin de la période déjà
-        payée : ton accès reste ouvert jusque-là, et aucun nouveau prélèvement n&apos;a lieu. Les périodes entamées ne sont pas
-        remboursées, sauf exercice du droit de rétractation (article 6).
-      </p>
-      <p>
-        Sans abonnement actif, ton arc continue de tourner mais plus aucune preuve ne peut être validée : les jours deviennent
-        blancs, selon les règles du jeu.
-      </p>
-
-      <h2>6. Droit de rétractation</h2>
-      <p>
-        Tu disposes de 14 jours à compter de ton achat (Arc 90 jours, Pro ou Fondateur) pour te rétracter, sans avoir à te justifier (articles L221-18 et
-        suivants du Code de la consommation). Au moment du paiement, tu demandes expressément que le service commence tout de
-        suite. Si tu te rétractes dans ces 14 jours, tu paies seulement la part du service déjà fournie jusqu&apos;à ta
-        rétractation, au prorata (article L221-25), et le reste t&apos;est remboursé dans les 14 jours, par le même moyen de
-        paiement.
-      </p>
-      <p>
-        Pour te rétracter, envoie une déclaration claire à {mail}, par exemple avec le modèle ci-dessous.
-      </p>
-      <blockquote className="border-l border-line pl-4 text-sm text-mute">
-        À l&apos;attention de {EDITOR.name}, {EDITOR.address}, {EDITOR.email} : je vous notifie par la présente ma rétractation du
-        contrat portant sur le service Nonante ci-dessous. Plan : … Acheté le : … Nom et adresse email du compte : …
-        Date : …
-      </blockquote>
-
-      <h2>7. Remises</h2>
-      <ul>
-        <li>
-          Parrainage : le lien ou le code d&apos;un joueur donne −20 % sur le premier paiement d&apos;un nouveau joueur ; le
-          parrain reçoit à son tour −20 % sur son prochain Arc 90 jours, ou sur sa prochaine facture Pro s&apos;il est abonné.
-          Une remise par filleul, une seule remise par paiement.
-        </li>
-        <li>
-          Fidélité : un arc tenu donne −50 % sur le prochain Arc 90 jours, ou sur la prochaine facture de l&apos;abonnement Pro,
-          une seule fois par arc.
-        </li>
-      </ul>
-      <p>
-        Ces remises sont identiques pour tous, n&apos;ont aucune valeur en argent et ne sont jamais liées au classement.
-      </p>
-
-      <h2>8. Classement et jeu</h2>
-      <p>
-        Le classement, les niveaux et les succès ne rapportent que des points, des titres et des fonds d&apos;écran pour la carte
-        de joueur. Aucun gain en argent ni en lot n&apos;est attribué. Le portefeuille est un suivi personnel de ce que tu gagnes
-        avec ton propre projet : Nonante ne verse ni ne garde d&apos;argent.
-      </p>
-
-      <h2>9. Règles de conduite</h2>
-      <p>
-        Les preuves doivent être réelles. Une preuve refusée lors d&apos;un contrôle entraîne les pénalités prévues par les
-        règles du jeu. Un comportement frauduleux, un pseudo ou une photo de profil offensants peuvent entraîner le masquage du
-        profil ou la fermeture du compte.
-      </p>
-
-      <h2>10. Santé</h2>
-      <p>
-        Les principes sportifs (pompes, squats, course…) se pratiquent sous ta responsabilité, selon ta condition physique. En
-        cas de doute, demande l&apos;avis d&apos;un médecin. Nonante ne fournit aucun conseil médical.
-      </p>
-
-      <h2>11. Responsabilité</h2>
-      <p>
-        Nonante s&apos;engage à fournir le service avec soin et à le rendre disponible le mieux possible. Des interruptions
-        ponctuelles peuvent survenir pour maintenance. La responsabilité de l&apos;éditeur ne peut être engagée que pour un
-        dommage direct et prouvé, dans la limite des sommes payées au cours des 12 derniers mois.
-      </p>
-
-      <h2>12. Données personnelles</h2>
-      <p>Le traitement de tes données est décrit dans la politique de confidentialité.</p>
-
-      <h2>13. Litiges</h2>
-      <p>
-        Ces conditions sont soumises au droit français. En cas de difficulté, écris d&apos;abord à {mail} : on cherche une
-        solution à l&apos;amiable. Tu peux aussi recourir gratuitement à un médiateur de la consommation (articles L611-1 et
-        suivants du Code de la consommation) ; ses coordonnées te sont communiquées sur simple demande. À défaut d&apos;accord, les
-        tribunaux français sont compétents.
-      </p>
-    </>
-  );
+export default async function CgvPage({ searchParams }: PageProps<"/legal/cgv">) {
+  const docs = await pick((await searchParams).lang);
+  return <LegalArticle doc={docs.cgv} notice={docs.notice} frenchHref="/legal/cgv" />;
 }

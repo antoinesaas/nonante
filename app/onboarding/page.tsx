@@ -11,19 +11,20 @@ import { referralPromo } from "@/lib/checkout";
 import { parseUtm, UTM_COOKIE } from "@/lib/utm";
 import { todayParis } from "@/lib/dates";
 import { faqItems } from "@/lib/faq";
+import { getI18n } from "@/lib/i18n/server";
 import type { PlanId, PublicPlans, SocialProof as Proof } from "@/lib/types";
 
-export const metadata: Metadata = {
-  title: "Construis ton arc",
-  description: "Deux minutes de questions, et Nonante construit ton arc de 90 jours : ton objectif, tes principes, ton jour 1.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.quiz.meta.title, description: m.quiz.meta.description };
+}
 
 // Les objections qui arrivent au moment de payer.
 const OBJECTIONS = ["payant", "renouvellement", "choisir", "temps", "triche", "retractation"];
 
 export default async function OnboardingPage({ searchParams }: PageProps<"/onboarding">) {
   const params = await searchParams;
-  const { supabase, user } = await getUser();
+  const [{ supabase, user }, { m }] = await Promise.all([getUser(), getI18n()]);
   const today = todayParis();
 
   const [{ data: plans }, { data: proof }, { data: starts }] = await Promise.all([
@@ -70,11 +71,11 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
       currentPlan={currentPlan}
       initialPlan={initialPlan}
       arts={IMAGES.onboarding.map((slug) => getArt(slug))}
-      templates={socialProof?.templates ?? 37}
+      templates={socialProof?.templates ?? 84}
       invitedBy={friend?.pseudo ?? null}
       founderSlot={<Founder compact />}
       proofSlot={<SocialProof proof={socialProof} compact />}
-      faqSlot={<Faq items={faqItems(OBJECTIONS)} />}
+      faqSlot={<Faq items={faqItems(OBJECTIONS, m)} />}
     />
   );
 }

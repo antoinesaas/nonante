@@ -2,12 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { getDayDetail } from "@/app/actions/proofs";
-import { calendarGrid, DAY_LABEL, Dot } from "@/components/DotCalendar";
-import { formatDayFr } from "@/lib/dates";
-import { signed } from "@/lib/proofs";
+import { calendarGrid, Dot } from "@/components/DotCalendar";
+import { useI18n } from "@/components/I18nProvider";
+import { fmt, formatDay, signed } from "@/lib/i18n/format";
 import type { CalendarDay, DayDetail } from "@/lib/types";
 
 export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
+  const { m, locale } = useI18n();
+  const c = m.game.calendar;
   const [selected, setSelected] = useState<number | null>(null);
   const [detail, setDetail] = useState<DayDetail | null>(null);
   const [pending, startTransition] = useTransition();
@@ -31,7 +33,7 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
             <button
               type="button"
               onClick={() => open(i)}
-              aria-label={`Jour ${i + 1}, ${formatDayFr(day.day, { year: false })} : ${DAY_LABEL[day.status]}`}
+              aria-label={fmt(c.dayAria, { n: i + 1, date: formatDay(day.day, locale, { year: false }), status: m.game.dayStatus[day.status] })}
               aria-pressed={selected === i}
               className="-m-1.5 block p-1.5"
             >
@@ -45,14 +47,14 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
         <div className="mt-6 border border-line bg-surface p-4 text-sm" aria-live="polite">
           <div className="flex items-baseline justify-between gap-4">
             <p>
-              Jour {selected! + 1} · {formatDayFr(current.day, { weekday: true, year: false })}
+              {fmt(c.day, { n: selected! + 1, date: formatDay(current.day, locale, { weekday: true, year: false }) })}
             </p>
             <button type="button" onClick={() => setSelected(null)} className="text-mute hover:text-paper">
-              Fermer
+              {m.common.actions.close}
             </button>
           </div>
-          <p className="mt-1 text-mute">{DAY_LABEL[current.status]}</p>
-          {pending ? <p className="mt-3 text-mute">Chargement…</p> : null}
+          <p className="mt-1 text-mute">{m.game.dayStatus[current.status]}</p>
+          {pending ? <p className="mt-3 text-mute">{m.common.actions.loading}</p> : null}
           {detail ? (
             <>
               <ul className="mt-4 space-y-2">
@@ -62,7 +64,7 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
                     <span className="shrink-0 tabular-nums">
                       {p.validation
                         ? p.validation.status === "rejected"
-                          ? "refusée"
+                          ? c.refused
                           : signed(p.validation.points)
                         : p.miss
                           ? signed(p.miss.points)
@@ -72,7 +74,7 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
                 ))}
               </ul>
               <p className="mt-4 border-t border-line pt-3">
-                Total du jour : <span className="tabular-nums">{signed(detail.points)}</span>
+                {c.total} <span className="tabular-nums">{signed(detail.points)}</span>
               </p>
             </>
           ) : null}

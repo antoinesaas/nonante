@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { type ProofResult, submitPhoto } from "@/app/actions/proofs";
+import { useI18n } from "@/components/I18nProvider";
 import { compressImage } from "@/lib/compress-image";
-import { btnLink, btnPrimary, btnSecondary } from "@/lib/ui";
+import { btnPrimary, btnSecondary } from "@/lib/ui";
 
 type Props = {
   kind: "principle" | "audit" | "challenge" | "arc_avant" | "arc_apres";
@@ -25,6 +26,8 @@ const MAX_SIDE = 1600;
  * Réduite à 1600 px sur le téléphone ; le serveur vérifie, ré-encode et retire les métadonnées.
  */
 export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", facing = "environment", backHref = "/app" }: Props) {
+  const { m } = useI18n();
+  const t = m.app.proofs;
   const [phase, setPhase] = useState<"intro" | "camera" | "preview" | "denied">("intro");
   const [preview, setPreview] = useState<string | null>(null);
   const [state, action, pending] = useActionState(submitPhoto, initial);
@@ -95,10 +98,10 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
   if (state.ok) {
     return (
       <div className="space-y-4 text-center">
-        <p className="font-serif text-4xl">Envoyé.</p>
+        <p className="font-serif text-4xl">{t.sent}</p>
         <p className="text-mute">{state.message}</p>
-        <Link href={backHref} className={btnPrimary}>
-          Retour
+        <Link href={backHref} replace className={btnPrimary}>
+          {m.app.timer.finish}
         </Link>
       </div>
     );
@@ -106,27 +109,27 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
 
   return (
     <div className="space-y-5">
-      <h1 className="font-serif text-4xl leading-tight">{title}</h1>
+      <h1 className="font-serif text-4xl leading-tight text-balance">{title}</h1>
       <p className="text-sm leading-relaxed text-mute">{detail}</p>
 
       {phase === "camera" ? (
-        <div className="aspect-[3/4] w-full overflow-hidden bg-surface">
+        <div className="aspect-[3/4] w-full animate-fade overflow-hidden rounded-xs bg-surface">
           <video ref={video} playsInline muted className="h-full w-full object-cover" />
         </div>
       ) : null}
       {phase === "preview" && preview ? (
         // eslint-disable-next-line @next/next/no-img-element -- aperçu local (blob:), jamais envoyé ailleurs qu'au serveur
-        <img src={preview} alt="Aperçu de la photo" className="w-full" />
+        <img src={preview} alt={t.preview} className="w-full animate-fade rounded-xs" />
       ) : null}
 
       {phase === "intro" && mode === "camera" ? (
         <button type="button" onClick={openCamera} className={btnPrimary}>
-          Ouvrir la caméra
+          {t.openCamera}
         </button>
       ) : null}
       {phase === "intro" && mode === "file" ? (
         <label className={`${btnPrimary} cursor-pointer`}>
-          Choisir une capture d&apos;écran
+          {t.chooseCapture}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
@@ -137,7 +140,7 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
       ) : null}
       {phase === "camera" ? (
         <button type="button" onClick={capture} className={btnPrimary}>
-          Prendre la photo
+          {t.takePhoto}
         </button>
       ) : null}
       {phase === "preview" ? (
@@ -145,7 +148,7 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
           <input type="hidden" name="kind" value={kind} />
           <input type="hidden" name="targetId" value={targetId} />
           <button type="submit" disabled={pending} className={btnPrimary}>
-            {pending ? "Envoi…" : "Envoyer cette photo"}
+            {pending ? m.common.actions.sending : t.sendPhoto}
           </button>
           <button
             type="button"
@@ -155,21 +158,18 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
               if (mode === "camera") void openCamera();
               else setPhase("intro");
             }}
-            className={btnSecondary}
+            className={`${btnSecondary} w-full`}
           >
-            {mode === "camera" ? "Reprendre" : "Choisir une autre"}
+            {mode === "camera" ? t.retake : t.chooseOther}
           </button>
         </form>
       ) : null}
-      {phase === "denied" ? <p role="alert">Caméra refusée. Autorise-la dans les réglages du navigateur pour prouver.</p> : null}
+      {phase === "denied" ? <p role="alert">{t.cameraDenied}</p> : null}
       {state.message ? (
         <p role="alert" className="text-sm">
           {state.message}
         </p>
       ) : null}
-      <Link href={backHref} className={btnLink}>
-        Retour
-      </Link>
     </div>
   );
 }

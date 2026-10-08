@@ -2,9 +2,11 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { sendEmail } from "@/lib/email";
 import { siteUrl } from "@/lib/env";
-import { plural } from "@/lib/proofs";
+import { INTL, type Locale } from "@/lib/i18n/config";
+import { fmt, signed } from "@/lib/i18n/format";
+import { getMessages } from "@/lib/i18n/messages";
 
-// Emails : texte sobre, une seule action par email, lien de désinscription des rappels.
+// Emails : texte sobre, une seule action par email, lien de désinscription des rappels, dans la langue du joueur.
 
 function unsubscribeToken(userId: string): string {
   return createHmac("sha256", process.env.CRON_SECRET ?? "nonante-dev").update(`unsubscribe:${userId}`).digest("hex").slice(0, 32);
@@ -20,55 +22,38 @@ export function verifyUnsubscribe(userId: string, token: string): boolean {
   return expected.length === given.length && timingSafeEqual(expected, given);
 }
 
-const signature = ["", "Nonante"];
-const withUnsubscribe = (userId: string) => [...signature, "", `Ne plus recevoir les rappels : ${unsubscribeUrl(userId)}`];
+function compose(locale: Locale, lines: string[], userId?: string): string {
+  const e = getMessages(locale).emails;
+  const footer = ["", e.signature, ...(userId ? ["", fmt(e.unsubscribe, { url: unsubscribeUrl(userId) })] : [])];
+  return [...lines, ...footer].join("\n");
+}
 
-export function sendWelcome(to: string) {
+export function sendWelcome(to: string, locale: Locale) {
+  const e = getMessages(locale).emails.welcome;
+  return sendEmail({ to, subject: e.subject, text: compose(locale, [e.body, "", `${siteUrl()}/app`]) });
+}
+
+export function sendReminder(to: string, userId: string, remaining: number, points: number, locale: Locale) {
+  const e = getMessages(locale).emails.reminder;
   return sendEmail({
     to,
-    subject: "Ton arc est lancé.",
-    text: [
-      "Ton abonnement est actif. Ton arc de 90 jours est lancé.",
-      "",
-      "Tes principes t'attendent. Rien ne se valide sans preuve.",
-      "",
-      `${siteUrl()}/app`,
-      ...signature,
-    ].join("\n"),
+    subject: fmt(e.subject, { n: remaining }, locale),
+    text: compose(locale, [fmt(e.body, { n: remaining, points }, locale), "", `${siteUrl()}/app`], userId),
   });
 }
 
-export function sendReminder(to: string, userId: string, remaining: number, points: number) {
-  return sendEmail({
-    to,
-    subject: `Il te reste ${plural(remaining, "principe", "principes")}.`,
-    text: [
-      `Il te reste ${plural(remaining, "principe", "principes")} à prouver aujourd'hui. ${points} points en jeu.`,
-      "Minuit, heure de Paris : après, c'est trop tard.",
-      "",
-      `${siteUrl()}/app`,
-      ...withUnsubscribe(userId),
-    ].join("\n"),
-  });
+/** Texte de la notification du rappel du soir. */
+export function reminderPush(remaining: number, points: number, locale: Locale): string {
+  return fmt(getMessages(locale).emails.reminder.push, { n: remaining, points }, locale);
 }
 
-export function sendAuditRequest(to: string, auditId: string, dueAt: string, label: string | null) {
-  const due = new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "Europe/Paris",
-    weekday: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(dueAt));
+export function sendAuditRequest(to: string, auditId: string, dueAt: string, label: string | null, locale: Locale) {
+  const e = getMessages(locale).emails.audit;
+  const due = new Intl.DateTimeFormat(INTL[locale], { timeZone: "Europe/Paris", weekday: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(dueAt));
   return sendEmail({
     to,
-    subject: "Contrôle : envoie ta preuve.",
-    text: [
-      label ? `Ta validation « ${label} » est contrôlée.` : "Une de tes validations est contrôlée.",
-      `Envoie une photo de ta preuve avant ${due}. Sans réponse, la pénalité est lourde.`,
-      "",
-      `${siteUrl()}/app/controle/${auditId}`,
-      ...signature,
-    ].join("\n"),
+    subject: e.subject,
+    text: compose(locale, [label ? fmt(e.labelled, { label }) : e.generic, fmt(e.body, { due }), "", `${siteUrl()}/app/controle/${auditId}`]),
   });
 }
 
@@ -76,70 +61,45 @@ export function sendWeeklyRecap(
   to: string,
   userId: string,
   recap: { points: number; green: number; days: number; streak: number; level: number; ovr: number },
+  locale: Locale,
 ) {
+  const e = getMessages(locale).emails.weekly;
   return sendEmail({
     to,
-    subject: `Semaine écoulée : ${recap.green} jours verts sur ${recap.days}.`,
-    text: [
-      `${recap.points > 0 ? "+" : ""}${recap.points} points en 7 jours.`,
-      `${recap.green} jours verts sur ${recap.days}. Série en cours : ${plural(recap.streak, "jour", "jours")}.`,
-      `Niveau ${recap.level}, note globale ${recap.ovr}.`,
-      "",
-      "Le classement de la semaine repart de zéro aujourd'hui.",
-      "",
-      `${siteUrl()}/app`,
-      ...withUnsubscribe(userId),
-    ].join("\n"),
+    subject: fmt(e.subject, { green: recap.green, days: recap.days }),
+    text: compose(
+      locale,
+      [
+        fmt(e.points, { points: signed(recap.points) }),
+        fmt(e.days, { green: recap.green, days: recap.days, streak: recap.streak }, locale),
+        fmt(e.level, { level: recap.level, ovr: recap.ovr }),
+        "",
+        e.reset,
+        "",
+        `${siteUrl()}/app`,
+      ],
+      userId,
+    ),
   });
 }
 
 /** applied : remise posée sur l'abonnement Pro ; sinon elle attend le prochain Arc 90 jours. */
-export function sendLoyalty(to: string, applied: boolean) {
-  return sendEmail({
-    to,
-    subject: "Arc tenu.",
-    text: [
-      "Tu as tenu ton arc. 90 jours, prouvés.",
-      "",
-      applied
-        ? "Merci : ta prochaine facture est à −50 %. Rien à faire, la remise est déjà appliquée."
-        : "Merci : ton prochain Arc 90 jours est à −50 %. La remise s'applique toute seule au paiement.",
-      "",
-      `${siteUrl()}/app`,
-      ...signature,
-    ].join("\n"),
-  });
+export function sendLoyalty(to: string, applied: boolean, locale: Locale) {
+  const e = getMessages(locale).emails.loyalty;
+  return sendEmail({ to, subject: e.subject, text: compose(locale, [e.body, "", applied ? e.applied : e.pending, "", `${siteUrl()}/app`]) });
 }
 
-export function sendArcResult(to: string, green: number) {
-  return sendEmail({
-    to,
-    subject: "Ton arc est terminé.",
-    text: [
-      `Ton arc est terminé : ${plural(green, "jour vert", "jours verts")} sur 90.`,
-      "Il en fallait 75, sans plus de 3 jours non verts d'affilée.",
-      "",
-      "Le prochain arc commence quand tu veux.",
-      "",
-      `${siteUrl()}/app`,
-      ...signature,
-    ].join("\n"),
-  });
+export function sendArcResult(to: string, green: number, locale: Locale) {
+  const e = getMessages(locale).emails.result;
+  return sendEmail({ to, subject: e.subject, text: compose(locale, [fmt(e.body, { green }, locale), "", `${siteUrl()}/app`]) });
 }
 
 /** Parrainage : un ami a payé. onSubscription : remise posée sur la facture Pro, sinon gardée pour le prochain arc. */
-export function sendReferralReward(to: string, onSubscription: boolean) {
+export function sendReferralReward(to: string, onSubscription: boolean, locale: Locale) {
+  const e = getMessages(locale).emails.referral;
   return sendEmail({
     to,
-    subject: "Quelqu'un a rejoint Nonante grâce à toi.",
-    text: [
-      "Ton code de parrainage a servi : ton ami a lancé son arc avec −20 %.",
-      onSubscription
-        ? "Toi aussi : −20 % sur ta prochaine facture Pro, déjà appliqués."
-        : "Toi aussi : −20 % sur ton prochain Arc 90 jours. La remise s'applique toute seule au paiement.",
-      "",
-      `${siteUrl()}/app/profil`,
-      ...signature,
-    ].join("\n"),
+    subject: e.subject,
+    text: compose(locale, [e.body, onSubscription ? e.subscription : e.nextArc, "", `${siteUrl()}/app/profil`]),
   });
 }

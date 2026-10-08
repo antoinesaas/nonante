@@ -70,7 +70,7 @@ une unité facultatifs. Affiché en haut du tableau de bord.
 ### Preuves
 | Type | Force | Comment |
 |---|---|---|
-| `session` | forte | Minuteur 25/50/90 min, battement toutes les 15 s, casse après 10 s hors écran ou 45 s sans battement |
+| `session` | forte | Minuteur 25/50/90 min, deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée |
 | `reps` | forte | Pompes ou squats comptés à la caméra (MediaPipe, sur l'appareil, aucune image envoyée) |
 | `reveil` | forte | Ouvrir l'app dans les 2 h 30 avant l'heure et recopier un code à 6 chiffres |
 | `photo` | faible | Photo prise dans l'app (pas la galerie) |
@@ -101,15 +101,17 @@ réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu prouvé + 
 - **Photo avant / après** : prise au jour 1, verrouillée, comparée au jour 90.
 - **Citation du jour** (auteurs du domaine public, traductions maison) sur le tableau de bord.
 
-### Portefeuille (Pro)
-On note chaque argent gagné grâce à son projet (montant, source, libellé), avec une capture en preuve.
+### Portefeuille (arcs business et Pro) et carnet de notes (arcs études et Pro)
+Modifié le 8 octobre 2026 : le portefeuille est inclus dans l'Arc 90 jours quand le profil est business (ou les deux) ;
+le carnet de notes (notes sur 20 pondérées, moyenne par matière et par semaine, capture en preuve, +10 par jour) dans
+les arcs études (ou les deux). On note chaque argent gagné grâce à son projet (montant, source, libellé), avec une capture en preuve.
 Revenus prouvés = comptés dans la stat Business, les succès (1 €, 100 €, 1 000 €, 10 000 €) et l'objectif de
 revenu. Sans capture : noté mais « non prouvé ». Visible sur le profil public seulement si l'utilisateur le
 choisit. C'est un suivi personnel, jamais un gain distribué par Nonante.
 
 ### Social
-- **Classement** : Semaine (depuis lundi, tout le monde repart à zéro), Général (points cumulés), filtre
-  catégorie, onglet par escouade. Égalité : série, puis note globale.
+- **Classement** : Semaine (depuis lundi, tout le monde repart à zéro), Mois, Général (points cumulés), Monde ou
+  pays du joueur, filtre catégorie, onglet par escouade. Égalité : série, puis note globale.
 - **Escouades** : groupes rejoints par code (privés) ou publics, 50 membres max, 3 escouades max par
   personne. Création réservée à Pro. Escouades officielles avec départ collectif.
 - **Profil public** : photo, carte de joueur, stats, calendrier, succès, preuves refusées, objectif et
@@ -144,12 +146,17 @@ lancer. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jour
 
 ### Parcours du visiteur
 
-Landing → `/onboarding` (sans compte) : questions une par écran (profil, objectif, phrase, points faibles, écran
-« si… alors… », réveil, concentration, pompes, jour 1, engagement, pseudo) → écran de construction (vrai calcul
+Landing → `/onboarding` (sans compte) : questions une par écran (profil, activité si business, école si études,
+objectif, phrase, points faibles, écran « si… alors… », réveil, concentration, sport facultatif, jour 1, engagement,
+pseudo) → écran de construction (vrai calcul
 `preview_principles`) → résultat personnalisé (arc, 6 principes, stats, preuve sociale, plans, objections) → email
 et code (les réponses sont gardées dans `pending_arcs`, 3 jours max) → `/onboarding/suite` (âge, accès immédiat) →
 Stripe → `/app?paid=1`. Preuve sociale : seulement des chiffres réels (seuils) et des études publiées, jamais de faux
 avis.
+
+### Langues
+Français (source), anglais, allemand, espagnol : toute l'app, les emails, les notifications et les pages légales
+(la version française fait foi). Langue détectée (navigateur, puis pays), modifiable dans le pied de page et le profil.
 
 ## 6. Stack et sécurité
 

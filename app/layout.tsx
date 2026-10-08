@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Caveat, Instrument_Serif, Inter } from "next/font/google";
 import { connection } from "next/server";
+import { I18nProvider } from "@/components/I18nProvider";
+import { getI18n } from "@/lib/i18n/server";
 import "./globals.css";
 
 const inter = Inter({
@@ -25,24 +27,20 @@ const caveat = Caveat({
   display: "swap",
 });
 
-const description =
-  "Pour les étudiants et les entrepreneurs : un objectif, des principes construits pour toi, et chaque jour une preuve. 90 jours, zéro excuse.";
+const OG_LOCALE = { fr: "fr_FR", en: "en_GB", de: "de_DE", es: "es_ES" } as const;
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: { default: "Nonante · 90 jours. Zéro excuse.", template: "%s · Nonante" },
-  description,
-  applicationName: "Nonante",
-  appleWebApp: { capable: true, title: "Nonante", statusBarStyle: "black-translucent" },
-  icons: { apple: "/icons/apple-touch-icon.png" },
-  openGraph: {
-    title: "90 jours. Zéro excuse.",
-    description,
-    siteName: "Nonante",
-    locale: "fr_FR",
-    type: "website",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, m } = await getI18n();
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+    title: { default: `Nonante · ${m.common.tagline}`, template: "%s · Nonante" },
+    description: m.common.taglineLong,
+    applicationName: "Nonante",
+    appleWebApp: { capable: true, title: "Nonante", statusBarStyle: "black-translucent" },
+    icons: { apple: "/icons/apple-touch-icon.png" },
+    openGraph: { title: m.common.tagline, description: m.common.taglineLong, siteName: "Nonante", locale: OG_LOCALE[locale], type: "website" },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#0A0A0A",
@@ -52,10 +50,15 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Rendu à chaque requête : nécessaire pour la CSP à nonce (voir proxy.ts).
   await connection();
+  const { locale, m } = await getI18n();
 
   return (
-    <html lang="fr" className={`${inter.variable} ${instrumentSerif.variable} ${caveat.variable}`}>
-      <body className="min-h-dvh bg-ink font-sans text-paper antialiased">{children}</body>
+    <html lang={locale} className={`${inter.variable} ${instrumentSerif.variable} ${caveat.variable}`}>
+      <body className="min-h-dvh bg-ink font-sans text-paper antialiased">
+        <I18nProvider locale={locale} messages={m}>
+          {children}
+        </I18nProvider>
+      </body>
     </html>
   );
 }

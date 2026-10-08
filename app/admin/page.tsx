@@ -3,8 +3,11 @@ import { CompForm } from "@/app/admin/AdminForms";
 import { requireAdmin } from "@/lib/auth";
 import { formatDayFr } from "@/lib/dates";
 import { formatEuros } from "@/lib/money";
-import { PLAN_NAME } from "@/lib/plans";
+import { getMessages } from "@/lib/i18n/messages";
 import type { PlanId } from "@/lib/types";
+
+// L'administration reste en français.
+const PLAN_NAME: Record<string, string> = getMessages("fr").game.plans.name;
 
 type Overview = {
   subscribers: { plan: PlanId; interval: string; count: number }[];

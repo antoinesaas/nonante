@@ -5,12 +5,15 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getUser } from "@/lib/auth";
 import { type ActionResult, userMessage } from "@/lib/errors";
+import { getMessages } from "@/lib/i18n/messages";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Les fonctions admin vérifient elles-mêmes is_admin et la double authentification (aal2),
 // à partir du jeton de l'utilisateur. Chaque action est écrite dans audit_log.
 
 const Id = z.uuid();
+// L'administration reste en français.
+const FR = { m: getMessages("fr"), locale: "fr" as const };
 
 async function session() {
   const { supabase, user } = await getUser();
@@ -22,7 +25,7 @@ export async function reviewAudit(auditId: string, pass: boolean): Promise<Actio
   if (!Id.safeParse(auditId).success) return { ok: false, message: "Requête invalide." };
   const supabase = await session();
   const { error } = await supabase.rpc("admin_review_audit", { p_audit_id: auditId, p_pass: pass });
-  if (error) return { ok: false, message: userMessage(error) };
+  if (error) return { ok: false, message: userMessage(error, FR) };
   revalidatePath("/admin/controles");
   return { ok: true, message: pass ? "Contrôle accepté." : "Contrôle refusé." };
 }
@@ -32,7 +35,7 @@ export async function proofUrl(auditId: string, which: "audit" | "proof"): Promi
   if (!Id.safeParse(auditId).success) return { message: "Requête invalide." };
   const supabase = await session();
   const { data: path, error } = await supabase.rpc("admin_proof_path", { p_audit_id: auditId, p_which: which });
-  if (error || !path) return { message: userMessage(error, "Aucune photo.") };
+  if (error || !path) return { message: userMessage(error, FR, "Aucune photo.") };
   const { data } = await createAdminClient().storage.from("proofs").createSignedUrl(path, 60);
   return data?.signedUrl ? { url: data.signedUrl } : { message: "Photo introuvable (peut-être supprimée après 30 jours)." };
 }
@@ -45,7 +48,7 @@ export async function resolveReport(reportId: string, status: "dismissed" | "act
     p_status: status,
     p_hide_profile: hideProfile,
   });
-  if (error) return { ok: false, message: userMessage(error) };
+  if (error) return { ok: false, message: userMessage(error, FR) };
   revalidatePath("/admin/signalements");
   return { ok: true, message: "Traité." };
 }
@@ -77,7 +80,7 @@ export async function saveSquad(_prev: ActionResult, formData: FormData): Promis
     p_start_date: s.startDate,
     p_is_public: s.isPublic,
   });
-  if (error) return { ok: false, message: userMessage(error) };
+  if (error) return { ok: false, message: userMessage(error, FR) };
   revalidatePath("/admin/escouades");
   return { ok: true, message: "Escouade enregistrée." };
 }
@@ -102,7 +105,7 @@ export async function grantComp(_prev: ActionResult, formData: FormData): Promis
     p_plan: parsed.data.plan,
     p_until: parsed.data.until,
   });
-  if (error) return { ok: false, message: userMessage(error) };
+  if (error) return { ok: false, message: userMessage(error, FR) };
   revalidatePath("/admin");
   return { ok: true, message: parsed.data.until ? "Accès offert." : "Accès retiré." };
 }

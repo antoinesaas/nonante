@@ -4,6 +4,7 @@ import { DotCalendar, type DayState } from "@/components/DotCalendar";
 import { Faq } from "@/components/Faq";
 import { Founder } from "@/components/Founder";
 import { Hand } from "@/components/Hand";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Logo } from "@/components/Logo";
 import { PlayerCard } from "@/components/Player";
 import { QuoteCard } from "@/components/QuoteCard";
@@ -14,9 +15,8 @@ import { IMAGES } from "@/lib/art";
 import { getUser } from "@/lib/auth";
 import { todayParis } from "@/lib/dates";
 import { faqItems } from "@/lib/faq";
-import { formatEuros } from "@/lib/money";
-import { perDay } from "@/lib/plans";
-import { plural } from "@/lib/proofs";
+import { fmt, formatMoney } from "@/lib/i18n/format";
+import { getI18n } from "@/lib/i18n/server";
 import type { PublicPlans, SocialProof as Proof, Stats } from "@/lib/types";
 import { btnLink, btnPrimary, btnSecondary, label } from "@/lib/ui";
 
@@ -30,121 +30,100 @@ const EXAMPLE_STATS: Stats = {
   wakes: 44, arcs_completed: 0, wallet_proven_cents: 0, wallet_declared_cents: 0,
 };
 
-const PAINS = [
-  "Tu ouvres TikTok « deux minutes », et la soirée y passe.",
-  "Tu repousses la tâche importante, un peu plus chaque jour.",
-  "Tu peaufines ton produit au lieu d'aller chercher des clients.",
-  "Tu lances trois projets à la fois, et tu n'en finis aucun.",
-  "Tu démarres fort le lundi ; le jeudi, il ne reste plus rien.",
-];
-
-const STEPS = [
-  { n: "1", title: "Ton objectif", text: "Un chiffre, une date : 3 000 € par mois, 10 clients, ton partiel. Affiché en haut de chaque écran." },
-  {
-    n: "2",
-    title: "Tes principes",
-    text: "« Si je m'assois à mon bureau, alors 50 minutes sans téléphone. » Proposés pour ton objectif et tes points faibles, puis modifiables à 100 %.",
-  },
-  { n: "3", title: "Chaque jour, une preuve", text: "Rien ne se valide sur parole. La caméra compte tes pompes, le minuteur surveille ta concentration." },
-  { n: "4", title: "Maxe tes stats", text: "Discipline, Focus, Business, Corps, Esprit, Énergie. Une note globale, des niveaux, un classement." },
-];
-
-const PROOFS = [
-  { title: "Minuteur", text: "25, 50 ou 90 minutes. Tu quittes l'écran plus de 10 secondes : la session casse." },
-  { title: "Caméra", text: "Pompes et squats comptés par l'IA, sur ton téléphone. Aucune image n'en sort." },
-  { title: "Réveil", text: "Un code à recopier avant ton heure de lever. Impossible de tricher depuis ton lit." },
-  { title: "Photo, capture, lien", text: "La salle, tes messages de prospection, ta publication. Contrôles aléatoires." },
-];
-
-const COMPARE = [
-  ["Validation", "Une case à cocher", "Une preuve : caméra, minuteur, code"],
-  ["Principes", "Les mêmes pour tous", "Construits pour ton objectif"],
-  ["Ton business", "Rien", "Prospection, portefeuille de revenus"],
-  ["Progression", "Une série", "6 stats, une note, des niveaux"],
-  ["Les autres", "Seul", "Classement et escouades"],
-];
+/** Conteneur : une colonne sur téléphone, large sur ordinateur. */
+const wrap = "mx-auto w-full max-w-xl px-5 lg:max-w-6xl lg:px-8";
 
 export default async function Home() {
-  const { supabase, user } = await getUser();
+  const [{ supabase, user }, { m, locale }] = await Promise.all([getUser(), getI18n()]);
   const [{ data: proofData }, { data: plansData }] = await Promise.all([supabase.rpc("social_proof"), supabase.rpc("plans_public")]);
   const proof = proofData as Proof | null;
   const plans = plansData as PublicPlans | null;
+  const l = m.landing;
   const cta = user ? "/app" : "/onboarding";
-  const ctaLabel = user ? "Mon arc" : "Construire mon arc";
+  const ctaLabel = user ? m.common.actions.myArc : m.common.actions.buildArc;
 
   return (
     <>
       <ArtBackdrop slug={IMAGES.hero} tone="medium" className="min-h-dvh">
-        <header className="mx-auto flex w-full max-w-xl items-center justify-between px-5 pt-6">
-          <Link href="/" aria-label="Nonante, accueil">
+        <header className={`${wrap} flex items-center justify-between pt-6`}>
+          <Link href="/" aria-label={m.common.homeAria}>
             <Logo />
           </Link>
-          <Link href={user ? "/app" : "/login"} className="text-sm text-paper/80 hover:text-paper">
-            {user ? "Mon arc" : "Connexion"}
-          </Link>
-        </header>
-        <section className="mx-auto mt-auto w-full max-w-xl px-5 pb-16">
-          <p className={`${label} animate-rise`}>Étudiants et entrepreneurs</p>
-          <h1 className="mt-5 animate-rise font-serif text-[4.2rem] leading-[0.9] tracking-tight [animation-delay:100ms] sm:text-8xl">
-            90 jours.
-            <br />
-            Zéro excuse.
-          </h1>
-          <p className="mt-4 animate-rise [animation-delay:200ms]">
-            <Hand underline className="text-3xl">
-              pas de motivation, de la discipline
-            </Hand>
-          </p>
-          <p className="mt-6 max-w-md animate-rise text-lg leading-relaxed text-paper/85 [animation-delay:300ms]">
-            Un objectif, des principes construits pour toi, et chaque jour une preuve. Tes progrès deviennent des stats de joueur
-            à faire monter.
-          </p>
-          <div className="mt-10 animate-rise space-y-3 [animation-delay:400ms]">
-            <Link href={cta} className={btnPrimary}>
-              {ctaLabel}
-            </Link>
-            {!user ? <p className="text-center text-xs text-paper/60">2 minutes de questions · tu vois ton arc avant de payer</p> : null}
-            <Link href="/classement" className={`${btnSecondary} w-full`}>
-              Voir le classement
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher className="hidden sm:flex" />
+            <Link href={user ? "/app" : "/login"} className="text-sm text-paper/80 hover:text-paper">
+              {user ? m.common.actions.myArc : m.common.actions.login}
             </Link>
           </div>
-          {proof && proof.joueurs >= 20 ? (
-            <p className="mt-6 animate-fade text-sm text-paper/70 [animation-delay:600ms]">
-              <span aria-hidden="true" className="mr-2 inline-block size-1.5 animate-breathe rounded-full bg-ok align-middle" />
-              {plural(proof.joueurs, "joueur", "joueurs")} · {plural(proof.arcs_en_cours, "arc en cours", "arcs en cours")} en ce moment.
+        </header>
+        <section className={`${wrap} mt-auto pb-16 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end lg:gap-16 lg:pb-24`}>
+          <div>
+            <p className={`${label} animate-rise`}>{l.label}</p>
+            <h1 className="mt-5 animate-rise font-serif text-[4.2rem] leading-[0.9] tracking-tight [animation-delay:100ms] sm:text-8xl lg:text-[8.5rem]">
+              {l.title1}
+              <br />
+              {l.title2}
+            </h1>
+            <p className="mt-4 animate-rise [animation-delay:200ms]">
+              <Hand underline className="text-3xl lg:text-4xl">
+                {l.hand}
+              </Hand>
             </p>
-          ) : null}
+            <p className="mt-6 max-w-md animate-rise text-lg leading-relaxed text-paper/85 [animation-delay:300ms] lg:text-xl">{l.intro}</p>
+            <div className="mt-10 max-w-md animate-rise space-y-3 [animation-delay:400ms]">
+              <Link href={cta} className={btnPrimary}>
+                {ctaLabel}
+              </Link>
+              {!user ? <p className="text-center text-xs text-paper/60">{l.ctaHint}</p> : null}
+              <Link href="/classement" className={`${btnSecondary} w-full`}>
+                {m.common.actions.seeLeaderboard}
+              </Link>
+            </div>
+            {proof && proof.joueurs >= 20 ? (
+              <p className="mt-6 animate-fade text-sm text-paper/70 [animation-delay:600ms]">
+                <span aria-hidden="true" className="mr-2 inline-block size-1.5 animate-breathe rounded-full bg-ok align-middle" />
+                {fmt(l.live, { players: proof.joueurs, arcs: proof.arcs_en_cours }, locale)}
+              </p>
+            ) : null}
+          </div>
+          <div className="hidden animate-rise [animation-delay:500ms] lg:block">
+            <PlayerCard pseudo="exemple" avatarPath={null} stats={EXAMPLE_STATS} art="pluie-nuit" subtitle={l.card.subtitle} />
+          </div>
         </section>
       </ArtBackdrop>
 
-      <main className="mx-auto w-full max-w-xl px-5">
-        <section data-reveal className="py-20">
-          <h2 className="font-serif text-5xl leading-none">Tu sais ce que tu dois faire.</h2>
-          <p className="mt-3">
-            <Hand className="text-3xl text-mute">le plus dur, c&apos;est de le faire chaque jour</Hand>
-          </p>
-          <ul className="mt-8 space-y-4 text-lg text-paper/85">
-            {PAINS.map((p) => (
-              <li key={p} className="border-l border-line pl-4">
-                {p}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-8 text-lg text-mute">
-            La motivation finit toujours par retomber. La discipline, elle, se construit : des règles claires, et une preuve
-            chaque jour.
-          </p>
+      <main>
+        <section className={`${wrap} py-20 lg:grid lg:grid-cols-2 lg:gap-16 lg:py-32`}>
+          <div data-reveal>
+            <h2 className="font-serif text-5xl leading-none lg:text-7xl">{l.pains.title}</h2>
+            <p className="mt-3">
+              <Hand className="text-3xl text-mute">{l.pains.hand}</Hand>
+            </p>
+            <p className="mt-8 hidden text-lg text-mute lg:block">{l.pains.outro}</p>
+          </div>
+          <div data-reveal>
+            <ul className="mt-8 space-y-4 text-lg text-paper/85 lg:mt-0">
+              {l.pains.items.map((p) => (
+                <li key={p} className="border-l border-line pl-4">
+                  {p}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 text-lg text-mute lg:hidden">{l.pains.outro}</p>
+          </div>
         </section>
 
-        <ArtBand slug="echecs" className="-mx-5 h-72">
-          <p className={label}>Comment ça marche</p>
-          <h2 className="mt-2 font-serif text-4xl leading-none">Quatre étapes. Quatre-vingt-dix jours.</h2>
+        <ArtBand slug={IMAGES.pains} className="h-72 lg:h-[28rem]" inner="py-8">
+          <div className={`${wrap} w-full`}>
+            <p className={label}>{l.steps.label}</p>
+            <h2 className="mt-2 font-serif text-4xl leading-none lg:text-6xl">{l.steps.title}</h2>
+          </div>
         </ArtBand>
-        <ol data-reveal className="mt-8 space-y-8 pb-20">
-          {STEPS.map((s) => (
-            <li key={s.n} className="flex gap-5">
-              <span className="font-serif text-5xl leading-none text-mute">{s.n}</span>
-              <div>
+        <ol data-reveal className={`${wrap} mt-8 grid gap-8 pb-20 lg:mt-12 lg:grid-cols-4 lg:pb-32`}>
+          {l.steps.items.map((s, i) => (
+            <li key={s.title} className="flex gap-5 lg:block">
+              <span className="font-serif text-5xl leading-none text-mute">{i + 1}</span>
+              <div className="lg:mt-4">
                 <h3 className="text-lg font-medium">{s.title}</h3>
                 <p className="mt-1 text-mute">{s.text}</p>
               </div>
@@ -152,71 +131,74 @@ export default async function Home() {
           ))}
         </ol>
 
-        <section data-reveal className="pb-20">
-          <p className={label}>Exemple de carte de joueur</p>
-          <div className="mt-4">
-            <PlayerCard pseudo="exemple" avatarPath={null} stats={EXAMPLE_STATS} art="pluie-nuit" subtitle="jour 23/90" />
+        <section className={`${wrap} grid gap-16 pb-20 lg:grid-cols-2 lg:items-center lg:pb-32`}>
+          <div data-reveal className="lg:hidden">
+            <p className={label}>{l.card.label}</p>
+            <div className="mt-4">
+              <PlayerCard pseudo="exemple" avatarPath={null} stats={EXAMPLE_STATS} art="pluie-nuit" subtitle={l.card.subtitle} />
+            </div>
+            <p className="mt-4 text-sm text-mute">{l.card.text}</p>
           </div>
-          <p className="mt-4 text-sm text-mute">
-            Six stats calculées sur tes 30 derniers jours. Pour monter ta note, tu ne peux rien négliger. Ta carte se partage en un
-            lien.
-          </p>
+          <div data-reveal>
+            <p className={label}>{l.calendar.label}</p>
+            <div className="mt-6">
+              <DotCalendar days={EXAMPLE_DAYS} today={22} />
+            </div>
+          </div>
+          <div data-reveal>
+            <p className="text-mute lg:text-lg">{l.calendar.text}</p>
+            <p className="mt-6 hidden text-sm text-mute lg:block">{l.card.text}</p>
+          </div>
         </section>
 
-        <ArtBand slug={IMAGES.proofs} className="-mx-5 h-64">
-          <p className={label}>Les preuves</p>
-          <h2 className="mt-2 font-serif text-4xl leading-none">Rien ne se valide sur parole.</h2>
+        <ArtBand slug={IMAGES.proofs} className="h-72 lg:h-[30rem]" inner="py-8">
+          <div className={`${wrap} w-full`}>
+            <p className={label}>{l.proofs.label}</p>
+            <h2 className="mt-2 font-serif text-4xl leading-none lg:text-6xl">{l.proofs.title}</h2>
+          </div>
         </ArtBand>
-        <dl data-reveal className="mt-8 divide-y divide-line border-y border-line">
-          {PROOFS.map((p) => (
-            <div key={p.title} className="py-5">
+        <dl data-reveal className={`${wrap} mt-8 grid divide-y divide-line border-y border-line lg:mt-12 lg:grid-cols-4 lg:divide-x lg:divide-y-0`}>
+          {l.proofs.items.map((p) => (
+            <div key={p.title} className="py-5 lg:px-6 lg:py-8 lg:first:pl-0">
               <dt className="font-medium">{p.title}</dt>
               <dd className="mt-1 text-mute">{p.text}</dd>
             </div>
           ))}
         </dl>
 
-        <section data-reveal className="py-20">
-          <p className={label}>Exemple : jour 23</p>
-          <div className="mt-6">
-            <DotCalendar days={EXAMPLE_DAYS} today={22} />
+        <section className={`${wrap} grid gap-0 py-20 lg:grid-cols-2 lg:gap-10 lg:py-32`}>
+          <div>
+            <ArtBand slug={IMAGES.wallet} className="-mx-5 h-64 lg:mx-0 lg:h-80">
+              <p className={label}>{l.wallet.label}</p>
+              <h2 className="mt-2 font-serif text-4xl leading-none">{l.wallet.title}</h2>
+            </ArtBand>
+            <p data-reveal className="mt-6 pb-16 text-lg text-paper/85 lg:pb-0">
+              {l.wallet.text}
+            </p>
           </div>
-          <p className="mt-6 text-mute">
-            Un point par jour. Vert : tout est prouvé. Rouge : il manque une preuve. Blanc : tu n&apos;as rien fait, et ça coûte
-            double. Un joker, et la journée ne compte pas.
-          </p>
+          <div>
+            <ArtBand slug={IMAGES.squads} className="-mx-5 h-64 lg:mx-0 lg:h-80">
+              <p className={label}>{l.squads.label}</p>
+              <h2 className="mt-2 font-serif text-4xl leading-none">{l.squads.title}</h2>
+            </ArtBand>
+            <p data-reveal className="mt-6 text-lg text-paper/85">
+              {l.squads.text}
+            </p>
+          </div>
         </section>
 
-        <ArtBand slug={IMAGES.wallet} className="-mx-5 h-64">
-          <p className={label}>Portefeuille</p>
-          <h2 className="mt-2 font-serif text-4xl leading-none">Ton argent, prouvé.</h2>
-        </ArtBand>
-        <p data-reveal className="mt-6 pb-20 text-lg text-paper/85">
-          Chaque euro gagné grâce à ton projet, avec une capture en preuve. Il fait monter ta stat Business, débloque des
-          succès et suit ton objectif de revenu. Ce n&apos;est pas Nonante qui te paie : c&apos;est ton projet qui rapporte.
-        </p>
-
-        <ArtBand slug={IMAGES.squads} className="-mx-5 h-64">
-          <p className={label}>Classement et escouades</p>
-          <h2 className="mt-2 font-serif text-4xl leading-none">Seul on lâche. En escouade, on tient.</h2>
-        </ArtBand>
-        <p data-reveal className="mt-6 pb-20 text-lg text-paper/85">
-          Le classement de la semaine repart de zéro chaque lundi. Crée ton escouade avec tes associés ou ta promo : vous
-          verrez vite qui tient vraiment.
-        </p>
-
-        <section data-reveal className="pb-20">
-          <h2 className="font-serif text-4xl leading-none">Pas une app d&apos;habitudes de plus.</h2>
-          <table className="mt-8 w-full text-left text-sm">
+        <section data-reveal className={`${wrap} pb-20 lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16 lg:pb-32`}>
+          <h2 className="font-serif text-4xl leading-none lg:text-6xl">{l.compare.title}</h2>
+          <table className="mt-8 w-full text-left text-sm lg:mt-0 lg:text-base">
             <thead className="text-mute">
               <tr className="border-b border-line">
                 <th className="py-2 pr-3 font-normal" />
-                <th className="py-2 pr-3 font-normal">Ailleurs</th>
+                <th className="py-2 pr-3 font-normal">{l.compare.elsewhere}</th>
                 <th className="py-2 font-normal text-paper">Nonante</th>
               </tr>
             </thead>
             <tbody>
-              {COMPARE.map(([k, a, b]) => (
+              {l.compare.rows.map(([k, a, b]) => (
                 <tr key={k} className="border-b border-line align-top">
                   <th className="py-3 pr-3 font-normal text-mute">{k}</th>
                   <td className="py-3 pr-3 text-mute">{a}</td>
@@ -227,56 +209,80 @@ export default async function Home() {
           </table>
         </section>
 
-        <section data-reveal className="pb-20">
-          <h2 className="font-serif text-4xl leading-none">Pourquoi ça marche.</h2>
-          <p className="mt-4 text-mute">Pas de recette miracle : des méthodes étudiées, appliquées tous les jours.</p>
-          <div className="mt-10">
+        <ArtBand slug={IMAGES.mood} className="h-96 lg:h-[34rem]" />
+
+        <section className={`${wrap} py-20 lg:py-32`}>
+          <div data-reveal className="lg:max-w-2xl">
+            <h2 className="font-serif text-4xl leading-none lg:text-6xl">{l.why.title}</h2>
+            <p className="mt-4 text-mute">{l.why.text}</p>
+          </div>
+          <div data-reveal className="mt-10">
             <SocialProof proof={proof} />
           </div>
         </section>
 
-        <div data-reveal className="pb-20">
+        <div data-reveal className={`${wrap} pb-20 lg:pb-32`}>
           <Founder />
         </div>
 
-        <ArtBand slug={IMAGES.quote} className="-mx-5 h-auto min-h-64" dark>
-          <QuoteCard date={todayParis()} />
+        <ArtBand slug={IMAGES.quote} className="h-auto min-h-64 lg:min-h-80" dark inner="py-12">
+          <div className={`${wrap} w-full lg:max-w-4xl`}>
+            <QuoteCard date={todayParis()} className="lg:[&_blockquote]:text-4xl" />
+          </div>
         </ArtBand>
 
-        <section data-reveal className="py-20">
-          <h2 className="font-serif text-5xl leading-none">Payer, c&apos;est déjà s&apos;engager.</h2>
-          <p className="mt-5 text-lg text-paper/85">
-            Pas de version gratuite : un arc gratuit se lâche au premier soir difficile. Tu construis ton arc gratuitement, tu
-            vois tes principes, puis tu le lances.
-          </p>
+        <section className={`${wrap} py-20 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-32`}>
+          <div data-reveal>
+            <h2 className="font-serif text-5xl leading-none lg:text-7xl">{l.price.title}</h2>
+            <p className="mt-5 text-lg text-paper/85">{l.price.text}</p>
+            <Link href="/abonnement" className={`${btnLink} mt-6 hidden lg:inline-block`}>
+              {l.price.more}
+            </Link>
+          </div>
           {plans ? (
-            <div className="mt-10 border border-paper bg-surface p-6 grain">
-              <p className={label}>Arc 90 jours</p>
+            <div data-reveal className="mt-10 border border-paper bg-surface p-6 grain lg:mt-0 lg:p-10">
+              <p className={label}>{m.game.plans.name.arc}</p>
               <p className="mt-4 flex items-baseline gap-3">
-                <span className="font-serif text-7xl leading-none tabular-nums">{formatEuros(plans.arc.once)}</span>
-                <Hand className="text-2xl">une fois</Hand>
+                <span className="font-serif text-7xl leading-none tabular-nums">{formatMoney(plans.arc.once, locale)}</span>
+                <Hand className="text-2xl">{m.game.plans.onceShort}</Hand>
               </p>
-              <p className="mt-3 text-sm text-mute">
-                Soit {perDay(plans.arc.once)} par jour. Pas d&apos;abonnement, rien ne se renouvelle tout seul.
-              </p>
+              <p className="mt-3 text-sm text-mute">{fmt(l.price.perDay, { price: formatMoney(Math.round(plans.arc.once / 90), locale) })}</p>
               <Link href={cta} className={`${btnPrimary} mt-6`}>
                 {ctaLabel}
               </Link>
             </div>
           ) : null}
-          <Link href="/abonnement" className={`${btnLink} mt-6 inline-block`}>
-            Voir aussi Pro et Fondateur
+          <Link href="/abonnement" className={`${btnLink} mt-6 inline-block lg:hidden`}>
+            {l.price.more}
           </Link>
         </section>
 
-        <section data-reveal className="pb-20">
-          <h2 className="font-serif text-4xl leading-none">Questions.</h2>
-          <div className="mt-8">
-            <Faq items={faqItems(["quoi", "payant", "renouvellement", "parrainage", "preuves", "installer"])} />
+        <section className={`${wrap} pb-20 lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16 lg:pb-32`}>
+          <div data-reveal>
+            <h2 className="font-serif text-4xl leading-none lg:text-6xl">{l.faqTitle}</h2>
+            <Link href="/faq" className={`${btnLink} mt-6 hidden lg:inline-block`}>
+              {m.common.actions.allQuestions}
+            </Link>
           </div>
-          <Link href="/faq" className={`${btnLink} mt-6 inline-block`}>
-            Toutes les questions
-          </Link>
+          <div data-reveal className="mt-8 lg:mt-0">
+            <Faq items={faqItems(["quoi", "payant", "renouvellement", "parrainage", "preuves", "installer"], m)} />
+            <Link href="/faq" className={`${btnLink} mt-6 inline-block lg:hidden`}>
+              {m.common.actions.allQuestions}
+            </Link>
+          </div>
+        </section>
+
+        <section className="relative overflow-hidden border-t border-line grain">
+          <div data-reveal className={`${wrap} py-24 text-center lg:py-36`}>
+            <Hand className="text-3xl text-mute">{l.final.hand}</Hand>
+            <h2 className="mx-auto mt-4 max-w-3xl font-serif text-5xl leading-[0.95] lg:text-7xl">{l.final.title}</h2>
+            <div className="mx-auto mt-10 max-w-sm">
+              <Link href={cta} className={btnPrimary}>
+                {ctaLabel}
+              </Link>
+              {!user ? <p className="mt-3 text-xs text-mute">{l.final.hint}</p> : null}
+            </div>
+          </div>
         </section>
       </main>
       <SiteFooter />

@@ -1,14 +1,18 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { type LoginState, sendLoginCode, signInWithGoogle, verifyLoginCode } from "@/app/actions/auth";
-import { GoogleLabel, googleAuthEnabled, googleButtonClass, OrDivider } from "@/components/GoogleButton";
+import { type LoginState, sendLoginCode, signInWithProvider, verifyLoginCode } from "@/app/actions/auth";
+import { useI18n } from "@/components/I18nProvider";
+import { OAUTH_PROVIDERS, oauthButtonClass, OrDivider, ProviderLabel } from "@/components/OAuthButtons";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
+import { fmt } from "@/lib/i18n/format";
 import { btnLink, btnPrimary, input } from "@/lib/ui";
 
 const initial: LoginState = { step: "email", email: "", message: null };
 
 export function LoginForm({ next }: { next: string }) {
+  const { m } = useI18n();
+  const t = m.auth;
   const [sent, sendAction] = useActionState(sendLoginCode, initial);
   const [checked, verifyAction] = useActionState(verifyLoginCode, initial);
   // Résultat d'envoi que l'utilisateur a quitté (« changer d'adresse ») : chaque nouvel envoi est un nouvel objet.
@@ -21,54 +25,48 @@ export function LoginForm({ next }: { next: string }) {
   if (!codeStep) {
     return (
       <div className="space-y-6">
-      {googleAuthEnabled ? (
-        <>
-          <form action={signInWithGoogle}>
-            <input type="hidden" name="next" value={next} />
-            <SubmitButton className={googleButtonClass} pendingLabel="Redirection…">
-              <GoogleLabel />
-            </SubmitButton>
-          </form>
-          <OrDivider />
-        </>
-      ) : null}
-      <form action={sendAction} className="space-y-4">
-        <input type="hidden" name="next" value={next} />
-        <label className="block">
-          <span className="text-sm text-mute">Ton email</span>
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            inputMode="email"
-            defaultValue={email}
-            placeholder="ton@email.fr"
-            className={`${input} mt-2`}
-          />
-        </label>
-        <SubmitButton className={btnPrimary} pendingLabel="Envoi…">
-          Recevoir mon lien de connexion
-        </SubmitButton>
-        <FormMessage message={sent.message} />
-      </form>
+        {OAUTH_PROVIDERS.length ? (
+          <>
+            <div className="space-y-3">
+              {OAUTH_PROVIDERS.map((provider) => (
+                <form key={provider} action={signInWithProvider}>
+                  <input type="hidden" name="next" value={next} />
+                  <input type="hidden" name="provider" value={provider} />
+                  <SubmitButton className={oauthButtonClass(provider)} pendingLabel={m.common.actions.redirecting}>
+                    <ProviderLabel provider={provider} />
+                  </SubmitButton>
+                </form>
+              ))}
+            </div>
+            <OrDivider />
+          </>
+        ) : null}
+        <form action={sendAction} className="space-y-4">
+          <input type="hidden" name="next" value={next} />
+          <label className="block">
+            <span className="text-sm text-mute">{t.email}</span>
+            <input name="email" type="email" required autoComplete="email" inputMode="email" defaultValue={email} placeholder={t.emailPlaceholder} className={`${input} mt-2`} />
+          </label>
+          <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.sending}>
+            {t.sendCode}
+          </SubmitButton>
+          <FormMessage message={sent.message} />
+        </form>
       </div>
     );
   }
 
   return (
-    <form action={verifyAction} className="space-y-4">
+    <form action={verifyAction} className="animate-step space-y-4">
       <input type="hidden" name="next" value={next} />
       <input type="hidden" name="email" value={email} />
-      <p className="text-sm text-mute">
-        Email envoyé à <span className="text-paper">{email}</span>. Ouvre-le et clique sur le lien, sur ce même appareil. S&apos;il
-        contient un code à 6 chiffres, tu peux aussi le saisir ici.
-      </p>
+      <p className="text-sm text-mute">{fmt(t.sent, { email })}</p>
       <label className="block">
-        <span className="text-sm text-mute">Code à 6 chiffres (si ton email en contient un)</span>
+        <span className="text-sm text-mute">{t.code}</span>
         <input
           name="token"
           required
+          autoFocus
           autoComplete="one-time-code"
           inputMode="numeric"
           pattern="[0-9 ]{6,12}"
@@ -77,12 +75,13 @@ export function LoginForm({ next }: { next: string }) {
           className={`${input} mt-2 font-serif text-3xl tracking-[0.3em]`}
         />
       </label>
-      <SubmitButton className={btnPrimary} pendingLabel="Vérification…">
-        Se connecter
+      <SubmitButton className={btnPrimary} pendingLabel={t.verifying}>
+        {t.signIn}
       </SubmitButton>
       <FormMessage message={checked.message} />
+      <p className="text-xs text-mute">{t.spam}</p>
       <button type="button" onClick={() => setDismissed(sent)} className={btnLink}>
-        Changer d&apos;adresse ou renvoyer l&apos;email
+        {t.change}
       </button>
     </form>
   );

@@ -4,35 +4,53 @@ import { redirect } from "next/navigation";
 import { openBillingPortal } from "@/app/actions/checkout";
 import { DeleteAccountForm } from "@/app/app/(main)/profil/DeleteAccountForm";
 import { InstallHint } from "@/app/app/(main)/profil/InstallHint";
+import { ProfileCard } from "@/app/app/(main)/profil/ProfileCard";
 import { PushToggle } from "@/app/app/(main)/profil/PushToggle";
-import { AvatarForm, SettingsForm } from "@/app/app/(main)/profil/SettingsForm";
+import { SettingsForm } from "@/app/app/(main)/profil/SettingsForm";
 import { CopyButton } from "@/components/CopyButton";
-import { PlayerCard, STAT_ROWS } from "@/components/Player";
 import { getArt } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
-import { formatDayFr } from "@/lib/dates";
 import { siteUrl } from "@/lib/env";
-import { formatEuros } from "@/lib/money";
-import { PLAN_NAME } from "@/lib/plans";
-import { plural, points } from "@/lib/proofs";
-import { nextTitle } from "@/lib/rules";
+import { fmt, formatDay, formatMoney, formatNumber, formatPoints } from "@/lib/i18n/format";
+import { nextTitle } from "@/lib/i18n/labels";
+import { getI18n } from "@/lib/i18n/server";
+import { STAT_KEYS } from "@/lib/stats";
 import { ensureReferralCode } from "@/lib/stripe-codes";
-import type { MyProfile } from "@/lib/types";
+import type { AchievementView, MyProfile } from "@/lib/types";
 import { btnLink, btnPrimary, btnSecondary, label } from "@/lib/ui";
 
-export const metadata: Metadata = { title: "Profil" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.app.profile.title };
+}
 
-const ARC_STATUS: Record<string, string> = {
-  draft: "en construction",
-  active: "en cours",
-  completed: "tenu",
-  failed: "raté",
-  abandoned: "lâché",
-};
+function Achievement({ a, title, description, percent, locked }: { a: AchievementView; title: string; description: string; percent: string | null; locked: boolean }) {
+  return (
+    <li className={`flex items-start justify-between gap-4 py-4 ${locked ? "text-mute" : ""}`}>
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border ${locked ? "border-line border-dashed" : "border-paper bg-paper text-ink"}`}>
+          {locked ? null : (
+            <svg viewBox="0 0 16 16" className="size-3.5">
+              <path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </span>
+        <div>
+          <p className={locked ? "" : "text-paper"}>{title}</p>
+          <p className="mt-1 text-xs text-mute">{description}</p>
+        </div>
+      </div>
+      <div className="shrink-0 text-right text-xs">
+        {a.points ? <p className="tabular-nums">+{a.points}</p> : null}
+        {percent ? <p className="mt-1 text-mute">{percent}</p> : null}
+      </div>
+    </li>
+  );
+}
 
 export default async function ProfilePage({ searchParams }: PageProps<"/app/profil">) {
-  const { supabase, user } = await requireUser("/app/profil");
-  const params = await searchParams;
+  const [{ supabase, user }, { m, locale }, params] = await Promise.all([requireUser("/app/profil"), getI18n(), searchParams]);
+  const t = m.app.profile;
   const { data } = await supabase.rpc("my_profile");
   const profile = data as MyProfile | null;
   if (!profile) redirect("/onboarding");
@@ -47,106 +65,117 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
   }
 
   const s = profile.stats;
-  const unlocked = profile.achievements.filter((a) => a.unlocked_at);
+  const day = (d: string, year = true) => formatDay(d, locale, { year });
+  const ach = (a: AchievementView) => m.content.achievements[a.code] ?? { title: a.title, description: a.description };
+  // Succès : ceux débloqués (du plus récent au plus ancien), puis les 3 prochains dans l'ordre du jeu.
+  const unlocked = profile.achievements.filter((a) => a.unlocked_at).sort((a, b) => (b.unlocked_at ?? "").localeCompare(a.unlocked_at ?? ""));
+  const upcoming = profile.achievements.filter((a) => !a.unlocked_at).slice(0, 3);
   const arts = profile.arts.map((slug) => getArt(slug)).filter((a) => a !== null);
-  const next = nextTitle(s.level);
+  const next = nextTitle(s.level, m);
   const plan = profile.plan;
-  const weakest = [...STAT_ROWS].sort((a, b) => Number(s[a.key]) - Number(s[b.key]))[0];
+  const weakest = [...STAT_KEYS].sort((a, b) => Number(s[a]) - Number(s[b]))[0];
+  const percent = (a: AchievementView) => (a.percent !== null ? fmt(t.percent, { n: a.percent }) : null);
 
   return (
     <>
-      <PlayerCard
+      <ProfileCard
         pseudo={profile.pseudo}
         avatarPath={profile.avatar_path}
         stats={s}
         art={profile.profile_art_slug}
         founder={plan.plan === "fondateur"}
+        arts={arts.map((a) => ({ slug: a.slug, title: a.title, artist: a.artist, width: a.width, height: a.height }))}
       />
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <AvatarForm hasAvatar={Boolean(profile.avatar_path)} />
-        {profile.is_public ? (
-          <Link href={`/u/${profile.pseudo}`} className={btnLink}>
-            Mon profil public
-          </Link>
-        ) : null}
+      {profile.is_public ? (
+        <Link href={`/u/${profile.pseudo}`} className={`${btnLink} mt-2 inline-block`}>
+          {t.publicProfile}
+        </Link>
+      ) : null}
+
+      <div className="lg:grid lg:grid-cols-2 lg:gap-12">
+        <section className="mt-10">
+          <h2 className="font-serif text-3xl">{t.stats}</h2>
+          <p className="mt-2 text-sm text-mute">
+            {next ? fmt(t.nextTitle, { title: next.title, level: next.level }) : t.topTitle}
+            {fmt(t.weakest, { stat: m.game.stats[weakest].label.toLowerCase() })}
+          </p>
+          <dl className="mt-6 divide-y divide-line border-y border-line">
+            {STAT_KEYS.map((key) => (
+              <div key={key} className="flex items-baseline justify-between gap-4 py-3">
+                <dt>
+                  {m.game.stats[key].label}
+                  <span className="block text-xs text-mute">{m.game.stats[key].help}</span>
+                </dt>
+                <dd className="font-serif text-3xl tabular-nums">{s[key]}</dd>
+              </div>
+            ))}
+          </dl>
+          <dl className="mt-8 grid grid-cols-3 gap-y-6">
+            {(
+              [
+                [t.numbers.points, formatPoints(profile.points, locale)],
+                [t.numbers.rank, profile.rank ? formatNumber(profile.rank, locale) : "—"],
+                [t.numbers.xp, formatNumber(s.xp, locale)],
+                [t.numbers.streak, String(s.streak)],
+                [t.numbers.bestStreak, String(s.best_streak)],
+                [t.numbers.greenDays, String(s.green_days)],
+                [t.numbers.focusHours, String(Math.floor(s.focus_minutes / 60))],
+                [t.numbers.reps, formatNumber(s.reps, locale)],
+                [t.numbers.wakes, String(s.wakes)],
+                [t.numbers.income, formatMoney(s.wallet_proven_cents, locale)],
+                [t.numbers.arcsDone, String(s.arcs_completed)],
+                [t.numbers.refused, String(profile.refused_proofs)],
+              ] as const
+            ).map(([k, v]) => (
+              <div key={k}>
+                <dt className="text-xs text-mute">{k}</dt>
+                <dd className="mt-1 font-serif text-2xl tabular-nums">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section className="mt-12 lg:mt-10">
+          <h2 className="font-serif text-3xl">{t.achievements}</h2>
+          <p className="mt-2 text-sm text-mute">
+            {fmt(t.achievementsCount, { n: unlocked.length, total: profile.achievements.length })} {t.rarity}
+          </p>
+          {unlocked.length ? (
+            <ul className="mt-6 divide-y divide-line border-y border-line">
+              {unlocked.map((a) => (
+                <Achievement key={a.code} a={a} {...ach(a)} percent={percent(a)} locked={false} />
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-6 border-y border-line py-4 text-sm text-mute">{t.noneYet}</p>
+          )}
+          {upcoming.length ? (
+            <>
+              <p className={`${label} mt-8`}>{t.nextUp}</p>
+              <ul className="mt-3 divide-y divide-line border-y border-line">
+                {upcoming.map((a) => (
+                  <Achievement key={a.code} a={a} {...ach(a)} percent={percent(a)} locked />
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </section>
       </div>
-
-      <section className="mt-10">
-        <h2 className="font-serif text-3xl">Tes stats</h2>
-        <p className="mt-2 text-sm text-mute">
-          {next ? `Titre suivant : ${next.title}, au niveau ${next.level}. ` : "Tu es au sommet des titres. "}
-          Ta stat la plus basse : {weakest.label.toLowerCase()}. C&apos;est elle qui tire ta note vers le bas.
-        </p>
-        <dl className="mt-6 divide-y divide-line border-y border-line">
-          {STAT_ROWS.map((row) => (
-            <div key={row.key} className="flex items-baseline justify-between gap-4 py-3">
-              <dt>
-                {row.label}
-                <span className="block text-xs text-mute">{row.help}</span>
-              </dt>
-              <dd className="font-serif text-3xl tabular-nums">{s[row.key]}</dd>
-            </div>
-          ))}
-        </dl>
-        <dl className="mt-8 grid grid-cols-3 gap-y-6">
-          {[
-            ["Points", points(profile.points)],
-            ["Rang général", profile.rank ? String(profile.rank) : "—"],
-            ["XP", s.xp.toLocaleString("fr-FR")],
-            ["Série", String(s.streak)],
-            ["Meilleure série", String(s.best_streak)],
-            ["Jours verts", String(s.green_days)],
-            ["Heures de focus", String(Math.floor(s.focus_minutes / 60))],
-            ["Répétitions", s.reps.toLocaleString("fr-FR")],
-            ["Réveils prouvés", String(s.wakes)],
-            ["Revenus prouvés", formatEuros(s.wallet_proven_cents)],
-            ["Arcs tenus", String(s.arcs_completed)],
-            ["Preuves refusées", String(profile.refused_proofs)],
-          ].map(([k, v]) => (
-            <div key={k}>
-              <dt className="text-xs text-mute">{k}</dt>
-              <dd className="mt-1 font-serif text-2xl tabular-nums">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="font-serif text-3xl">Succès</h2>
-        <p className="mt-2 text-sm text-mute">
-          {unlocked.length} sur {profile.achievements.length}. La rareté est calculée sur tous les joueurs.
-        </p>
-        <ul className="mt-6 divide-y divide-line border-y border-line">
-          {profile.achievements.map((a) => (
-            <li key={a.code} className={`flex items-start justify-between gap-4 py-4 ${a.unlocked_at ? "" : "text-mute"}`}>
-              <div>
-                <p className={a.unlocked_at ? "text-paper" : ""}>{a.title}</p>
-                <p className="mt-1 text-xs text-mute">{a.description}</p>
-              </div>
-              <div className="shrink-0 text-right text-xs">
-                {a.points ? <p className="tabular-nums">+{a.points}</p> : null}
-                {a.percent !== null ? <p className="mt-1 text-mute">{a.percent} % des joueurs</p> : null}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       {profile.arcs.length ? (
         <section className="mt-12">
-          <h2 className="font-serif text-3xl">Tes arcs</h2>
+          <h2 className="font-serif text-3xl">{t.arcs}</h2>
           <ul className="mt-6 divide-y divide-line border-y border-line">
             {profile.arcs.map((a) => (
               <li key={a.number} className="py-4">
                 <p className="flex justify-between gap-4">
-                  <span>Arc n° {a.number}</span>
-                  <span className="text-sm text-mute">{ARC_STATUS[a.status]}</span>
+                  <span>{fmt(t.arcNumber, { n: a.number })}</span>
+                  <span className="text-sm text-mute">{t.arcStatus[a.status]}</span>
                 </p>
                 <p className="mt-1 text-sm text-mute">{a.goal_title}</p>
                 <p className="mt-1 text-xs text-mute">
-                  {formatDayFr(a.start_date, { year: false })} → {formatDayFr(a.end_date)} · {plural(a.green, "jour vert", "jours verts")} ·{" "}
-                  {points(a.points)} points
-                  {a.loyalty_applied ? " · −50 % appliqué" : ""}
+                  {fmt(t.arcLine, { start: day(a.start_date, false), end: day(a.end_date), green: a.green, points: formatPoints(a.points, locale) }, locale)}
+                  {a.loyalty_applied ? t.loyaltyApplied : ""}
                 </p>
               </li>
             ))}
@@ -154,133 +183,128 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
         </section>
       ) : null}
 
-      <section className="mt-12">
-        <h2 className="font-serif text-3xl">Plan</h2>
-        <p className="mt-3">
-          {plan.plan ? PLAN_NAME[plan.plan] : "Aucun plan actif"}
-          {plan.plan === "arc"
-            ? " · payé pour cet arc"
-            : plan.interval === "month"
-              ? " · mensuel"
-              : plan.interval === "year"
-                ? " · annuel"
-                : plan.interval === "lifetime"
-                  ? " · à vie"
-                  : ""}
-        </p>
-        <p className="mt-1 text-sm text-mute">
-          {plan.comp_until
-            ? `Accès offert jusqu'au ${formatDayFr(plan.comp_until)}.`
-            : plan.plan === "arc"
-              ? "Paiement unique : rien ne se renouvelle. Ton prochain arc se paie quand tu le lances."
-              : plan.cancel_at_period_end && plan.period_end
-                ? `Résilié : accès jusqu'au ${formatDayFr(plan.period_end.slice(0, 10))}.`
-                : plan.period_end && plan.interval !== "lifetime"
-                  ? `Prochain renouvellement le ${formatDayFr(plan.period_end.slice(0, 10))}.`
-                  : null}
-          {plan.status === "past_due" ? " Paiement en échec : mets ta carte à jour." : ""}
-          {plan.arc_credits > 0 ? ` ${plan.arc_credits > 1 ? `${plan.arc_credits} arcs payés d'avance` : "1 arc payé d'avance"}, utilisé${plan.arc_credits > 1 ? "s" : ""} à ton prochain arc.` : ""}
-          {plan.loyalty_pending ? " Fidélité : ton prochain Arc 90 jours est à −50 %." : ""}
-        </p>
-        {params.portail === "indisponible" ? <p className="mt-3 text-sm">Le portail de paiement est indisponible. Réessaie plus tard.</p> : null}
-        <div className="mt-5 flex flex-wrap gap-3">
-          {profile.has_billing ? (
-            <form action={openBillingPortal}>
-              <button type="submit" className={btnSecondary}>
-                {plan.paid_plan === "pro" ? "Gérer mon abonnement" : "Mes factures"}
-              </button>
-            </form>
-          ) : null}
-          {plan.plan !== "fondateur" ? (
-            <Link href="/abonnement" className={plan.plan ? btnSecondary : btnPrimary}>
-              {plan.plan === "arc" ? "Passer Pro" : plan.plan ? "Changer de plan" : "Choisir un plan"}
-            </Link>
-          ) : null}
-        </div>
-      </section>
-
-      {profile.referral_code ? (
+      <div className="lg:grid lg:grid-cols-2 lg:gap-12">
         <section className="mt-12">
-          <h2 className="font-serif text-3xl">Parrainage</h2>
-          <p className="mt-2 text-sm text-mute">
-            Partage ton lien : ton ami a −20 % sur son premier paiement, et toi −20 % sur ton prochain arc (ou ta prochaine
-            facture Pro).{" "}
-            {plural(profile.referral_sales, "ami inscrit", "amis inscrits")}
-            {profile.referral_rewards ? ` · ${plural(profile.referral_rewards, "remise de −20 % en attente", "remises de −20 % en attente")}` : ""}.
+          <h2 className="font-serif text-3xl">{t.plan}</h2>
+          <p className="mt-3">
+            {plan.plan ? m.game.plans.name[plan.plan] : t.noPlan}
+            {plan.plan === "arc"
+              ? t.planArc
+              : plan.interval === "month"
+                ? t.planMonth
+                : plan.interval === "year"
+                  ? t.planYear
+                  : plan.interval === "lifetime"
+                    ? t.planLifetime
+                    : ""}
           </p>
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <span className="font-serif text-2xl">{profile.referral_code}</span>
-            <CopyButton
-              value={`${profile.referral_code} · ${siteUrl()}/?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`}
-            />
+          <p className="mt-1 text-sm text-mute">
+            {plan.comp_until
+              ? fmt(t.compUntil, { date: day(plan.comp_until) })
+              : plan.plan === "arc"
+                ? t.arcOnce
+                : plan.cancel_at_period_end && plan.period_end
+                  ? fmt(t.cancelled, { date: day(plan.period_end.slice(0, 10)) })
+                  : plan.period_end && plan.interval !== "lifetime"
+                    ? fmt(t.renews, { date: day(plan.period_end.slice(0, 10)) })
+                    : null}
+            {plan.status === "past_due" ? t.pastDue : ""}
+            {plan.arc_credits > 0 ? fmt(t.credits, { n: plan.arc_credits }, locale) : ""}
+            {plan.loyalty_pending ? t.loyalty : ""}
+          </p>
+          {params.portail === "indisponible" ? <p className="mt-3 text-sm">{t.portalDown}</p> : null}
+          <div className="mt-5 flex flex-wrap gap-3">
+            {profile.has_billing ? (
+              <form action={openBillingPortal}>
+                <button type="submit" className={btnSecondary}>
+                  {plan.paid_plan === "pro" ? t.manageSub : t.invoices}
+                </button>
+              </form>
+            ) : null}
+            {plan.plan !== "fondateur" ? (
+              <Link href="/abonnement" className={plan.plan ? btnSecondary : btnPrimary}>
+                {plan.plan === "arc" ? t.goPro : plan.plan ? t.changePlan : t.choosePlan}
+              </Link>
+            ) : null}
           </div>
         </section>
-      ) : null}
 
-      <section className="mt-12">
-        <h2 className="font-serif text-3xl">Réglages</h2>
-        <SettingsForm
-          isPublic={profile.is_public}
-          emailReminders={profile.email_reminders}
-          walletPublic={profile.wallet_public}
-          bio={profile.bio}
-          art={profile.profile_art_slug}
-          arts={arts.map((a) => ({ slug: a.slug, title: a.title, artist: a.artist, width: a.width, height: a.height }))}
-        />
-      </section>
+        {profile.referral_code ? (
+          <section className="mt-12">
+            <h2 className="font-serif text-3xl">{t.referral}</h2>
+            <p className="mt-2 text-sm text-mute">
+              {t.referralText} {fmt(t.referralSales, { n: profile.referral_sales }, locale)}
+              {profile.referral_rewards ? fmt(t.referralRewards, { n: profile.referral_rewards }, locale) : ""}.
+            </p>
+            <div className="mt-4 flex items-center justify-between gap-4">
+              <span className="font-serif text-2xl">{profile.referral_code}</span>
+              <CopyButton value={`${profile.referral_code} · ${siteUrl()}/?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`} />
+            </div>
+          </section>
+        ) : null}
+      </div>
 
-      <section className="mt-12">
-        <h2 className="font-serif text-3xl">Notifications</h2>
-        <p className="mt-2 text-sm text-mute">Un seul rappel par jour, le soir, s&apos;il te reste des principes à prouver.</p>
-        <PushToggle subscribed={profile.push_subscriptions > 0} publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
-        <InstallHint />
-      </section>
+      <div className="lg:grid lg:grid-cols-2 lg:gap-12">
+        <section className="mt-12">
+          <h2 className="font-serif text-3xl">{t.settings}</h2>
+          <SettingsForm isPublic={profile.is_public} emailReminders={profile.email_reminders} walletPublic={profile.wallet_public} bio={profile.bio} />
+        </section>
 
-      <section className="mt-12">
-        <h2 className="font-serif text-3xl">Tes données</h2>
-        <p className="mt-2 text-sm text-mute">Connecté avec {profile.email}.</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <a href="/api/me/export" className={btnSecondary}>
-            Exporter mes données
-          </a>
-          <form action="/auth/signout" method="post">
-            <button type="submit" className={btnSecondary}>
-              Se déconnecter
-            </button>
-          </form>
-          {profile.is_admin ? (
-            <Link href="/admin" className={btnSecondary}>
-              Admin
-            </Link>
-          ) : null}
+        <div>
+          <section className="mt-12">
+            <h2 className="font-serif text-3xl">{t.notifications}</h2>
+            <p className="mt-2 text-sm text-mute">{t.notificationsText}</p>
+            <PushToggle subscribed={profile.push_subscriptions > 0} publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+            <InstallHint />
+          </section>
+
+          <section className="mt-12">
+            <h2 className="font-serif text-3xl">{t.data}</h2>
+            <p className="mt-2 text-sm text-mute">{fmt(t.connectedAs, { email: profile.email })}</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a href="/api/me/export" className={btnSecondary}>
+                {t.export}
+              </a>
+              <form action="/auth/signout" method="post">
+                <button type="submit" className={btnSecondary}>
+                  {t.signOut}
+                </button>
+              </form>
+              {profile.is_admin ? (
+                <Link href="/admin" className={btnSecondary}>
+                  {t.admin}
+                </Link>
+              ) : null}
+            </div>
+            <DeleteAccountForm pseudo={profile.pseudo} />
+          </section>
         </div>
-        <DeleteAccountForm pseudo={profile.pseudo} />
-      </section>
+      </div>
 
       <p className="mt-12 text-xs text-mute">
-        <span className={label}>Liens</span>{" "}
+        <span className={label}>{t.links}</span>{" "}
         <Link href="/app/principes" className="underline underline-offset-4">
-          Tes principes
+          {t.principles}
         </Link>{" "}
         ·{" "}
         <Link href="/art" className="underline underline-offset-4">
-          Crédits photos
+          {m.common.footer.credits}
         </Link>{" "}
         ·{" "}
         <Link href="/faq" className="underline underline-offset-4">
-          Questions
+          {m.common.footer.faq}
         </Link>{" "}
         ·{" "}
         <Link href="/legal/cgu" className="underline underline-offset-4">
-          CGU
+          {m.common.footer.terms}
         </Link>{" "}
         ·{" "}
         <Link href="/legal/cgv" className="underline underline-offset-4">
-          CGV
+          {m.common.footer.sales}
         </Link>{" "}
         ·{" "}
         <Link href="/legal/confidentialite" className="underline underline-offset-4">
-          Confidentialité
+          {m.common.footer.privacy}
         </Link>
       </p>
     </>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/components/I18nProvider";
 import { useEffect, useState } from "react";
 import { btnSecondary } from "@/lib/ui";
 
@@ -7,6 +8,7 @@ type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<
 
 /** Installation de la PWA : bouton sur Android et Chrome, mode d'emploi sur iPhone. */
 export function InstallHint() {
+  const { m } = useI18n();
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null);
   const [standalone, setStandalone] = useState(true);
   const [ios, setIos] = useState(false);
@@ -31,7 +33,7 @@ export function InstallHint() {
   if (standalone) return null;
   return (
     <div className="mt-6 border-t border-line pt-6 text-sm">
-      <p>Installe Nonante sur ton écran d&apos;accueil.</p>
+      <p>{m.app.profile.install}</p>
       {prompt ? (
         <button
           type="button"
@@ -41,12 +43,12 @@ export function InstallHint() {
           }}
           className={`${btnSecondary} mt-3`}
         >
-          Installer
+          {m.app.profile.installButton}
         </button>
       ) : ios ? (
-        <p className="mt-2 text-mute">Dans Safari : bouton Partager, puis « Sur l&apos;écran d&apos;accueil ».</p>
+        <p className="mt-2 text-mute">{m.app.profile.installIos}</p>
       ) : (
-        <p className="mt-2 text-mute">Menu du navigateur, puis « Installer l&apos;application ».</p>
+        <p className="mt-2 text-mute">{m.app.profile.installOther}</p>
       )}
     </div>
   );

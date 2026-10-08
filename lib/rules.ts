@@ -42,23 +42,3 @@ export const STAT_FULL_XP = 600;
 export function levelFor(xp: number): number {
   return Math.floor(Math.sqrt(Math.max(xp, 0) / 50)) + 1;
 }
-
-const TITLES: [number, string][] = [
-  [40, "Légende"],
-  [30, "Inarrêtable"],
-  [20, "Redoutable"],
-  [15, "Discipliné"],
-  [10, "Constant"],
-  [5, "Initié"],
-  [1, "Recrue"],
-];
-
-export function titleFor(level: number): string {
-  return TITLES.find(([min]) => level >= min)?.[1] ?? "Recrue";
-}
-
-/** Prochain titre et niveau requis, ou null au sommet. */
-export function nextTitle(level: number): { level: number; title: string } | null {
-  const next = [...TITLES].reverse().find(([min]) => min > level);
-  return next ? { level: next[0], title: next[1] } : null;
-}

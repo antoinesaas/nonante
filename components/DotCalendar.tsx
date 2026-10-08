@@ -1,3 +1,7 @@
+"use client";
+
+import { useI18n } from "@/components/I18nProvider";
+import { fmt } from "@/lib/i18n/format";
 import { ARC_DAYS } from "@/lib/rules";
 import type { DayStatus } from "@/lib/types";
 
@@ -14,17 +18,6 @@ const DOT: Record<DayStatus, string> = {
   none: "border border-line",
 };
 
-export const DAY_LABEL: Record<DayStatus, string> = {
-  green: "réussi",
-  red: "raté",
-  white: "absent",
-  joker: "joker",
-  future: "à venir",
-  today: "aujourd'hui",
-  pending: "en cours de clôture",
-  none: "hors de l'arc",
-};
-
 export function Dot({ state, today = false }: { state: DayStatus; today?: boolean }) {
   const ring = today && state !== "today" ? " ring-1 ring-paper ring-offset-[3px] ring-offset-ink" : "";
   return <span className={`block size-3.5 rounded-full sm:size-4 ${DOT[state]}${ring}`} />;
@@ -34,11 +27,12 @@ export const calendarGrid = "grid w-full grid-cols-[repeat(10,auto)] justify-bet
 
 /** Le calendrier de l'arc : 90 points, 10 colonnes × 9 lignes. */
 export function DotCalendar({ days, today }: { days: DayStatus[]; today?: number }) {
+  const { m } = useI18n();
   const cells = Array.from({ length: ARC_DAYS }, (_, i) => days[i] ?? "future");
   return (
     <ol className={calendarGrid}>
       {cells.map((state, i) => (
-        <li key={i} aria-label={`Jour ${i + 1} : ${i === today ? "aujourd'hui" : DAY_LABEL[state]}`}>
+        <li key={i} aria-label={fmt(m.game.calendar.dotAria, { n: i + 1, status: m.game.dayStatus[i === today ? "today" : state] })}>
           <Dot state={state} today={i === today} />
         </li>
       ))}
@@ -47,13 +41,11 @@ export function DotCalendar({ days, today }: { days: DayStatus[]; today?: number
 }
 
 export function CalendarLegend() {
-  const items: { state: DayStatus; label: string }[] = [
-    { state: "green", label: "réussi" },
-    { state: "red", label: "raté" },
-    { state: "white", label: "absent" },
-    { state: "joker", label: "joker" },
-    { state: "future", label: "à venir" },
-  ];
+  const { m } = useI18n();
+  const items: { state: DayStatus; label: string }[] = (["green", "red", "white", "joker", "future"] as const).map((state) => ({
+    state,
+    label: m.game.dayStatus[state],
+  }));
   return (
     <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-mute">
       {items.map((item) => (

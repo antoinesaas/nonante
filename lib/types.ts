@@ -77,6 +77,7 @@ export type ChallengeRule = {
 
 export type ChallengeView = {
   assignment_id: string;
+  code?: string;
   week: number;
   status: "assigned" | "done" | "failed";
   title: string;
@@ -275,6 +276,7 @@ export type LeaderboardRow = {
   level: number;
   ovr: number;
   category: Category | null;
+  country: string | null;
   points: number;
   streak: number;
   is_me: boolean;
@@ -358,4 +360,25 @@ export type SocialProof = {
   minutes_focus_7j: number;
   templates: number;
   joueurs_en_forme: { pseudo: string; avatar_path: string | null; level: number; streak: number; ovr: number }[];
+};
+
+export type GradeEntry = {
+  id: string;
+  day: string;
+  subject: string;
+  score: number;
+  out_of: number;
+  coefficient: number;
+  status: "declared" | "proven";
+  has_proof: boolean;
+};
+
+export type Grades = {
+  enabled: boolean;
+  xp_today: boolean;
+  average: number | null;
+  count: number;
+  subjects: { subject: string; average: number; count: number }[];
+  weeks: { week: string; average: number }[];
+  entries: GradeEntry[];
 };

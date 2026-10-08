@@ -1,79 +1,56 @@
 "use client";
 
-import { startTransition, useActionState, useRef, useState, useTransition } from "react";
+import { startTransition, useActionState, useState, useTransition } from "react";
 import { addWalletEntry, deleteWalletEntry } from "@/app/actions/wallet";
+import { FileField } from "@/components/FileField";
+import { useI18n } from "@/components/I18nProvider";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { compressField } from "@/lib/compress-image";
 import { idle } from "@/lib/errors";
 import { btnLink, btnPrimary, input, label } from "@/lib/ui";
 
-const SOURCES = [
-  { value: "vente", label: "Vente" },
-  { value: "client", label: "Client" },
-  { value: "freelance", label: "Mission freelance" },
-  { value: "contenu", label: "Contenu" },
-  { value: "autre", label: "Autre" },
-];
+const SOURCES = ["vente", "client", "freelance", "contenu", "autre"] as const;
 
 export function WalletEntryForm({ today, minDay }: { today: string; minDay: string }) {
+  const { m } = useI18n();
+  const t = m.app.wallet;
   const [state, formAction] = useActionState(addWalletEntry, idle);
-  const formRef = useRef<HTMLFormElement>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
 
   return (
     <form
-      ref={formRef}
       action={async (fd) => {
         const data = await compressField(fd, "proof");
-        setFileName(null);
         startTransition(() => formAction(data));
       }}
       className="space-y-4"
     >
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className={label}>Montant (€)</span>
+          <span className={label}>{t.amount}</span>
           <input name="amount" inputMode="decimal" placeholder="450" required className={`${input} mt-2`} />
         </label>
         <label className="block">
-          <span className={label}>Date</span>
+          <span className={label}>{t.date}</span>
           <input name="day" type="date" defaultValue={today} min={minDay} max={today} required className={`${input} mt-2`} />
         </label>
       </div>
       <label className="block">
-        <span className={label}>Source</span>
+        <span className={label}>{t.source}</span>
         <select name="source" defaultValue="vente" className={`${input} mt-2`}>
           {SOURCES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
+            <option key={s} value={s}>
+              {t.sources[s]}
             </option>
           ))}
         </select>
       </label>
       <label className="block">
-        <span className={label}>Libellé</span>
-        <input name="label" placeholder="Site vitrine pour un restaurant" maxLength={80} required className={`${input} mt-2`} />
+        <span className={label}>{t.label}</span>
+        <input name="label" placeholder={t.labelPlaceholder} maxLength={80} required className={`${input} mt-2`} />
       </label>
-      <label className="block">
-        <span className={label}>Preuve (capture d&apos;écran)</span>
-        <span className="mt-2 flex h-12 cursor-pointer items-center justify-between rounded-xs border border-dashed border-line px-4 text-sm text-mute hover:border-mute">
-          <span className="truncate">{fileName ?? "Virement, Stripe, facture payée…"}</span>
-          <span className="text-paper">Choisir</span>
-        </span>
-        <input
-          name="proof"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-          className="sr-only"
-          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
-        />
-        <span className="mt-2 block text-xs text-mute">
-          Sans capture, le revenu est noté mais pas prouvé : il ne compte ni pour tes stats ni pour tes succès. Les captures
-          restent privées, supprimées après 30 jours.
-        </span>
-      </label>
-      <SubmitButton className={btnPrimary} pendingLabel="Envoi…">
-        Ajouter au portefeuille
+      <FileField name="proof" label={t.proof} placeholder={t.proofPlaceholder} choose={t.choose} hint={t.proofHint} />
+      <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.sending}>
+        {t.submit}
       </SubmitButton>
       <FormMessage message={state.message} ok={state.ok} />
     </form>
@@ -81,19 +58,20 @@ export function WalletEntryForm({ today, minDay }: { today: string; minDay: stri
 }
 
 export function DeleteEntryButton({ id }: { id: string }) {
+  const { m } = useI18n();
   const [pending, startTransition] = useTransition();
-  const [message, setMessage] = useState<string | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; message: string | null } | null>(null);
   return (
     <>
       <button
         type="button"
         disabled={pending}
-        onClick={() => startTransition(async () => setMessage((await deleteWalletEntry(id)).message))}
-        className={`${btnLink} text-xs`}
+        onClick={() => startTransition(async () => setResult(await deleteWalletEntry(id)))}
+        className={`${btnLink} text-xs ${pending ? "opacity-50" : ""}`}
       >
-        retirer
+        {m.app.wallet.remove}
       </button>
-      {message && message !== "Retiré." ? <span className="ml-2 text-xs">{message}</span> : null}
+      {result && !result.ok ? <span className="ml-2 text-xs">{result.message}</span> : null}
     </>
   );
 }

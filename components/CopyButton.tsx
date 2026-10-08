@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/components/I18nProvider";
 import { btnSmall } from "@/lib/ui";
 
-export function CopyButton({ value, label = "Copier" }: { value: string; label?: string }) {
+export function CopyButton({ value, label }: { value: string; label?: string }) {
+  const { m } = useI18n();
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -19,7 +21,7 @@ export function CopyButton({ value, label = "Copier" }: { value: string; label?:
       }}
       className={btnSmall}
     >
-      {copied ? "Copié" : label}
+      {copied ? m.common.actions.copied : (label ?? m.common.actions.copy)}
     </button>
   );
 }

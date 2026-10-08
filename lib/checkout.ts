@@ -2,6 +2,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import type Stripe from "stripe";
 import { siteUrl } from "@/lib/env";
+import type { Locale } from "@/lib/i18n/config";
+import { getMessages, type Messages } from "@/lib/i18n/messages";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
 import { ensureCoupons, LOYALTY_COUPON, REFERRAL_COUPON } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -10,7 +12,8 @@ import { parseUtm, UTM_COOKIE } from "@/lib/utm";
 
 // Paiement : Arc 90 jours (une fois par arc), Pro (abonnement), Fondateur (une fois, à vie).
 
-export const UNAVAILABLE = "Le paiement n'est pas encore disponible. Réessaie plus tard.";
+/** Clé du message d'erreur (actions.checkout), traduit par l'appelant. */
+export type CheckoutError = keyof Omit<Messages["actions"]["checkout"], "stripeNotice">;
 
 export type Choice = { plan: PlanId; interval: Interval };
 
@@ -50,14 +53,14 @@ export async function upcomingDiscount(
   userId: string,
   plan: PlanId,
   b: Billing | null,
-): Promise<{ percent: number; label: string } | null> {
-  if (plan === "arc" && b?.loyalty_pending) return { percent: 50, label: "Fidélité (arc tenu)" };
-  if (plan === "arc" && (b?.referral_rewards ?? 0) > 0) return { percent: 20, label: "Parrainage" };
+): Promise<{ percent: number; kind: "loyalty" | "reward" | "friend"; pseudo: string | null } | null> {
+  if (plan === "arc" && b?.loyalty_pending) return { percent: 50, kind: "loyalty", pseudo: null };
+  if (plan === "arc" && (b?.referral_rewards ?? 0) > 0) return { percent: 20, kind: "reward", pseudo: null };
   const utm = parseUtm((await cookies()).get(UTM_COOKIE)?.value);
   const source = b?.utm_source ?? utm.source;
   const campaign = b?.utm_campaign ?? utm.campaign;
   const friend = await referralPromo(userId, source === "parrainage" ? campaign : null);
-  return friend ? { percent: 20, label: `Invité par ${friend.pseudo}` } : null;
+  return friend ? { percent: 20, kind: "friend", pseudo: friend.pseudo } : null;
 }
 
 export async function billing(userId: string): Promise<Billing | null> {
@@ -76,7 +79,7 @@ async function ensureCustomer(userId: string, b: Billing): Promise<string> {
   return customer.id;
 }
 
-export async function portalUrl(customer: string): Promise<string | null> {
+export async function portalUrl(customer: string, locale: Locale = "fr"): Promise<string | null> {
   const admin = createAdminClient();
   const { data: setting } = await admin.from("settings").select("value").eq("key", "stripe_portal").maybeSingle();
   const configuration = typeof setting?.value === "string" ? setting.value : undefined;
@@ -84,7 +87,7 @@ export async function portalUrl(customer: string): Promise<string | null> {
     const session = await getStripe().billingPortal.sessions.create({
       customer,
       return_url: `${siteUrl()}/app/profil`,
-      locale: "fr",
+      locale,
       ...(configuration ? { configuration } : {}),
     });
     return session.url;
@@ -101,13 +104,14 @@ export async function portalUrl(customer: string): Promise<string | null> {
 export async function checkoutDestination(
   userId: string,
   { plan, interval }: Choice,
-): Promise<{ url: string } | { covered: true } | { error: string }> {
-  if (!validChoice(plan, interval)) return { error: "Choix invalide." };
-  if (!stripeConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return { error: UNAVAILABLE };
+  locale: Locale = "fr",
+): Promise<{ url: string } | { covered: true } | { error: CheckoutError }> {
+  if (!validChoice(plan, interval)) return { error: "invalid" };
+  if (!stripeConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY) return { error: "unavailable" };
 
   const b = await billing(userId);
-  if (!b) return { error: "Construis d'abord ton arc." };
-  if (b.effective_plan === "fondateur") return plan === "fondateur" ? { error: "Tu as déjà l'accès à vie." } : { covered: true };
+  if (!b) return { error: "buildFirst" };
+  if (b.effective_plan === "fondateur") return plan === "fondateur" ? { error: "lifetime" } : { covered: true };
   if (plan === "arc") {
     if (b.effective_plan === "pro") return { covered: true };
     if (b.arc_paid || b.arc_credits > 0) return { covered: true };
@@ -115,8 +119,8 @@ export async function checkoutDestination(
 
   // Abonnement Pro en cours : changement de période dans le portail Stripe (prorata géré par Stripe).
   if (plan === "pro" && b.stripe_customer_id && b.stripe_subscription_id && ["active", "trialing", "past_due"].includes(b.plan_status ?? "")) {
-    const url = await portalUrl(b.stripe_customer_id);
-    return url ? { url } : { error: UNAVAILABLE };
+    const url = await portalUrl(b.stripe_customer_id, locale);
+    return url ? { url } : { error: "unavailable" };
   }
 
   const admin = createAdminClient();
@@ -125,9 +129,9 @@ export async function checkoutDestination(
     admin.rpc("plans_public"),
   ]);
   const priceId = (price as { price_id: string | null } | null)?.price_id;
-  if (!priceId) return { error: UNAVAILABLE };
+  if (!priceId) return { error: "unavailable" };
   const p = plans as PublicPlans | null;
-  if (plan === "fondateur" && p && p.fondateur.sold >= p.fondateur.limit) return { error: "Les 100 places Fondateur sont parties." };
+  if (plan === "fondateur" && p && p.fondateur.sold >= p.fondateur.limit) return { error: "soldOut" };
 
   const utm = parseUtm((await cookies()).get(UTM_COOKIE)?.value);
   const metadata: Record<string, string> = { user_id: userId, plan, interval, waiver: "acces_immediat" };
@@ -151,14 +155,9 @@ export async function checkoutDestination(
       customer,
       client_reference_id: userId,
       line_items: [{ price: priceId, quantity: 1 }],
-      locale: "fr",
+      locale,
       metadata,
-      custom_text: {
-        submit: {
-          message:
-            "Tu demandes l'accès immédiat. En cas de rétractation dans les 14 jours, le service déjà fourni reste dû au prorata.",
-        },
-      },
+      custom_text: { submit: { message: getMessages(locale).actions.checkout.stripeNotice } },
       success_url: `${siteUrl()}/app?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl()}/abonnement?annule=1`,
     };
@@ -181,6 +180,6 @@ export async function checkoutDestination(
   } catch (e) {
     console.error(`[checkout] session Stripe impossible : ${e instanceof Error ? e.name : "inconnue"}`);
   }
-  return { error: "Le paiement n'a pas pu démarrer. Réessaie dans un instant." };
+  return { error: "failed" };
 }
 

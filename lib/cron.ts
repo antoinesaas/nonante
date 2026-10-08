@@ -1,7 +1,8 @@
 import "server-only";
-import { sendArcResult, sendLoyalty, sendReminder, sendWeeklyRecap } from "@/lib/emails";
+import { reminderPush, sendArcResult, sendLoyalty, sendReminder, sendWeeklyRecap } from "@/lib/emails";
+import { DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { localesOf } from "@/lib/i18n/user";
 import { removeProofPhotos } from "@/lib/photos";
-import { plural } from "@/lib/proofs";
 import { sendPush } from "@/lib/push";
 import { stripeConfigured } from "@/lib/stripe";
 import { applyLoyaltyDiscount } from "@/lib/stripe-codes";
@@ -64,11 +65,12 @@ export async function taskWeekly(admin = createAdminClient()) {
     { user_id: string; email: string | null; email_reminders: boolean; points: number; green: number; days: number;
       streak: number; level: number; ovr: number }[]
   >(admin, "weekly_recap_targets");
+  const locales = await localesOf(admin, targets.map((t) => t.user_id));
   let recaps = 0;
   for (const t of targets) {
     if (!t.email || !t.email_reminders || t.days === 0) continue;
     const first = await call<boolean>(admin, "log_email_once", { p_user: t.user_id, p_kind: "weekly", p_ref: monday });
-    if (first && (await sendWeeklyRecap(t.email, t.user_id, t))) recaps++;
+    if (first && (await sendWeeklyRecap(t.email, t.user_id, t, locales.get(t.user_id) ?? DEFAULT_LOCALE))) recaps++;
   }
   return { recaps };
 }
@@ -78,17 +80,19 @@ export async function taskReminders(admin = createAdminClient()) {
   const targets = await call<
     { user_id: string; email: string | null; remaining: number; points: number; email_reminders: boolean; has_push: boolean }[]
   >(admin, "cron_reminder_targets");
+  const locales = await localesOf(admin, targets.map((t) => t.user_id));
   let push = 0;
   let email = 0;
   for (const t of targets) {
+    const locale = locales.get(t.user_id) ?? DEFAULT_LOCALE;
     const channel = t.has_push ? "push" : t.email_reminders && t.email ? "email" : "none";
     // Noter d'abord : en cas de relance, personne ne reçoit deux rappels.
     const first = await call<boolean>(admin, "mark_reminded", { p_user: t.user_id, p_channel: channel });
     if (!first) continue;
-    const body = `Il te reste ${plural(t.remaining, "principe", "principes")}. ${t.points} points en jeu.`;
+    const body = reminderPush(t.remaining, t.points, locale);
     if (channel === "push" && (await sendPush(t.user_id, { title: "Nonante", body, url: "/app" }))) {
       push++;
-    } else if (t.email_reminders && t.email && (await sendReminder(t.email, t.user_id, t.remaining, t.points))) {
+    } else if (t.email_reminders && t.email && (await sendReminder(t.email, t.user_id, t.remaining, t.points, locale))) {
       email++;
     }
   }
@@ -101,6 +105,8 @@ export async function taskArcEnd(admin = createAdminClient()) {
     admin,
     "cron_loyalty_targets",
   );
+  const results = await call<{ enrollment_id: string; user_id: string; email: string | null; status: string; green: number }[]>(admin, "cron_arc_results");
+  const locales = await localesOf(admin, [...loyalty.map((l) => l.user_id), ...results.map((r) => r.user_id)]);
   let applied = 0;
   for (const l of loyalty) {
     let ok = false;
@@ -118,16 +124,15 @@ export async function taskArcEnd(admin = createAdminClient()) {
     if (ok || pending) applied++;
     if (l.email) {
       const first = await call<boolean>(admin, "log_email_once", { p_user: l.user_id, p_kind: "loyalty", p_ref: l.enrollment_id });
-      if (first && (ok || pending)) await sendLoyalty(l.email, ok);
+      if (first && (ok || pending)) await sendLoyalty(l.email, ok, locales.get(l.user_id) ?? DEFAULT_LOCALE);
     }
   }
 
-  const results = await call<{ enrollment_id: string; user_id: string; email: string | null; status: string; green: number }[]>(admin, "cron_arc_results");
   let emails = 0;
   for (const r of results) {
     if (!r.email || r.status !== "failed") continue;
     const first = await call<boolean>(admin, "log_email_once", { p_user: r.user_id, p_kind: "arc_result", p_ref: r.enrollment_id });
-    if (first && (await sendArcResult(r.email, r.green))) emails++;
+    if (first && (await sendArcResult(r.email, r.green, locales.get(r.user_id) ?? DEFAULT_LOCALE))) emails++;
   }
   return { loyalty: loyalty.length, discounts: applied, result_emails: emails };
 }

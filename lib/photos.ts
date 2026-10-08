@@ -11,18 +11,20 @@ const ACCEPTED = new Set(["jpeg", "png", "webp", "heif"]);
  * ré-encode en JPEG 1600 px maximum (métadonnées EXIF et position GPS supprimées)
  * puis dépose dans le bucket privé : proofs/<user_id>/<uuid>.jpg.
  */
-export async function storeProofPhoto(userId: string, file: unknown): Promise<{ path: string } | { error: string }> {
-  if (!(file instanceof File) || file.size === 0) return { error: "Photo manquante." };
-  if (file.size > MAX_PHOTO_BYTES) return { error: "Photo trop lourde : 3 Mo maximum." };
+type PhotoMessages = { missing: string; tooBig: string; notImage: string; format: string; unreadable: string; upload: string };
+
+export async function storeProofPhoto(userId: string, file: unknown, t: PhotoMessages): Promise<{ path: string } | { error: string }> {
+  if (!(file instanceof File) || file.size === 0) return { error: t.missing };
+  if (file.size > MAX_PHOTO_BYTES) return { error: t.tooBig };
 
   const input = Buffer.from(await file.arrayBuffer());
   let format: string | undefined;
   try {
     format = (await sharp(input).metadata()).format;
   } catch {
-    return { error: "Ce fichier n'est pas une image." };
+    return { error: t.notImage };
   }
-  if (!format || !ACCEPTED.has(format)) return { error: "Format d'image non accepté." };
+  if (!format || !ACCEPTED.has(format)) return { error: t.format };
 
   let clean: Buffer;
   try {
@@ -33,14 +35,14 @@ export async function storeProofPhoto(userId: string, file: unknown): Promise<{ 
       .jpeg({ quality: 82, mozjpeg: true })
       .toBuffer();
   } catch {
-    return { error: "Image illisible." };
+    return { error: t.unreadable };
   }
 
   const path = `${userId}/${randomUUID()}.jpg`;
   const { error } = await createAdminClient()
     .storage.from("proofs")
     .upload(path, clean, { contentType: "image/jpeg", upsert: false });
-  if (error) return { error: "Envoi impossible. Réessaie." };
+  if (error) return { error: t.upload };
   return { path };
 }
 
@@ -53,17 +55,17 @@ export async function removeProofPhotos(paths: string[]): Promise<void> {
 }
 
 /** Photo de profil : carré 512 px, WebP, sans métadonnées, dans le bucket public avatars/<user_id>/<uuid>.webp. */
-export async function storeAvatar(userId: string, file: unknown): Promise<{ path: string } | { error: string }> {
-  if (!(file instanceof File) || file.size === 0) return { error: "Photo manquante." };
-  if (file.size > MAX_PHOTO_BYTES) return { error: "Photo trop lourde : 3 Mo maximum." };
+export async function storeAvatar(userId: string, file: unknown, t: PhotoMessages): Promise<{ path: string } | { error: string }> {
+  if (!(file instanceof File) || file.size === 0) return { error: t.missing };
+  if (file.size > MAX_PHOTO_BYTES) return { error: t.tooBig };
   const input = Buffer.from(await file.arrayBuffer());
   let format: string | undefined;
   try {
     format = (await sharp(input).metadata()).format;
   } catch {
-    return { error: "Ce fichier n'est pas une image." };
+    return { error: t.notImage };
   }
-  if (!format || !ACCEPTED.has(format)) return { error: "Format d'image non accepté." };
+  if (!format || !ACCEPTED.has(format)) return { error: t.format };
   let clean: Buffer;
   try {
     clean = await sharp(input, { failOn: "error" })
@@ -72,13 +74,13 @@ export async function storeAvatar(userId: string, file: unknown): Promise<{ path
       .webp({ quality: 82 })
       .toBuffer();
   } catch {
-    return { error: "Image illisible." };
+    return { error: t.unreadable };
   }
   const path = `${userId}/${randomUUID()}.webp`;
   const { error } = await createAdminClient()
     .storage.from("avatars")
     .upload(path, clean, { contentType: "image/webp", upsert: false, cacheControl: "31536000" });
-  if (error) return { error: "Envoi impossible. Réessaie." };
+  if (error) return { error: t.upload };
   return { path };
 }
 

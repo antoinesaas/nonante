@@ -7,10 +7,9 @@ import { Logo } from "@/components/Logo";
 import { PlayerCard } from "@/components/Player";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getUser } from "@/lib/auth";
-import { formatDayFr } from "@/lib/dates";
-import { formatEuros } from "@/lib/money";
-import { CATEGORY_LABEL, GOAL_LABEL, plural, points } from "@/lib/proofs";
-import { titleFor } from "@/lib/rules";
+import { fmt, formatDay, formatMoney, formatNumber, formatPoints } from "@/lib/i18n/format";
+import { titleFor } from "@/lib/i18n/labels";
+import { getI18n } from "@/lib/i18n/server";
 import type { PublicProfile } from "@/lib/types";
 import { btnPrimary, label } from "@/lib/ui";
 
@@ -22,19 +21,21 @@ async function load(pseudo: string): Promise<PublicProfile | null> {
 }
 
 export async function generateMetadata({ params }: PageProps<"/u/[pseudo]">): Promise<Metadata> {
-  const { pseudo } = await params;
+  const [{ pseudo }, { m }] = await Promise.all([params, getI18n()]);
+  const t = m.pages.publicProfile;
   const profile = await load(pseudo);
-  if (!profile) return { title: "Profil", robots: { index: false } };
+  if (!profile) return { title: t.fallbackTitle, robots: { index: false } };
   return {
     title: profile.pseudo,
-    description: `Niveau ${profile.stats.level} (${titleFor(profile.stats.level)}), note globale ${profile.stats.ovr}. ${
-      profile.arc?.day_number ? `Jour ${profile.arc.day_number} sur 90.` : ""
-    }`,
+    description:
+      fmt(t.description, { level: profile.stats.level, title: titleFor(profile.stats.level, m), ovr: profile.stats.ovr }) +
+      (profile.arc?.day_number ? fmt(t.descriptionDay, { n: profile.arc.day_number }) : ""),
   };
 }
 
 export default async function PublicProfilePage({ params }: PageProps<"/u/[pseudo]">) {
-  const { pseudo } = await params;
+  const [{ pseudo }, { m, locale }] = await Promise.all([params, getI18n()]);
+  const t = m.pages.publicProfile;
   const profile = await load(pseudo);
   if (!profile) notFound();
   const { user } = await getUser();
@@ -43,8 +44,8 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
 
   return (
     <>
-      <main className="mx-auto w-full max-w-xl px-5 pt-6 pb-16">
-        <Link href="/" aria-label="Nonante, accueil">
+      <main className="mx-auto w-full max-w-xl px-5 pt-6 pb-16 lg:max-w-2xl">
+        <Link href="/" aria-label={m.common.homeAria}>
           <Logo size="sm" />
         </Link>
 
@@ -55,55 +56,55 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
             stats={s}
             art={profile.art}
             founder={profile.founder}
-            subtitle={profile.arc?.day_number ? `jour ${profile.arc.day_number}/90` : null}
+            subtitle={profile.arc?.day_number ? fmt(t.dayOf, { n: profile.arc.day_number }) : null}
           />
         </div>
 
         {profile.bio ? <p className="mt-6 text-lg">{profile.bio}</p> : null}
         {profile.arc?.goal ? (
           <div className="mt-6">
-            <p className={label}>{GOAL_LABEL[profile.arc.goal_type]}</p>
+            <p className={label}>{m.game.goals[profile.arc.goal_type].label}</p>
             <p className="mt-2 text-lg">{profile.arc.goal}</p>
           </div>
         ) : null}
 
         <dl className="mt-8 grid grid-cols-3 gap-y-6 border-y border-line py-6">
           <div>
-            <dt className="text-xs text-mute">Points</dt>
-            <dd className="mt-1 font-serif text-3xl tabular-nums">{points(profile.points)}</dd>
+            <dt className="text-xs text-mute">{t.points}</dt>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{formatPoints(profile.points, locale)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-mute">Rang général</dt>
+            <dt className="text-xs text-mute">{t.rank}</dt>
             <dd className="mt-1 font-serif text-3xl tabular-nums">{profile.rank ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-mute">Série</dt>
+            <dt className="text-xs text-mute">{t.streak}</dt>
             <dd className="mt-1 font-serif text-3xl tabular-nums">{s.streak}</dd>
           </div>
           <div>
-            <dt className="text-xs text-mute">Jours verts</dt>
+            <dt className="text-xs text-mute">{t.greenDays}</dt>
             <dd className="mt-1 font-serif text-3xl tabular-nums">{s.green_days}</dd>
           </div>
           <div>
-            <dt className="text-xs text-mute">Heures de focus</dt>
+            <dt className="text-xs text-mute">{t.focusHours}</dt>
             <dd className="mt-1 font-serif text-3xl tabular-nums">{Math.floor(s.focus_minutes / 60)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-mute">Répétitions</dt>
-            <dd className="mt-1 font-serif text-3xl tabular-nums">{s.reps.toLocaleString("fr-FR")}</dd>
+            <dt className="text-xs text-mute">{t.reps}</dt>
+            <dd className="mt-1 font-serif text-3xl tabular-nums">{formatNumber(s.reps, locale)}</dd>
           </div>
           {profile.wallet_proven_cents !== null ? (
             <div className="col-span-3">
-              <dt className="text-xs text-mute">Revenus prouvés avec son projet</dt>
-              <dd className="mt-1 font-serif text-3xl tabular-nums">{formatEuros(profile.wallet_proven_cents)}</dd>
+              <dt className="text-xs text-mute">{t.income}</dt>
+              <dd className="mt-1 font-serif text-3xl tabular-nums">{formatMoney(profile.wallet_proven_cents, locale)}</dd>
             </div>
           ) : null}
         </dl>
 
         <p className="mt-4 text-sm text-mute">
-          {profile.arc ? `Arc n° ${profile.arc.number} · ${CATEGORY_LABEL[profile.arc.category]} · ` : ""}
-          {plural(s.arcs_completed, "arc tenu", "arcs tenus")} · {plural(profile.refused_proofs, "preuve refusée", "preuves refusées")} ·
-          joueur depuis le {formatDayFr(profile.member_since.slice(0, 10))}
+          {profile.arc ? fmt(t.arc, { n: profile.arc.number, category: m.game.category[profile.arc.category] }) : ""}
+          {fmt(t.arcsDone, { n: s.arcs_completed }, locale)} · {fmt(t.refused, { n: profile.refused_proofs }, locale)} ·{" "}
+          {fmt(t.since, { date: formatDay(profile.member_since.slice(0, 10), locale) })}
         </p>
 
         {profile.calendar.length ? (
@@ -114,24 +115,24 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
         ) : null}
 
         <section className="mt-12">
-          <h2 className="font-serif text-3xl">Succès</h2>
+          <h2 className="font-serif text-3xl">{t.achievements}</h2>
           {profile.achievements.length ? (
             <ul className="mt-4 divide-y divide-line border-y border-line">
               {profile.achievements.map((a) => (
                 <li key={a.code} className="py-3">
-                  <p>{a.title}</p>
-                  <p className="text-xs text-mute">{a.description}</p>
+                  <p>{m.content.achievements[a.code]?.title ?? a.title}</p>
+                  <p className="text-xs text-mute">{m.content.achievements[a.code]?.description ?? a.description}</p>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-mute">Aucun pour l&apos;instant.</p>
+            <p className="mt-3 text-mute">{t.none}</p>
           )}
         </section>
 
         {!user ? (
           <Link href="/onboarding" className={`${btnPrimary} mt-12`}>
-            Créer ma carte de joueur
+            {t.createCard}
           </Link>
         ) : null}
 
@@ -140,7 +141,7 @@ export default async function PublicProfilePage({ params }: PageProps<"/u/[pseud
             <ReportForm pseudo={profile.pseudo} />
           ) : (
             <Link href={`/login?next=/u/${profile.pseudo}`} className="text-sm text-mute underline underline-offset-4">
-              Signaler ce profil
+              {t.report}
             </Link>
           )}
         </section>

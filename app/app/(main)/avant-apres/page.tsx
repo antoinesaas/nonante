@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { requireUser } from "@/lib/auth";
+import { fmt } from "@/lib/i18n/format";
+import { getI18n } from "@/lib/i18n/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { btnLink, label } from "@/lib/ui";
 
-export const metadata: Metadata = { title: "Avant / après" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.app.beforeAfter.title };
+}
 
 type ArcPhotos = {
   before_path: string | null;
@@ -23,8 +29,8 @@ async function signed(path: string | null): Promise<string | null> {
 
 /** Photo du jour 1, verrouillée jusqu'à la fin de l'arc, puis comparée à celle du jour 90. */
 export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/avant-apres">) {
-  const { supabase, user } = await requireUser("/app/avant-apres");
-  const params = await searchParams;
+  const [{ supabase, user }, { m }, params] = await Promise.all([requireUser("/app/avant-apres"), getI18n(), searchParams]);
+  const t = m.app.beforeAfter;
   const { data } = await supabase.rpc("my_arc_photos");
   const p = data as ArcPhotos | null;
   const { data: enrollment } = await supabase
@@ -38,11 +44,9 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
   if (!p || !enrollment) {
     return (
       <>
-        <p className={label}>Avant / après</p>
-        <h1 className="mt-4 font-serif text-4xl leading-tight">Lance ton arc d&apos;abord.</h1>
-        <Link href="/app" className={`${btnLink} mt-6 inline-block`}>
-          Retour
-        </Link>
+        <BackLink />
+        <p className={`${label} mt-4`}>{t.title}</p>
+        <h1 className="mt-4 font-serif text-4xl leading-tight">{t.startFirst}</h1>
       </>
     );
   }
@@ -53,23 +57,21 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
 
   return (
     <>
-      <p className={label}>Avant / après</p>
-      <h1 className="mt-4 font-serif text-4xl leading-tight">Le jour 1 contre le jour 90.</h1>
-      <p className="mt-3 text-sm text-mute">
-        Une photo de toi au début, verrouillée : tu ne la revois qu&apos;une fois la photo de fin prise, à partir du jour 81.
-        Privée, jamais montrée à personne.
-      </p>
+      <BackLink />
+      <p className={`${label} mt-4`}>{t.title}</p>
+      <h1 className="mt-4 font-serif text-4xl leading-tight">{t.heading}</h1>
+      <p className="mt-3 text-sm text-mute">{t.intro}</p>
 
       {unlocked ? (
         <div className="mt-8 grid grid-cols-2 gap-3">
           {[
-            ["Jour 1", before],
-            ["Jour 90", after],
+            [t.day1, before],
+            [t.day90, after],
           ].map(([title, url]) => (
             <figure key={title}>
               {url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- URL signée de 5 minutes, bucket privé
-                <img src={url} alt={`Photo ${title}`} className="aspect-[3/4] w-full object-cover" />
+                <img src={url} alt={fmt(t.photoAlt, { day: title ?? "" })} className="aspect-[3/4] w-full object-cover" />
               ) : (
                 <div className="aspect-[3/4] w-full bg-surface" />
               )}
@@ -78,10 +80,10 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
           ))}
         </div>
       ) : (
-        <div className="mt-8 border border-line p-5">
-          <p>{p.before_path ? "Photo du jour 1 prise. Verrouillée." : "Pas encore de photo du jour 1."}</p>
+        <div className="mt-8 rounded-xs border border-line p-5">
+          <p>{p.before_path ? t.beforeTaken : t.beforeMissing}</p>
           <p className="mt-1 text-sm text-mute">
-            {p.can_take_after ? "Tu peux prendre ta photo de fin." : p.day_number ? `Jour ${p.day_number} sur 90.` : ""}
+            {p.can_take_after ? t.canAfter : p.day_number ? fmt(t.dayOf, { n: p.day_number }) : ""}
           </p>
         </div>
       )}
@@ -91,15 +93,15 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
           <PhotoCapture
             kind="arc_avant"
             targetId={enrollment.id}
-            title="Ta photo du jour 1"
-            detail="Toi, aujourd'hui. Même endroit, même lumière que tu pourras retrouver au jour 90."
+            title={t.beforeTitle}
+            detail={t.beforeDetail}
             facing="user"
             backHref="/app/avant-apres"
           />
         </div>
       ) : p.can_take_before && p.before_path ? (
         <Link href="/app/avant-apres?refaire=1" className={`${btnLink} mt-6 inline-block`}>
-          Reprendre la photo du jour 1 (possible la première semaine)
+          {t.retake}
         </Link>
       ) : null}
 
@@ -108,8 +110,8 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
           <PhotoCapture
             kind="arc_apres"
             targetId={enrollment.id}
-            title="Ta photo de fin"
-            detail="Même endroit, même lumière qu'au jour 1. Elle déverrouille la comparaison."
+            title={t.afterTitle}
+            detail={t.afterDetail}
             facing="user"
             backHref="/app/avant-apres"
           />

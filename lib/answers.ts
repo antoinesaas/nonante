@@ -3,11 +3,9 @@ import { todayParis } from "@/lib/dates";
 
 // Réponses du questionnaire : vérifiées ici (navigateur et serveur), puis par Postgres (save_arc).
 
-export const COMMITMENTS = [
-  { value: "essayer", label: "Je veux essayer", echo: "Tu as dit vouloir essayer. Le meilleur moyen, c'est d'aller au bout." },
-  { value: "decide", label: "Je suis décidé", echo: "Tu as dit être décidé. Voilà de quoi le prouver, chaque jour." },
-  { value: "tout", label: "Je suis prêt à tout donner", echo: "Tu as dit être prêt à tout donner. Ton arc va te prendre au mot." },
-] as const;
+export const BUSINESS_TYPES = ["ecommerce", "agence", "saas", "contenu", "revente", "trading", "immobilier", "coaching", "service_local", "autre"] as const;
+export const SCHOOLS = ["lycee", "prepa", "universite", "commerce", "ingenieur", "bts_but", "autre"] as const;
+export const COMMITMENT_KEYS = ["essayer", "decide", "tout"] as const;
 
 export const Answers = z.object({
   category: z.enum(["etudes", "business", "mixte"], { error: "Choisis ton profil." }),
@@ -17,8 +15,13 @@ export const Answers = z.object({
   goalUnit: z.string().trim().max(20).nullable(),
   goalPublic: z.boolean(),
   weakPoints: z.array(z.enum(["telephone", "procrastination", "reveil", "sport", "dispersion", "vente", "regularite"])).max(7),
+  // Absents des réponses gardées avant le 8 octobre 2026 : valeurs par défaut.
+  businessTypes: z.array(z.enum(BUSINESS_TYPES)).max(10).default([]),
+  businessOther: z.string().trim().max(60).nullable().default(null),
+  school: z.enum(SCHOOLS).nullable().default(null),
+  schoolOther: z.string().trim().max(60).nullable().default(null),
   wakeTime: z.string().regex(/^([01]\d|2[0-3]):(00|15|30|45)$/, { error: "Heure de lever invalide." }),
-  pushups: z.enum(["oui", "quelques", "non"], { error: "Réponds à la question sur les pompes." }),
+  pushups: z.enum(["oui", "quelques", "non"], { error: "Réponds à la question sur le sport." }),
   focusMinutes: z.union([z.literal(25), z.literal(50), z.literal(90)]),
   start: z.string().regex(/^(today|tomorrow|monday|date:\d{4}-\d{2}-\d{2}|squad:[0-9a-f-]{36})$/, { error: "Choisis ton jour 1." }),
   commitment: z.enum(["essayer", "decide", "tout"]).nullable(),

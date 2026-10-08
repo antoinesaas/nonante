@@ -1,17 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { abandonSession, completeSession, heartbeat, startChallengeSession, startSession } from "@/app/actions/proofs";
+import { abandonSession, completeSession, heartbeat, leaveSession, startChallengeSession, startSession } from "@/app/actions/proofs";
+import { useI18n } from "@/components/I18nProvider";
 import { Ring } from "@/components/Ring";
+import { Sheet } from "@/components/Sheet";
+import type { Messages } from "@/lib/i18n/messages";
+import { fmt } from "@/lib/i18n/format";
 import type { StartedSession } from "@/lib/types";
-import { btnLink, btnPrimary, btnSecondary } from "@/lib/ui";
+import { btnPrimary, btnSecondary } from "@/lib/ui";
 
 type Phase = "ready" | "starting" | "running" | "finishing" | "completed" | "broken" | "abandoned";
 
-type Props =
+type Props = (
   | { mode: "principle"; principleId: string; label: string; minutes: number }
-  | { mode: "challenge"; assignmentId: string; label: string; minutes: null };
+  | { mode: "challenge"; assignmentId: string; label: string; minutes: null }
+) & {
+  /** Une session de cette page tournait encore (page rechargée, appli rouverte) : elle casse dès l'ouverture. */
+  orphan?: boolean;
+};
 
 const HEARTBEAT_MS = 15_000;
 const HIDDEN_LIMIT_MS = 10_000;
@@ -21,23 +30,59 @@ function mmss(seconds: number): string {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
+/** Raison de la casse (déjà traduite par l'action serveur). */
+function reasonText(reason: string | undefined, t: Messages["app"]["timer"]): string {
+  if (!reason) return t.reasonLeft;
+  // Message technique de Postgres en français : version plus parlante.
+  if (reason.includes("battements se sont arrêtés")) return t.reasonBeats;
+  if (reason.includes("Trop peu de battements")) return t.reasonShort;
+  return reason;
+}
+
+function BackArrow({ label, onClick, href }: { label: string; onClick?: () => void; href?: string }) {
+  const icon = (
+    <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
+      <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+  const cls = "-ml-2 grid size-11 place-items-center rounded-full text-mute transition-[color,transform] hover:text-paper active:scale-90";
+  return href ? (
+    <Link href={href} aria-label={label} className={cls}>
+      {icon}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} aria-label={label} className={cls}>
+      {icon}
+    </button>
+  );
+}
+
 /**
- * Minuteur de concentration (§5). Le serveur décide de tout : heure de début, battements, fin.
- * Ce composant ne fait que montrer le temps et prévenir le serveur quand la page est quittée.
+ * Minuteur de concentration. Le serveur décide de tout : heure de début, battements, fin.
+ * Deux boutons seulement : Lancer, puis Stop (confirmation : − 5 points). Quitter la page casse la session :
+ * retour (bouton ou geste), autre onglet de l'app, onglet fermé (sendBeacon), plus de 10 s hors de l'écran.
  */
 export function FocusTimer(props: Props) {
+  const { m } = useI18n();
+  const t = m.app.timer;
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("ready");
   const [minutes, setMinutes] = useState<number>(props.minutes ?? 50);
   const [remaining, setRemaining] = useState<number>((props.minutes ?? 50) * 60);
   const [message, setMessage] = useState<string | null>(null);
-  const [confirmAbandon, setConfirmAbandon] = useState(false);
+  const [confirmStop, setConfirmStop] = useState(false);
   const [points, setPoints] = useState<number | null>(null);
 
   const session = useRef<StartedSession | null>(null);
+  const phaseRef = useRef<Phase>("ready");
   const skew = useRef(0);
   const hiddenAt = useRef<number | null>(null);
   const wakeLock = useRef<{ release: () => Promise<void> } | null>(null);
   const finishing = useRef(false);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const total = minutes * 60;
 
@@ -50,15 +95,27 @@ export function FocusTimer(props: Props) {
     }
   }, []);
 
-  const stopped = useCallback((status: string, reason?: string) => {
-    if (status === "broken") {
-      setPhase("broken");
-      setMessage(reason ?? "La session a cassé.");
-    } else if (status === "abandoned") {
-      setPhase("abandoned");
-    }
-    void wakeLock.current?.release().catch(() => {});
-  }, []);
+  const stopped = useCallback(
+    (status: string, reason?: string) => {
+      setConfirmStop(false);
+      if (status === "broken") {
+        setPhase("broken");
+        setMessage(reasonText(reason, t));
+      } else if (status === "abandoned") {
+        setPhase("abandoned");
+      }
+      void wakeLock.current?.release().catch(() => {});
+    },
+    [t],
+  );
+
+  // Page rouverte alors qu'une session tournait : on ne reprend pas, elle casse.
+  useEffect(() => {
+    if (!props.orphan) return;
+    void leaveSession().then((r) => {
+      if (r.status === "broken") stopped("broken", r.reason);
+    });
+  }, [props.orphan, stopped]);
 
   const beat = useCallback(
     async (visible: boolean, hiddenMs: number) => {
@@ -79,6 +136,7 @@ export function FocusTimer(props: Props) {
     if (r.status === "completed") {
       setPhase("completed");
       setPoints(r.points ?? null);
+      setConfirmStop(false);
       void wakeLock.current?.release().catch(() => {});
     } else if (r.status === "error") {
       // Le serveur n'a pas encore compté assez de temps : on réessaie dans quelques secondes.
@@ -86,7 +144,6 @@ export function FocusTimer(props: Props) {
         finishing.current = false;
       }, 3000);
       setPhase("running");
-      setMessage(r.message ?? null);
     } else {
       stopped(r.status, r.reason);
     }
@@ -98,18 +155,21 @@ export function FocusTimer(props: Props) {
     const r = props.mode === "principle" ? await startSession(props.principleId) : await startChallengeSession(props.assignmentId, minutes);
     if (!r.session) {
       setPhase("ready");
-      setMessage(r.message ?? "Impossible de lancer la session.");
+      setMessage(r.message ?? t.startFailed);
       return;
     }
     session.current = r.session;
     skew.current = Date.parse(r.session.server_now) - Date.now();
     setMinutes(r.session.minutes ?? minutes);
     setRemaining((r.session.minutes ?? minutes) * 60);
+    // Le geste « retour » ouvre la confirmation au lieu de quitter la page.
+    window.history.pushState({ ...window.history.state, nonanteSession: true }, "");
     setPhase("running");
     await requestWakeLock();
     void beat(true, 0);
   }
 
+  // Pendant la session : chrono, battements, écran quitté, retour, onglet fermé.
   useEffect(() => {
     if (phase !== "running") return;
     const s = session.current!;
@@ -138,122 +198,134 @@ export function FocusTimer(props: Props) {
         if (hiddenTimer) clearTimeout(hiddenTimer);
         const hiddenMs = hiddenAt.current ? Date.now() - hiddenAt.current : 0;
         hiddenAt.current = null;
+        // Revenu après plus de 10 s : le serveur casse la session.
         void beat(hiddenMs <= HIDDEN_LIMIT_MS, hiddenMs);
         void requestWakeLock();
       }
     };
+    const onPopState = () => {
+      // Retour pendant la session : on reste sur la page et on demande confirmation.
+      window.history.pushState({ ...window.history.state, nonanteSession: true }, "");
+      setConfirmStop(true);
+    };
+    const onPageHide = () => {
+      navigator.sendBeacon?.("/api/session/leave");
+    };
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("popstate", onPopState);
+    window.addEventListener("pagehide", onPageHide);
 
     return () => {
       clearInterval(tick);
       clearInterval(pulse);
       if (hiddenTimer) clearTimeout(hiddenTimer);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("pagehide", onPageHide);
     };
   }, [phase, beat, finish, requestWakeLock]);
 
-  async function abandon() {
+  // Page quittée dans l'app (onglet de la barre, lien) pendant la session : elle casse.
+  useEffect(
+    () => () => {
+      if (phaseRef.current === "running" || phaseRef.current === "finishing") void leaveSession();
+    },
+    [],
+  );
+
+  async function stop() {
     const s = session.current;
     if (!s) return;
+    setConfirmStop(false);
     const r = await abandonSession(s.id, s.nonce);
-    stopped(r.status === "error" ? "abandoned" : r.status);
+    stopped(r.status === "error" ? "abandoned" : r.status, r.reason);
   }
 
+  const running = phase === "running" || phase === "finishing";
+  const ended = phase === "completed" || phase === "broken" || phase === "abandoned";
   const progress = phase === "ready" || phase === "starting" ? 0 : 1 - Math.max(0, remaining) / total;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col items-center px-5 pt-8 pb-12 text-center">
-      <p className="text-sm text-mute">{props.label}</p>
+    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+      <div className="flex h-11 items-center">
+        {running ? <BackArrow label={t.back} onClick={() => setConfirmStop(true)} /> : <BackArrow label={t.back} href="/app" />}
+      </div>
+      <p className="mt-2 text-center text-sm text-mute">{props.label}</p>
 
-      <div className="relative my-auto flex items-center justify-center py-10">
-        <Ring progress={phase === "completed" ? 1 : progress} broken={phase === "broken"} />
+      <div className="relative my-auto flex items-center justify-center py-8">
+        <div className={`transition-transform duration-700 ease-out ${running ? "scale-100" : "scale-[0.97]"}`}>
+          <Ring progress={phase === "completed" ? 1 : progress} broken={phase === "broken"} />
+        </div>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="font-serif text-7xl leading-none tabular-nums">
-            {phase === "completed" ? "00:00" : mmss(phase === "ready" || phase === "starting" ? minutes * 60 : remaining)}
-          </p>
-          {phase === "running" ? <p className="mt-3 text-xs text-mute">en cours</p> : null}
+          <p className="font-serif text-7xl leading-none tabular-nums">{phase === "completed" ? "00:00" : mmss(phase === "ready" || phase === "starting" ? minutes * 60 : remaining)}</p>
+          {running ? <p className="mt-3 animate-breathe text-xs tracking-[0.2em] text-mute uppercase">{t.running}</p> : null}
         </div>
       </div>
 
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-4 text-center">
         {phase === "ready" || phase === "starting" ? (
           <>
             {props.mode === "challenge" ? (
-              <div className="flex justify-center gap-3">
-                {[25, 50, 90].map((m) => (
+              <div className="flex justify-center gap-2">
+                {[25, 50, 90].map((n) => (
                   <button
-                    key={m}
+                    key={n}
                     type="button"
                     onClick={() => {
-                      setMinutes(m);
-                      setRemaining(m * 60);
+                      setMinutes(n);
+                      setRemaining(n * 60);
                     }}
-                    aria-pressed={minutes === m}
-                    className={`h-10 w-16 rounded-xs border text-sm ${minutes === m ? "border-paper bg-paper text-ink" : "border-line"}`}
+                    aria-pressed={minutes === n}
+                    className={`h-10 rounded-full border px-4 text-sm transition-colors ${minutes === n ? "border-paper bg-paper text-ink" : "border-line"}`}
                   >
-                    {m} min
+                    {fmt(t.minutes, { n })}
                   </button>
                 ))}
               </div>
             ) : null}
-            <p className="text-sm leading-relaxed text-mute">
-              Téléphone posé, écran vers le haut. Si tu quittes cet écran plus de 10 secondes, la session casse.
-            </p>
             <button type="button" onClick={start} disabled={phase === "starting"} className={btnPrimary}>
-              {phase === "starting" ? "Lancement…" : "Lancer"}
+              {phase === "starting" ? t.starting : t.start}
             </button>
-            <Link href="/app" className={btnLink}>
-              Retour
-            </Link>
+            <p className="text-xs text-mute">{t.rule}</p>
           </>
         ) : null}
 
-        {phase === "running" || phase === "finishing" ? (
-          <>
-            <p className="leading-relaxed">Reste sur cet écran. Si tu le quittes, la session casse.</p>
-            {confirmAbandon ? (
-              <div className="flex justify-center gap-3">
-                <button type="button" onClick={abandon} className={btnSecondary}>
-                  Confirmer : −5 points
-                </button>
-                <button type="button" onClick={() => setConfirmAbandon(false)} className={btnSecondary}>
-                  Continuer
-                </button>
-              </div>
-            ) : (
-              <button type="button" onClick={() => setConfirmAbandon(true)} className={btnLink}>
-                Abandonner (−5 points)
-              </button>
-            )}
-          </>
+        {running ? (
+          <button type="button" onClick={() => setConfirmStop(true)} disabled={phase === "finishing"} className={`${btnSecondary} w-full`}>
+            {t.stop}
+          </button>
         ) : null}
 
-        {phase === "completed" ? (
-          <>
-            <p className="font-serif text-4xl">Session tenue.</p>
-            {points !== null ? <p className="text-mute">+{points} points, preuve forte.</p> : null}
-            <Link href="/app" className={btnPrimary}>
-              Retour
-            </Link>
-          </>
+        {ended ? (
+          <div className="animate-rise">
+            <p className="font-serif text-4xl">{phase === "completed" ? t.done : phase === "broken" ? t.broken : t.abandoned}</p>
+            <p className="mt-2 text-mute">
+              {phase === "completed" ? (points !== null ? fmt(t.donePoints, { n: points }) : null) : `${phase === "broken" && message ? `${message} ` : ""}${t.penalty}`}
+            </p>
+            <button type="button" onClick={() => router.replace("/app")} className={`${btnPrimary} mt-6`}>
+              {t.finish}
+            </button>
+          </div>
         ) : null}
 
-        {phase === "broken" || phase === "abandoned" ? (
-          <>
-            <p className="font-serif text-4xl">{phase === "broken" ? "La session a cassé." : "Session abandonnée."}</p>
-            <p className="text-mute">{phase === "broken" ? message : null} −5 points.</p>
-            <Link href="/app" className={btnPrimary}>
-              Retour
-            </Link>
-          </>
-        ) : null}
-
-        {message && (phase === "ready" || phase === "running") ? (
+        {message && phase === "ready" ? (
           <p role="alert" className="text-sm">
             {message}
           </p>
         ) : null}
       </div>
+
+      <Sheet open={confirmStop && running} onClose={() => setConfirmStop(false)} title={t.stopTitle}>
+        <p className="mt-2 text-sm text-mute">{t.stopText}</p>
+        <div className="mt-6 space-y-3">
+          <button type="button" onClick={stop} className="inline-flex h-14 w-full items-center justify-center rounded-xs bg-ko px-6 font-medium text-paper transition-transform active:scale-[0.98]">
+            {t.stopConfirm}
+          </button>
+          <button type="button" onClick={() => setConfirmStop(false)} className={`${btnSecondary} w-full`}>
+            {t.keepGoing}
+          </button>
+        </div>
+      </Sheet>
     </main>
   );
 }

@@ -2,6 +2,7 @@ import "server-only";
 import type Stripe from "stripe";
 import { z } from "zod";
 import { sendReferralReward, sendWelcome } from "@/lib/emails";
+import { localeOf } from "@/lib/i18n/user";
 import { getStripe } from "@/lib/stripe";
 import { applyReferralDiscount } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -81,7 +82,7 @@ async function rewardReferral(session: Stripe.Checkout.Session, userId: string) 
   await admin.rpc("mark_referral_rewarded", { p_referred: userId, p_cents: 0 });
   if (referral.email) {
     const { data: first } = await admin.rpc("log_email_once", { p_user: referral.referrer_id, p_kind: "referral", p_ref: userId });
-    if (first) await sendReferralReward(referral.email, onSubscription);
+    if (first) await sendReferralReward(referral.email, onSubscription, await localeOf(admin, referral.referrer_id));
   }
 }
 
@@ -130,7 +131,7 @@ export async function fulfillCheckout(session: Stripe.Checkout.Session): Promise
   const email = session.customer_details?.email ?? session.customer_email;
   if (email) {
     const { data: first } = await admin.rpc("log_email_once", { p_user: userId, p_kind: "welcome", p_ref: session.id });
-    if (first) await sendWelcome(email);
+    if (first) await sendWelcome(email, await localeOf(admin, userId));
   }
   return userId;
 }

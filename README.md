@@ -1,21 +1,22 @@
 # Nonante
 
-Le jeu de la vraie vie pour les jeunes entrepreneurs : un arc de 90 jours qui démarre quand tu veux, des principes « si… alors… » construits pour ton objectif, chaque jour prouvé (caméra, minuteur, réveil, photo, capture, lien), et des stats de joueur à maxer. Web app installable (PWA), mobile d'abord.
+« 90 jours. Zéro excuse. » Pour les étudiants et les entrepreneurs : un arc de 90 jours qui démarre quand tu veux, des principes « si… alors… » construits pour ton objectif, chaque jour prouvé (caméra, minuteur, réveil, photo, capture, lien), et des stats de joueur à maxer. Web app installable (PWA), mobile d'abord.
 
 Le cahier des charges est dans [`CLAUDE.md`](CLAUDE.md). Ce README explique comment installer, configurer et déployer, et note les choix faits en route.
 
-## Ce qui est construit (V2)
+## Ce qui est construit (V2 à V5)
 
 | Domaine | Contenu |
 |---|---|
 | Arc | Départ libre (aujourd'hui, demain, lundi, une date à 60 jours max) ou départ collectif d'une escouade officielle ; arc n° 2, 3… à la suite |
 | Objectif | Type, phrase, chiffre et unité, affiché en haut du tableau de bord |
-| Principes | 37 gabarits sourcés (travail profond, grenouille, règle des 2 minutes, prospection…), proposés selon l'objectif et les points faibles, 100 % modifiables ; difficulté calculée par le serveur ; modification effective le lendemain |
-| Preuves | Minuteur, pompes et squats comptés à la caméra, réveil à code, photo, capture, lien, déclaratif ; contrôles aléatoires |
+| Principes | 84 gabarits sourcés et traduits (travail profond, grenouille, règle des 2 minutes, prospection, e-commerce, SaaS, revente, trading, prépa, fac…), choisis selon le profil, l'activité (au moins un principe par activité, pas de prospection pour le trading seul), l'école, l'objectif, les points faibles et le sport voulu ; 100 % modifiables dans une feuille avec « Enregistrer » toujours visible ; difficulté calculée par le serveur ; modification effective le lendemain |
+| Preuves | Minuteur (Lancer / Stop à −5 ; quitter l'écran plus de 10 s, faire retour ou fermer l'onglet casse la session), pompes et squats comptés à la caméra (modèle préchargé, repli processeur), réveil à code, photo, capture, lien, déclaratif ; contrôles aléatoires |
 | Jeu | XP, niveaux, titres, 6 stats sur 30 jours (Discipline, Focus, Corps, Business, Esprit, Énergie), note globale, séries, jokers, quête de la semaine, succès avec rareté réelle, fonds de carte à débloquer, avant / après, citation du jour |
-| Portefeuille | Revenus notés avec capture en preuve, +15 XP par jour prouvé, succès 1 € → 10 000 €, suivi de l'objectif de revenu |
-| Social | Classement semaine / général, filtres, onglet par escouade ; escouades privées (code) ou publiques ; profil public avec photo et carte de joueur |
-| Parcours | Questionnaire sans compte (une question par écran, mots manuscrits), écran de construction (vrai calcul des principes), résultat personnalisé avec preuve sociale réelle et plans, email + code, dernière étape, paiement |
+| Portefeuille et notes | Portefeuille (arcs business, Pro) : revenus avec capture en preuve, +15 par jour prouvé, succès 1 € → 10 000 € ; carnet de notes (arcs études, Pro) : notes sur 20 pondérées, moyenne par matière et par semaine, +10 par jour prouvé |
+| Social | Classement semaine / mois / général, monde ou pays, filtres, onglet par escouade ; escouades privées (code) ou publiques ; profil public avec photo et carte de joueur (photo et fond modifiables d'un toucher) |
+| Langues | Français, anglais, allemand, espagnol : détection par le navigateur puis le pays, sélecteur dans le pied de page et le profil ; textes dans `lib/i18n/messages/<langue>/`, messages Postgres traduits dans `lib/i18n/sql-errors.ts`, pages légales dans `lib/legal-docs/` (la version française fait foi) ; emails et notifications dans la langue du joueur |
+| Parcours | Questionnaire sans compte (une question par écran, activité et école selon le profil, sport facultatif, transitions animées, geste retour du téléphone respecté), écran de construction (vrai calcul des principes), résultat personnalisé avec preuve sociale réelle et plans, email + code (ou Apple / Google), dernière étape, paiement |
 | Paiement | Arc 90 jours 19,99 € une fois par arc, Pro 14,99 €/mois ou 99,99 €/an, Fondateur 199 € une fois (100 places) ; portail client ; parrainage (−20 % pour l'ami et −20 % pour le parrain) ; fidélité (−50 % sur l'arc ou la facture suivante) |
 | Contenu | FAQ (`/faq`), CGU, CGV, confidentialité, mentions légales |
 | Admin | Double authentification, ventes, contrôles (preuves et revenus), signalements, escouades officielles, accès offerts, journal |
@@ -44,6 +45,7 @@ npm run dev
 | `CRON_SECRET` | `openssl rand -hex 32` | protège `/api/cron/*`, clé HMAC de l'empreinte IP |
 | `NEXT_PUBLIC_SITE_URL` | URL publique | liens des emails et retours Stripe |
 | `NEXT_PUBLIC_GOOGLE_AUTH` | `1` une fois Google activé dans Supabase | bouton « Continuer avec Google » (connexion et questionnaire) |
+| `NEXT_PUBLIC_APPLE_AUTH` | `1` une fois Apple activé dans Supabase (compte Apple Developer payant) | bouton « Continuer avec Apple » |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | `npx web-push generate-vapid-keys` | notifications push |
 | `AUDIT_RATE` | `0.10` | part des preuves faibles contrôlées |
 
@@ -58,13 +60,19 @@ Dans l'ordre, depuis [`supabase/migrations/`](supabase/migrations/) (SQL Editor 
 3. `20261007100200_v2_logic.sql` : règles du jeu
 4. `20261007100300_v2_read_admin_cron.sql` : lectures, escouades, paiements, admin, crons
 5. `20261007100400_v2_seed.sql` : plans, gabarits, quêtes, succès, escouade officielle du 1er janvier
+6. `20261008100000_v3_langues_pays.sql` : langue et pays du joueur, gabarits traduits, classement du mois et par pays
+7. `20261008110000_v4_parcours_metier.sql` : activité et école, 47 nouveaux gabarits, choix des principes par métier, carnet de notes, portefeuille dans l'arc business
+8. `20261008120000_v5_session_quittee.sql` : `leave_session` (page du minuteur quittée = session cassée)
+
+Les migrations v3 à v5 sont regroupées dans `../deploy-v3-v5.sql` (une transaction) pour l'éditeur SQL.
 
 **Passage de la V1 à la V2** : exécuter d'abord [`supabase/ops/reset-v1.sql`](supabase/ops/reset-v1.sql), qui supprime le schéma V1 (données comprises). Les comptes Auth restent : il suffit de refaire l'onboarding.
 
 ### Réglages Auth
 
 - URL Configuration : Site URL = domaine ; Redirect URLs `https://<domaine>/auth/callback` et `/auth/confirm`.
-- Email OTP à 6 chiffres ; modèle Magic Link avec `{{ .Token }}` et un lien `/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/app`.
+- Email OTP à 6 chiffres ; modèles **Magic Link et Confirm signup** avec `{{ .Token }}` (sinon le code n'arrive pas, seulement le lien) et un lien `/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/app`.
+- Google : Authentication > Providers > Google, avec l'ID et le secret du client OAuth du projet Google Cloud « Nonante » (redirection autorisée `https://<projet>.supabase.co/auth/v1/callback`), puis `NEXT_PUBLIC_GOOGLE_AUTH=1` sur Vercel.
 - **SMTP** : le serveur d'email intégré de Supabase est limité à quelques messages par heure. Avant le lancement, branche un SMTP (Project Settings > Authentication > SMTP Settings).
 
 ### Types
@@ -97,7 +105,7 @@ Puis `/admin` : double authentification obligatoire (application d'authentificat
 
 | Commande | Ce qu'elle vérifie |
 |---|---|
-| `npm run test:db` | 198 tests sur Postgres 17 (PGlite) : Arc 90 jours (paiement unique, crédit, fin d'arc), aperçu des principes pour un visiteur, preuve sociale, démarrage libre, principes versionnés, difficulté serveur, chaque preuve, jokers, points, stats, niveaux, quêtes, portefeuille, escouades, classement, plans et limites, abonnements, parrainage, fidélité, RLS, registre en ajout seul, admin, suppression de compte |
+| `npm run test:db` | Plus de 230 tests sur Postgres 17 (PGlite) : langues et pays, parcours métier et école, carnet de notes, session quittée, Arc 90 jours (paiement unique, crédit, fin d'arc), aperçu des principes pour un visiteur, preuve sociale, démarrage libre, principes versionnés, difficulté serveur, chaque preuve, jokers, points, stats, niveaux, quêtes, portefeuille, escouades, classement, plans et limites, abonnements, parrainage, fidélité, RLS, registre en ajout seul, admin, suppression de compte |
 | `npm run lint` / `npm run typecheck` / `npm run build` | ESLint, TypeScript strict, build |
 
 Parcours joué à 375 px contre un Supabase émulé : questionnaire visiteur → construction → plans → email et code → dernière étape → paiement simulé → tableau de bord ; arc n° 2 d'un joueur connecté ; connexion, onboarding, génération des principes, plans, tableau de bord et calendrier, validation déclarative, capture, revenu prouvé, montée de niveau, succès, photo de profil, escouade, classement, profil public, quête, avant / après.
@@ -109,11 +117,13 @@ Parcours joué à 375 px contre un Supabase émulé : questionnaire visiteur →
 3. **Modifications de principes le lendemain** (versions `active_from` / `active_until`) : on ne change pas les règles d'un jour déjà commencé.
 4. **Stats sur 30 jours glissants** : la note baisse si on arrête, elle se mérite en continu.
 5. **Portefeuille** : un revenu sans capture est noté « non prouvé » et ne compte ni pour la stat ni pour les succès. Les revenus prouvés peuvent être contrôlés (refus = retrait des points).
-6. **Photos** : CC0 / domaine public via l'API Openverse (`scripts/fetch-photos.mjs`), œuvres du domaine public via Wikimedia (`npm run art:fetch`), crédits sur `/art`. Les images Pinterest fournies n'ont pas été utilisées (droits d'auteur, visage d'une personne connue, marques, filigranes). Pour utiliser tes propres photos : dépose-les dans `public/art/` et ajoute-les à `lib/art.ts`.
+6. **Photos** : CC0 / domaine public via l'API Openverse (`scripts/fetch-photos.mjs`), œuvres du domaine public via Wikimedia (`npm run art:fetch`), et images fournies par l'éditeur (type « fournie » dans `public/art/credits.json`), toutes listées sur `/art`. Les images fournies avec un visage connu, une marque ou un filigrane n'ont pas été utilisées.
 7. **Droit de rétractation** : case à cocher obligatoire avant paiement pour l'accès immédiat ; formulaire type dans les CGV.
 8. **Aucun chiffre inventé** : les exemples de la landing sont présentés comme exemples ; le compteur Fondateur et les statistiques viennent de la base. La preuve sociale n'affiche les chiffres en direct qu'au-delà de 20 joueurs (sinon seulement les études publiées), et aucun faux avis.
 9. **Questionnaire avant le compte** : on demande l'email au moment où le visiteur a vu son arc et choisi son plan (effet d'investissement). Les réponses sont gardées côté serveur avec l'email, pour que le lien de connexion marche même ouvert dans un autre navigateur (TikTok → Safari), puis supprimées.
 10. **Écran de construction** : il attend le vrai calcul des principes (preview_principles) et dure environ 5 secondes ; pas de faux compte à rebours ni de fausse rareté.
+11. **Fluidité** : une seule vérification de session par requête (`getUser` en cache), écrans de chargement instantanés, « Fait » coché avant la réponse du serveur, transitions du questionnaire par View Transitions (transform et opacité seulement), flou limité à la barre d'onglets.
+12. **Retour** : chaque question du questionnaire est une entrée de l'historique ; pendant une session, le geste retour ouvre la confirmation « −5 points » au lieu de quitter.
 
 ## Plus tard
 

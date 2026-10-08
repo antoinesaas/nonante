@@ -311,6 +311,8 @@ export type Database = {
           arc_paid: boolean;
           arc_payment: string | null;
           before_photo_path: string | null;
+          business_other: string | null;
+          business_types: string[];
           category: string;
           closed_at: string | null;
           created_at: string;
@@ -323,8 +325,11 @@ export type Database = {
           goal_unit: string | null;
           id: string;
           jokers_used: number;
+          locale: string;
           loyalty_applied_at: string | null;
           pushups: string;
+          school: string | null;
+          school_other: string | null;
           start_date: string;
           status: string;
           user_id: string;
@@ -340,6 +345,8 @@ export type Database = {
           arc_paid?: boolean;
           arc_payment?: string | null;
           before_photo_path?: string | null;
+          business_other?: string | null;
+          business_types?: string[];
           category: string;
           closed_at?: string | null;
           created_at?: string;
@@ -352,8 +359,11 @@ export type Database = {
           goal_unit?: string | null;
           id?: string;
           jokers_used?: number;
+          locale?: string;
           loyalty_applied_at?: string | null;
           pushups?: string;
+          school?: string | null;
+          school_other?: string | null;
           start_date: string;
           status?: string;
           user_id: string;
@@ -369,6 +379,8 @@ export type Database = {
           arc_paid?: boolean;
           arc_payment?: string | null;
           before_photo_path?: string | null;
+          business_other?: string | null;
+          business_types?: string[];
           category?: string;
           closed_at?: string | null;
           created_at?: string;
@@ -381,8 +393,11 @@ export type Database = {
           goal_unit?: string | null;
           id?: string;
           jokers_used?: number;
+          locale?: string;
           loyalty_applied_at?: string | null;
           pushups?: string;
+          school?: string | null;
+          school_other?: string | null;
           start_date?: string;
           status?: string;
           user_id?: string;
@@ -390,6 +405,51 @@ export type Database = {
           utm_source?: string | null;
           wake_time?: string;
           weak_points?: string[];
+        };
+        Relationships: [];
+      };
+      grades: {
+        Row: {
+          coefficient: number;
+          created_at: string;
+          day: string;
+          enrollment_id: string | null;
+          id: string;
+          out_of: number;
+          proof_deleted_at: string | null;
+          proof_path: string | null;
+          score: number;
+          status: string;
+          subject: string;
+          user_id: string;
+        };
+        Insert: {
+          coefficient?: number;
+          created_at?: string;
+          day: string;
+          enrollment_id?: string | null;
+          id?: string;
+          out_of: number;
+          proof_deleted_at?: string | null;
+          proof_path?: string | null;
+          score: number;
+          status?: string;
+          subject: string;
+          user_id: string;
+        };
+        Update: {
+          coefficient?: number;
+          created_at?: string;
+          day?: string;
+          enrollment_id?: string | null;
+          id?: string;
+          out_of?: number;
+          proof_deleted_at?: string | null;
+          proof_path?: string | null;
+          score?: number;
+          status?: string;
+          subject?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -611,14 +671,18 @@ export type Database = {
       };
       principle_templates: {
         Row: {
+          business_types: string[];
           categories: string[];
           code: string;
           days: number[];
           difficulty: number;
           goal_types: string[];
+          i18n: Json;
           if_text: string;
+          not_for: string[];
           pillar: string;
           proof_type: string;
+          schools: string[];
           sort: number;
           source: string;
           target: Json;
@@ -627,14 +691,18 @@ export type Database = {
           why: string;
         };
         Insert: {
+          business_types?: string[];
           categories?: string[];
           code: string;
           days?: number[];
           difficulty?: number;
           goal_types?: string[];
+          i18n?: Json;
           if_text: string;
+          not_for?: string[];
           pillar: string;
           proof_type: string;
+          schools?: string[];
           sort?: number;
           source: string;
           target?: Json;
@@ -643,14 +711,18 @@ export type Database = {
           why: string;
         };
         Update: {
+          business_types?: string[];
           categories?: string[];
           code?: string;
           days?: number[];
           difficulty?: number;
           goal_types?: string[];
+          i18n?: Json;
           if_text?: string;
+          not_for?: string[];
           pillar?: string;
           proof_type?: string;
+          schools?: string[];
           sort?: number;
           source?: string;
           target?: Json;
@@ -726,12 +798,14 @@ export type Database = {
           cancel_at_period_end: boolean;
           comp_plan: string | null;
           comp_until: string | null;
+          country: string | null;
           created_at: string;
           current_period_end: string | null;
           email_reminders: boolean;
           id: string;
           is_admin: boolean;
           is_public: boolean;
+          locale: string;
           loyalty_pending: boolean;
           plan: string | null;
           plan_interval: string | null;
@@ -756,12 +830,14 @@ export type Database = {
           cancel_at_period_end?: boolean;
           comp_plan?: string | null;
           comp_until?: string | null;
+          country?: string | null;
           created_at?: string;
           current_period_end?: string | null;
           email_reminders?: boolean;
           id: string;
           is_admin?: boolean;
           is_public?: boolean;
+          locale?: string;
           loyalty_pending?: boolean;
           plan?: string | null;
           plan_interval?: string | null;
@@ -786,12 +862,14 @@ export type Database = {
           cancel_at_period_end?: boolean;
           comp_plan?: string | null;
           comp_until?: string | null;
+          country?: string | null;
           created_at?: string;
           current_period_end?: string | null;
           email_reminders?: boolean;
           id?: string;
           is_admin?: boolean;
           is_public?: boolean;
+          locale?: string;
           loyalty_pending?: boolean;
           plan?: string | null;
           plan_interval?: string | null;
@@ -1221,6 +1299,7 @@ export type Database = {
       abandon_session: { Args: { p_session_id: string | null; p_nonce: string | null }; Returns: Json };
       achievement_rarity: { Args: never; Returns: { code: string; title: string; description: string; points: number; art_slug: string; holders: number; total: number; percent: number }[] };
       activate_my_arc: { Args: never; Returns: boolean };
+      add_grade: { Args: { p_user: string | null; p_subject: string | null; p_score: number | null; p_out_of: number | null; p_coefficient: number | null; p_day: string | null; p_proof_path: string | null }; Returns: Json };
       add_referral_reward: { Args: { p_user: string | null }; Returns: undefined };
       add_template_principle: { Args: { p_code: string | null }; Returns: string };
       add_wallet_entry: { Args: { p_user: string | null; p_amount_cents: number | null; p_source: string | null; p_label: string | null; p_day: string | null; p_proof_path: string | null }; Returns: Json };
@@ -1251,6 +1330,7 @@ export type Database = {
       cron_photo_cleanup_targets: { Args: never; Returns: string[] };
       cron_reminder_targets: { Args: never; Returns: { user_id: string; email: string; remaining: number; points: number; email_reminders: boolean; has_push: boolean }[] };
       day_detail: { Args: { p_day: string | null }; Returns: Json };
+      delete_grade: { Args: { p_id: string | null }; Returns: undefined };
       delete_my_account: { Args: never; Returns: Json };
       delete_push_endpoint: { Args: { p_endpoint: string | null }; Returns: undefined };
       delete_push_subscriptions: { Args: never; Returns: undefined };
@@ -1262,7 +1342,8 @@ export type Database = {
       heartbeat: { Args: { p_session_id: string | null; p_nonce: string | null; p_visible: boolean | null; p_hidden_ms: number | null }; Returns: Json };
       join_public_squad: { Args: { p_id: string | null }; Returns: undefined };
       join_squad: { Args: { p_code: string | null }; Returns: string };
-      leaderboard: { Args: { p_period?: string | null; p_category?: string | null; p_squad?: string | null }; Returns: { rank: number; pseudo: string; avatar_path: string; level: number; ovr: number; category: string; points: number; streak: number; is_me: boolean; is_public: boolean }[] };
+      leaderboard: { Args: { p_period?: string | null; p_category?: string | null; p_squad?: string | null }; Returns: { rank: number; pseudo: string; avatar_path: string; level: number; ovr: number; category: string; country: string; points: number; streak: number; is_me: boolean; is_public: boolean }[] };
+      leave_session: { Args: never; Returns: Json };
       leave_squad: { Args: { p_id: string | null }; Returns: undefined };
       log_email_once: { Args: { p_user: string | null; p_kind: string | null; p_ref: string | null }; Returns: boolean };
       mark_achievements_seen: { Args: never; Returns: undefined };
@@ -1273,6 +1354,7 @@ export type Database = {
       mark_reminded: { Args: { p_user: string | null; p_channel: string | null }; Returns: boolean };
       my_arc_photos: { Args: never; Returns: Json };
       my_dashboard: { Args: never; Returns: Json };
+      my_grades: { Args: never; Returns: Json };
       my_plan: { Args: never; Returns: Json };
       my_principles: { Args: never; Returns: Json };
       my_profile: { Args: never; Returns: Json };
@@ -1283,7 +1365,7 @@ export type Database = {
       paris_today: { Args: never; Returns: string };
       plan_price: { Args: { p_plan: string | null; p_interval: string | null }; Returns: Json };
       plans_public: { Args: never; Returns: Json };
-      preview_principles: { Args: { p_category: string | null; p_goal_type: string | null; p_weak_points: string[] | null; p_wake_time: string | null; p_pushups: string | null; p_focus_minutes: number | null }; Returns: Json };
+      preview_principles: { Args: { p_category: string | null; p_goal_type: string | null; p_weak_points: string[] | null; p_wake_time: string | null; p_pushups: string | null; p_focus_minutes: number | null; p_locale?: string | null; p_business_types?: string[] | null; p_school?: string | null }; Returns: Json };
       public_profile: { Args: { p_pseudo: string | null }; Returns: Json };
       public_squads: { Args: never; Returns: Json };
       push_targets: { Args: { p_user: string | null }; Returns: { endpoint: string; p256dh: string; auth: string }[] };
@@ -1294,13 +1376,15 @@ export type Database = {
       regenerate_principles: { Args: never; Returns: undefined };
       remove_principle: { Args: { p_id: string | null }; Returns: undefined };
       report_user: { Args: { p_pseudo: string | null; p_reason: string | null }; Returns: undefined };
-      save_arc: { Args: { p_category: string | null; p_goal_type: string | null; p_goal_title: string | null; p_goal_target: number | null; p_goal_unit: string | null; p_goal_public: boolean | null; p_weak_points: string[] | null; p_wake_time: string | null; p_pushups: string | null; p_focus_minutes: number | null; p_start_date: string | null; p_squad_id?: string | null }; Returns: string };
+      save_arc: { Args: { p_category: string | null; p_goal_type: string | null; p_goal_title: string | null; p_goal_target: number | null; p_goal_unit: string | null; p_goal_public: boolean | null; p_weak_points: string[] | null; p_wake_time: string | null; p_pushups: string | null; p_focus_minutes: number | null; p_start_date: string | null; p_squad_id?: string | null; p_locale?: string | null; p_business_types?: string[] | null; p_business_other?: string | null; p_school?: string | null; p_school_other?: string | null }; Returns: string };
       save_principle: { Args: { p_id: string | null; p_pillar: string | null; p_if: string | null; p_then: string | null; p_proof_type: string | null; p_target: Json | null; p_days: number[] | null; p_difficulty?: number | null }; Returns: string };
-      save_profile: { Args: { p_pseudo: string | null; p_birth_year: number | null; p_adult: boolean | null; p_is_public: boolean | null; p_utm_source?: string | null; p_utm_campaign?: string | null }; Returns: undefined };
+      save_profile: { Args: { p_pseudo: string | null; p_birth_year: number | null; p_adult: boolean | null; p_is_public: boolean | null; p_utm_source?: string | null; p_utm_campaign?: string | null; p_locale?: string | null; p_country?: string | null }; Returns: undefined };
       save_push_subscription: { Args: { p_endpoint: string | null; p_p256dh: string | null; p_auth: string | null }; Returns: undefined };
       set_arc_photo: { Args: { p_user: string | null; p_which: string | null; p_path: string | null }; Returns: string };
       set_audit_rate: { Args: { p_rate: number | null }; Returns: undefined };
       set_avatar: { Args: { p_user: string | null; p_path: string | null }; Returns: string };
+      set_my_country: { Args: { p_country: string | null }; Returns: undefined };
+      set_my_locale: { Args: { p_locale: string | null }; Returns: undefined };
       set_referral_promo: { Args: { p_user: string | null; p_promotion_code_id: string | null }; Returns: undefined };
       set_start_date: { Args: { p_date: string | null }; Returns: undefined };
       set_stripe_customer: { Args: { p_user: string | null; p_customer: string | null }; Returns: undefined };

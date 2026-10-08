@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { finishArc, type FinishState } from "@/app/actions/onboarding";
+import { useI18n } from "@/components/I18nProvider";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { btnLink, btnPrimary, input, label } from "@/lib/ui";
 
@@ -23,6 +24,8 @@ export function SuiteForm({
   cta: string;
   currentYear: number;
 }) {
+  const { m } = useI18n();
+  const t = m.quiz.suite;
   const [state, formAction] = useActionState(finishArc, initial);
   // Champs contrôlés : React ne les vide pas si le serveur renvoie une erreur.
   const [pseudo, setPseudo] = useState(initialPseudo);
@@ -36,7 +39,7 @@ export function SuiteForm({
       {needsProfile ? (
         <>
           <label className="block">
-            <span className={label}>Ton nom de joueur</span>
+            <span className={label}>{t.pseudo}</span>
             <input
               name="pseudo"
               value={pseudo}
@@ -48,7 +51,7 @@ export function SuiteForm({
             />
           </label>
           <label className="block">
-            <span className={label}>Année de naissance</span>
+            <span className={label}>{t.birthYear}</span>
             <input
               name="birthYear"
               value={birthYear}
@@ -63,11 +66,11 @@ export function SuiteForm({
           </label>
           <label className="flex items-start gap-3 text-sm">
             <input type="checkbox" name="adult" checked={adult} onChange={(e) => setAdult(e.target.checked)} required className="mt-0.5 size-5 shrink-0 accent-paper" />
-            J&apos;ai 18 ans ou plus.
+            {t.adult}
           </label>
           <label className="flex items-start gap-3 text-sm">
             <input type="checkbox" name="isPublic" checked={visible} onChange={(e) => setVisible(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-paper" />
-            Apparaître au classement avec mon pseudo.
+            {t.public}
           </label>
         </>
       ) : null}
@@ -75,33 +78,33 @@ export function SuiteForm({
       {needsPayment ? (
         <label className="flex items-start gap-3 text-xs text-mute">
           <input type="checkbox" name="waiver" checked={waiver} onChange={(e) => setWaiver(e.target.checked)} required className="mt-0.5 size-4 shrink-0 accent-paper" />
-          <span>
-            Je veux commencer tout de suite. Si je me rétracte dans les 14 jours, je paie seulement les jours déjà utilisés.
-          </span>
+          <span>{m.game.plans.waiver}</span>
         </label>
       ) : null}
 
-      <SubmitButton className={btnPrimary} pendingLabel={needsPayment ? "Redirection vers le paiement…" : "Lancement…"}>
+      <SubmitButton className={btnPrimary} pendingLabel={needsPayment ? t.toPayment : t.launching}>
         {cta}
       </SubmitButton>
       <FormMessage message={state.message} />
       <p className="text-xs text-mute">
-        {needsPayment ? "Paiement sécurisé par Stripe. " : ""}En continuant, tu acceptes les{" "}
+        {needsPayment ? t.secure : ""}
+        {t.accept}{" "}
         <Link href="/legal/cgu" className="underline underline-offset-2">
-          conditions d&apos;utilisation
+          {t.terms}
         </Link>
         {needsPayment ? (
           <>
-            {" "}et les{" "}
+            {" "}
+            {t.and}{" "}
             <Link href="/legal/cgv" className="underline underline-offset-2">
-              conditions de vente
+              {t.sales}
             </Link>
           </>
         ) : null}
         .
       </p>
       <Link href="/onboarding" className={btnLink}>
-        Modifier mes réponses
+        {t.edit}
       </Link>
     </form>
   );

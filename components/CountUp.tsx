@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { INTL, type Locale } from "@/lib/i18n/config";
 
 /** Nombre qui monte jusqu'à sa valeur quand il apparaît à l'écran (valeur finale lisible sans JavaScript). */
-export function CountUp({ value, duration = 1200, className = "" }: { value: number; duration?: number; className?: string }) {
+export function CountUp({ value, duration = 1200, className = "", locale = "fr" }: { value: number; duration?: number; className?: string; locale?: Locale }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [shown, setShown] = useState(value);
 
@@ -36,7 +37,7 @@ export function CountUp({ value, duration = 1200, className = "" }: { value: num
 
   return (
     <span ref={ref} className={`tabular-nums ${className}`}>
-      {shown.toLocaleString("fr-FR")}
+      {shown.toLocaleString(INTL[locale])}
     </span>
   );
 }

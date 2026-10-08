@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/components/I18nProvider";
 import { useState, useTransition } from "react";
 import { disablePush, savePushSubscription } from "@/app/actions/profile";
 import { btnSecondary } from "@/lib/ui";
@@ -14,6 +15,7 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
 
 /** Notifications push (Web Push, VAPID). Sur iPhone : seulement une fois l'app ajoutée à l'écran d'accueil. */
 export function PushToggle({ subscribed, publicKey }: { subscribed: boolean; publicKey: string | null }) {
+  const { m } = useI18n();
   const [on, setOn] = useState(subscribed);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -24,12 +26,12 @@ export function PushToggle({ subscribed, publicKey }: { subscribed: boolean; pub
     startTransition(async () => {
       try {
         if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-          setMessage("Ce navigateur ne gère pas les notifications. Sur iPhone, ajoute d'abord Nonante à l'écran d'accueil.");
+          setMessage(m.app.profile.pushUnsupported);
           return;
         }
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-          setMessage("Notifications refusées.");
+          setMessage(m.app.profile.pushDenied);
           return;
         }
         const registration = await navigator.serviceWorker.register("/sw.js");
@@ -44,7 +46,7 @@ export function PushToggle({ subscribed, publicKey }: { subscribed: boolean; pub
         setOn(r.ok);
         setMessage(r.message);
       } catch {
-        setMessage("Activation impossible sur cet appareil.");
+        setMessage(m.app.profile.pushFailed);
       }
     });
   }
@@ -66,7 +68,7 @@ export function PushToggle({ subscribed, publicKey }: { subscribed: boolean; pub
   return (
     <div className="mt-4">
       <button type="button" disabled={pending} onClick={on ? disable : enable} className={btnSecondary}>
-        {pending ? "…" : on ? "Désactiver les notifications" : "Activer les notifications"}
+        {pending ? "…" : on ? m.app.profile.pushOff : m.app.profile.pushOn}
       </button>
       {message ? (
         <p role="status" className="mt-3 text-sm">

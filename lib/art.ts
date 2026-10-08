@@ -2,8 +2,11 @@ import credits from "@/public/art/credits.json";
 
 export type Artwork = {
   slug: string;
-  /** « photo » : photo CC0 ou domaine public (Openverse) ; absent : œuvre du domaine public (Wikimedia). */
-  kind?: "photo";
+  /**
+   * « photo » : photo CC0 ou domaine public (Openverse) ; « fournie » : image choisie et fournie par l'éditeur
+   * (pas de crédit public) ; absent : œuvre du domaine public (Wikimedia).
+   */
+  kind?: "photo" | "fournie";
   title: string;
   artist: string;
   year: string;
@@ -27,24 +30,23 @@ export function allArt(): Artwork[] {
 
 /** Les photos n'existent qu'en noir et blanc ; les œuvres aussi en couleur. */
 export function artSrc(art: Artwork, variant: "couleur" | "nb" = "nb"): string {
-  return variant === "couleur" && art.kind !== "photo" ? `/art/${art.slug}.jpg` : `/art/${art.slug}-nb.jpg`;
-}
-
-/** Crédit court : « Matt Bango, City Building. CC0. » ou « Friedrich, Le Moine…, 1810. Domaine public. » */
-export function creditLine(art: Artwork): string {
-  if (art.kind === "photo") return `Photo : ${art.artist}. ${art.license}.`;
-  return `${art.artist}, ${art.title}, ${art.year}. Domaine public.`;
+  return variant === "couleur" && !art.kind ? `/art/${art.slug}.jpg` : `/art/${art.slug}-nb.jpg`;
 }
 
 /** Où va chaque image dans l'app. */
 export const IMAGES = {
   hero: "nuit-tours",
-  login: "fenetre",
-  onboarding: ["fenetre", "echecs", "sommet", "pluie-nuit", "aube", "piste", "carnet"],
-  paywall: "ville-nuit",
-  proofs: "bureau-nuit",
-  wallet: "billets",
-  squads: "oiseaux-fil",
+  // Page de connexion : sans image (fond noir).
+  onboarding: ["fenetre-allumee", "pion-roi", "sommet", "pluie-nuit", "aube", "piste", "carnet"],
+  paywall: "bar-marbre",
+  pains: "fenetre-allumee",
+  steps: "pion-roi",
+  proofs: "capuche-ordi",
+  wallet: "billet",
+  grades: "carnet",
+  squads: "oiseau-seul",
+  mood: "plan-humeur",
+  founder: "etiquettes",
   body: "halteres",
   quote: "marc-aurele",
   levelUp: "escalier",

@@ -6,17 +6,21 @@ import { Logo } from "@/components/Logo";
 import { Answers, startDateOf } from "@/lib/answers";
 import { requireUser } from "@/lib/auth";
 import { billing, upcomingDiscount } from "@/lib/checkout";
-import { formatEuros } from "@/lib/money";
-import { formatDayFr, todayParis } from "@/lib/dates";
-import { PLAN_NAME, priceLabel } from "@/lib/plans";
+import { todayParis } from "@/lib/dates";
+import { fmt, formatDay, formatMoney } from "@/lib/i18n/format";
+import { getI18n } from "@/lib/i18n/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Interval, PlanId, PublicPlans } from "@/lib/types";
 import { label } from "@/lib/ui";
 
-export const metadata: Metadata = { title: "Dernière étape", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { m } = await getI18n();
+  return { title: m.quiz.suite.title, robots: { index: false } };
+}
 
 export default async function SuitePage() {
-  const { supabase, user } = await requireUser("/onboarding/suite");
+  const [{ supabase, user }, { m, locale }] = await Promise.all([requireUser("/onboarding/suite"), getI18n()]);
+  const t = m.quiz.suite;
   const email = user.email?.toLowerCase() ?? "";
   const { data: pending } = await createAdminClient()
     .from("pending_arcs")
@@ -50,39 +54,40 @@ export default async function SuitePage() {
   const total = discount ? Math.round(price * (1 - discount.percent / 100)) : price;
   const today = todayParis();
   const start = startDateOf(a.start, today);
-  const startLabel = a.start.startsWith("squad:") ? "départ collectif" : formatDayFr(start.date, { weekday: true, year: false });
+  const startLabel = a.start.startsWith("squad:") ? t.collective : formatDay(start.date, locale, { weekday: true, year: false });
+  const priceText = (cents: number) => fmt(m.game.plans.price[interval], { price: formatMoney(cents, locale) }, locale);
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-6 pb-14 grain">
       <Logo size="sm" />
       <div className="my-auto py-12">
         <Hand underline className="animate-rise text-3xl">
-          presque fini
+          {t.hand}
         </Hand>
-        <h1 className="mt-6 animate-rise font-serif text-5xl leading-[0.95] [animation-delay:80ms]">Dernière étape.</h1>
+        <h1 className="mt-6 animate-rise font-serif text-5xl leading-[0.95] [animation-delay:80ms]">{t.heading}</h1>
 
         <dl className="mt-8 animate-rise divide-y divide-line border-y border-line text-sm [animation-delay:160ms]">
           <div className="py-4">
-            <dt className={label}>Objectif</dt>
+            <dt className={label}>{t.goal}</dt>
             <dd className="mt-1.5 font-serif text-2xl leading-tight">{a.goal}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-4 py-4">
-            <dt className={label}>Jour 1</dt>
+            <dt className={label}>{t.day1}</dt>
             <dd>{startLabel}</dd>
           </div>
           <div className="flex items-baseline justify-between gap-4 py-4">
-            <dt className={label}>{PLAN_NAME[plan]}</dt>
-            <dd className="font-serif text-2xl">{covered ? "déjà inclus" : priceLabel(price, interval)}</dd>
+            <dt className={label}>{m.game.plans.name[plan]}</dt>
+            <dd className="font-serif text-2xl">{covered ? t.included : priceText(price)}</dd>
           </div>
           {discount ? (
             <>
               <div className="flex items-baseline justify-between gap-4 py-4">
-                <dt className={label}>{discount.label}</dt>
+                <dt className={label}>{fmt(t.discount[discount.kind], { name: discount.pseudo })}</dt>
                 <dd>−{discount.percent} %</dd>
               </div>
               <div className="flex items-baseline justify-between gap-4 py-4">
-                <dt className={label}>À payer</dt>
-                <dd className="font-serif text-3xl">{formatEuros(total)}</dd>
+                <dt className={label}>{t.toPay}</dt>
+                <dd className="font-serif text-3xl">{formatMoney(total, locale)}</dd>
               </div>
             </>
           ) : null}
@@ -94,7 +99,7 @@ export default async function SuitePage() {
             pseudo={profile?.pseudo ?? a.pseudo ?? ""}
             isPublic={a.isPublic}
             needsPayment={!covered}
-            cta={covered ? "Lancer mon arc" : `Payer ${priceLabel(total, interval).replace(" pour 90 jours", "")} et lancer mon arc`}
+            cta={covered ? t.launch : fmt(t.pay, { price: interval === "once" ? formatMoney(total, locale) : priceText(total) })}
             currentYear={Number(today.slice(0, 4))}
           />
         </div>

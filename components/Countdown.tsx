@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/components/I18nProvider";
+import { fmt } from "@/lib/i18n/format";
 
 type Props = {
   /** Départ, en ms depuis l'époque Unix. */
@@ -22,6 +24,7 @@ function split(ms: number) {
 const pad = (n: number) => String(n).padStart(2, "0");
 
 export function Countdown({ target, serverNow }: Props) {
+  const { m, locale } = useI18n();
   const [remaining, setRemaining] = useState(target - serverNow);
 
   useEffect(() => {
@@ -32,16 +35,16 @@ export function Countdown({ target, serverNow }: Props) {
 
   const { days, hours, minutes, seconds } = split(remaining);
   const cells = [
-    { value: String(days), label: days > 1 ? "jours" : "jour" },
-    { value: pad(hours), label: "h" },
-    { value: pad(minutes), label: "min" },
-    { value: pad(seconds), label: "s" },
+    { value: String(days), label: fmt(m.common.units.days, { n: days }, locale).replace(/^[\d\s.,]+/, "") },
+    { value: pad(hours), label: m.common.units.h },
+    { value: pad(minutes), label: m.common.units.min },
+    { value: pad(seconds), label: m.common.units.s },
   ];
 
   return (
     <div>
       <p className="sr-only">
-        Départ dans {days} jours, {hours} heures et {minutes} minutes.
+        {fmt(m.common.countdown.aria, { days, hours, minutes })}
       </p>
       <div aria-hidden="true" className="flex items-baseline gap-4 sm:gap-6">
         {cells.map((cell) => (

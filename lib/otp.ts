@@ -2,57 +2,70 @@ import "server-only";
 import { z } from "zod";
 import { isDisposableEmail } from "@/lib/disposable-email";
 import { siteUrl } from "@/lib/env";
+import type { Messages } from "@/lib/i18n/messages";
 import { rateLimit } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
-// Connexion sans mot de passe : un email avec un lien et un code à 6 chiffres.
+// Connexion sans mot de passe : un email avec un lien et un code à 6 chiffres, ou Apple / Google.
+// Les fonctions renvoient une clé de message (actions.auth), traduite par l'appelant.
 
-const Email = z.email({ error: "Adresse email invalide." }).max(254);
+export type AuthError = keyof Messages["actions"]["auth"];
+export type OAuthProvider = "apple" | "google";
 
-/** Adresse normalisée, ou message d'erreur. */
-export function checkEmail(raw: unknown): { email: string } | { error: string } {
+const Email = z.email().max(254);
+
+/** Adresse normalisée, ou clé d'erreur. */
+export function checkEmail(raw: unknown): { email: string } | { error: AuthError } {
   const typed = String(raw ?? "").trim().toLowerCase();
   const parsed = Email.safeParse(typed);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Adresse invalide." };
-  if (isDisposableEmail(parsed.data)) return { error: "Les adresses jetables ne sont pas acceptées." };
+  if (!parsed.success) return { error: "badEmail" };
+  if (isDisposableEmail(parsed.data)) return { error: "disposable" };
   return { email: parsed.data };
 }
 
-/** Envoie le lien et le code. `next` : où arriver après la connexion. Renvoie un message d'erreur ou null. */
-export async function sendOtp(email: string, next: string): Promise<string | null> {
-  if (!(await rateLimit("login", 5, 600))) return "Trop de demandes. Réessaie dans quelques minutes.";
+/** Envoie le lien et le code. `next` : où arriver après la connexion. */
+export async function sendOtp(email: string, next: string): Promise<AuthError | null> {
+  if (!(await rateLimit("login", 5, 600))) return "tooMany";
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { shouldCreateUser: true, emailRedirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(next)}` },
   });
   if (!error) return null;
-  return error.status === 429 ? "Trop de demandes. Réessaie dans une minute." : "Envoi impossible pour le moment. Réessaie.";
+  console.error(`[connexion] envoi de l'email impossible : ${error.status ?? "?"} ${error.code ?? error.name}`);
+  return error.status === 429 ? "tooManyMinute" : "sendFailed";
 }
 
-/** Connexion Google activée ? (fournisseur à configurer dans Supabase, puis NEXT_PUBLIC_GOOGLE_AUTH=1). */
-export function googleEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1";
+/** Fournisseur activé ? (à configurer dans Supabase, puis NEXT_PUBLIC_APPLE_AUTH=1 / NEXT_PUBLIC_GOOGLE_AUTH=1). */
+export function oauthEnabled(provider: OAuthProvider): boolean {
+  return (provider === "apple" ? process.env.NEXT_PUBLIC_APPLE_AUTH : process.env.NEXT_PUBLIC_GOOGLE_AUTH) === "1";
 }
 
-/** Adresse de connexion Google (flux PKCE : le retour passe par /auth/callback). Null si indisponible. */
-export async function googleUrl(next: string): Promise<string | null> {
-  if (!googleEnabled()) return null;
+export function parseProvider(raw: unknown): OAuthProvider | null {
+  return raw === "apple" || raw === "google" ? raw : null;
+}
+
+/** Adresse de connexion Apple ou Google (flux PKCE : le retour passe par /auth/callback). Null si indisponible. */
+export async function oauthUrl(provider: OAuthProvider, next: string): Promise<string | null> {
+  if (!oauthEnabled(provider)) return null;
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(next)}`, queryParams: { prompt: "select_account" } },
+    provider,
+    options: {
+      redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
+      ...(provider === "google" ? { queryParams: { prompt: "select_account" } } : {}),
+    },
   });
   return error ? null : data.url;
 }
 
-/** Vérifie le code reçu. Renvoie un message d'erreur ou null. */
-export async function verifyOtp(email: string, rawToken: unknown): Promise<string | null> {
+/** Vérifie le code reçu. */
+export async function verifyOtp(email: string, rawToken: unknown): Promise<AuthError | null> {
   const token = String(rawToken ?? "").replace(/\s/g, "");
-  if (!Email.safeParse(email).success) return "Recommence avec ton adresse email.";
-  if (!/^\d{6,10}$/.test(token)) return "Le code fait 6 chiffres.";
-  if (!(await rateLimit("verify", 10, 600))) return "Trop d'essais. Réessaie dans quelques minutes.";
+  if (!Email.safeParse(email).success) return "restart";
+  if (!/^\d{6,10}$/.test(token)) return "codeLength";
+  if (!(await rateLimit("verify", 10, 600))) return "tooManyTries";
   const supabase = await createClient();
   const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  return error ? "Code incorrect ou expiré." : null;
+  return error ? "badCode" : null;
 }

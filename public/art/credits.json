@@ -339,5 +339,93 @@
     "source": "https://www.flickr.com/photos/132795455@N08/18003995359",
     "width": 1023,
     "height": 576
+  },
+  {
+    "slug": "billet",
+    "kind": "fournie",
+    "title": "Billet froissé",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 734,
+    "height": 366
+  },
+  {
+    "slug": "etiquettes",
+    "kind": "fournie",
+    "title": "Étiquettes d'expédition",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 683,
+    "height": 1200
+  },
+  {
+    "slug": "bar-marbre",
+    "kind": "fournie",
+    "title": "Bureau de nuit",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 736,
+    "height": 981
+  },
+  {
+    "slug": "fenetre-allumee",
+    "kind": "fournie",
+    "title": "Une fenêtre allumée",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 640,
+    "height": 1136
+  },
+  {
+    "slug": "plan-humeur",
+    "kind": "fournie",
+    "title": "Stick to the plan",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 736,
+    "height": 1104
+  },
+  {
+    "slug": "oiseau-seul",
+    "kind": "fournie",
+    "title": "Seul sur le fil",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 736,
+    "height": 1308
+  },
+  {
+    "slug": "capuche-ordi",
+    "kind": "fournie",
+    "title": "Face à la mer",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 735,
+    "height": 1033
+  },
+  {
+    "slug": "pion-roi",
+    "kind": "fournie",
+    "title": "Le pion et le roi",
+    "artist": "Nonante",
+    "year": "",
+    "license": "Image fournie par l'éditeur",
+    "source": "",
+    "width": 600,
+    "height": 1200
   }
 ]

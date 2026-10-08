@@ -2,15 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { validateChallengeDeclaratif } from "@/app/actions/proofs";
+import { useI18n } from "@/components/I18nProvider";
 import { btnPrimary } from "@/lib/ui";
 
 export function ChallengeDeclaratif({ assignmentId }: { assignmentId: string }) {
+  const { m } = useI18n();
+  const t = m.app.quest;
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   return (
     <div className="space-y-3">
-      <p className="text-sm text-mute">Preuve déclarative : un contrôle peut tomber, et il faudra alors une capture sous 24 h.</p>
+      <p className="text-sm text-mute">{t.declarative}</p>
       <button
         type="button"
         disabled={pending}
@@ -23,10 +26,10 @@ export function ChallengeDeclaratif({ assignmentId }: { assignmentId: string }) 
         }}
         className={btnPrimary}
       >
-        {pending ? "…" : confirm ? "Je confirme : c'est fait" : "C'est fait"}
+        {pending ? "…" : confirm ? t.confirmDone : t.itsDone}
       </button>
       {message ? (
-        <p role="status" className="text-sm">
+        <p role="status" className="animate-rise text-sm">
           {message}
         </p>
       ) : null}

@@ -7,7 +7,9 @@ import { startDateOf } from "@/lib/answers";
 import { getUser } from "@/lib/auth";
 import { billing, checkoutDestination } from "@/lib/checkout";
 import { userMessage } from "@/lib/errors";
-import { checkEmail, googleUrl, sendOtp, verifyOtp } from "@/lib/otp";
+import { fmt } from "@/lib/i18n/format";
+import { getCountry, getI18n } from "@/lib/i18n/server";
+import { checkEmail, oauthUrl, parseProvider, sendOtp, verifyOtp } from "@/lib/otp";
 import { rateLimit } from "@/lib/rate-limit";
 import { ensureReferralCode } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -23,9 +25,10 @@ const SUITE = "/onboarding/suite";
 
 /** Aperçu des principes, calculé par Postgres à partir des réponses (rien n'est écrit). */
 export async function previewArc(raw: string): Promise<Preview | { error: string }> {
+  const { m, locale } = await getI18n();
   const a = parseAnswers(raw);
-  if (!a) return { error: "Il manque une réponse. Reviens en arrière pour vérifier." };
-  if (!(await rateLimit("preview", 30, 600))) return { error: "Trop de tentatives. Réessaie dans quelques minutes." };
+  if (!a) return { error: m.actions.onboarding.missing };
+  if (!(await rateLimit("preview", 30, 600))) return { error: m.actions.tooMany };
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("preview_principles", {
     p_category: a.category,
@@ -34,8 +37,11 @@ export async function previewArc(raw: string): Promise<Preview | { error: string
     p_wake_time: a.wakeTime,
     p_pushups: a.pushups,
     p_focus_minutes: a.focusMinutes,
+    p_locale: locale,
+    p_business_types: a.businessTypes,
+    p_school: a.school,
   });
-  if (error || !data) return { error: "Construction impossible pour le moment. Réessaie." };
+  if (error || !data) return { error: m.actions.onboarding.buildFailed };
   return data as Preview;
 }
 
@@ -43,35 +49,39 @@ export type AccountState = { step: "email" | "code"; email: string; message: str
 
 /** Visiteur : garde ses réponses et son plan, puis envoie le code de connexion. */
 export async function sendAccountCode(_prev: AccountState, formData: FormData): Promise<AccountState> {
+  const { m } = await getI18n();
   const typed = String(formData.get("email") ?? "").trim().toLowerCase();
   const checked = checkEmail(typed);
-  if ("error" in checked) return { step: "email", email: typed, message: checked.error };
+  if ("error" in checked) return { step: "email", email: typed, message: m.actions.auth[checked.error] };
   const answers = parseAnswers(formData.get("answers"));
   const choice = parseChoice(formData.get("plan"), formData.get("interval"));
-  if (!answers || !choice) return { step: "email", email: typed, message: "Il manque une réponse. Reviens au questionnaire." };
+  if (!answers || !choice) return { step: "email", email: typed, message: m.actions.onboarding.missingBack };
   if (!(await savePending(checked.email, answers, choice))) {
-    return { step: "email", email: typed, message: "Enregistrement impossible pour le moment. Réessaie." };
+    return { step: "email", email: typed, message: m.actions.onboarding.saveFailed };
   }
   const error = await sendOtp(checked.email, SUITE);
-  if (error) return { step: "email", email: typed, message: error };
+  if (error) return { step: "email", email: typed, message: m.actions.auth[error] };
   return { step: "code", email: checked.email, message: null };
 }
 
 /** Visiteur : vérifie le code, puis dernière étape. */
 export async function verifyAccountCode(_prev: AccountState, formData: FormData): Promise<AccountState> {
+  const { m } = await getI18n();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const error = await verifyOtp(email, formData.get("token"));
-  if (error) return { step: error.startsWith("Recommence") ? "email" : "code", email, message: error };
+  if (error) return { step: error === "restart" ? "email" : "code", email, message: m.actions.auth[error] };
   redirect(SUITE);
 }
 
-/** Visiteur : continuer avec Google. Les réponses suivent dans un cookie, rangées en base au retour (/auth/callback). */
-export async function continueWithGoogle(rawAnswers: string, plan: string, interval: string): Promise<{ error: string }> {
+/** Visiteur : continuer avec Apple ou Google. Les réponses suivent dans un cookie, rangées en base au retour (/auth/callback). */
+export async function continueWithProvider(rawProvider: string, rawAnswers: string, plan: string, interval: string): Promise<{ error: string }> {
+  const { m } = await getI18n();
+  const provider = parseProvider(rawProvider);
   const answers = parseAnswers(rawAnswers);
   const choice = parseChoice(plan, interval);
-  if (!answers || !choice) return { error: "Il manque une réponse. Reviens au questionnaire." };
-  const url = await googleUrl(SUITE);
-  if (!url) return { error: "La connexion Google n'est pas disponible. Utilise ton email." };
+  if (!answers || !choice || !provider) return { error: m.actions.onboarding.missingBack };
+  const url = await oauthUrl(provider, SUITE);
+  if (!url) return { error: m.actions.onboarding.oauthUnavailable };
   (await cookies()).set(PENDING_COOKIE, JSON.stringify({ answers, plan: choice.plan, interval: choice.interval }), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -86,10 +96,11 @@ export async function continueWithGoogle(rawAnswers: string, plan: string, inter
 export async function continueWithPlan(rawAnswers: string, plan: string, interval: string): Promise<{ error: string }> {
   const { user } = await getUser();
   if (!user?.email) redirect("/onboarding");
+  const { m } = await getI18n();
   const answers = parseAnswers(rawAnswers);
   const choice = parseChoice(plan, interval);
-  if (!answers || !choice) return { error: "Il manque une réponse. Reviens en arrière pour vérifier." };
-  if (!(await savePending(user.email.toLowerCase(), answers, choice))) return { error: "Enregistrement impossible pour le moment. Réessaie." };
+  if (!answers || !choice) return { error: m.actions.onboarding.missing };
+  if (!(await savePending(user.email.toLowerCase(), answers, choice))) return { error: m.actions.onboarding.saveFailed };
   redirect(SUITE);
 }
 
@@ -109,7 +120,9 @@ const Profile = z.object({
 export async function finishArc(_prev: FinishState, formData: FormData): Promise<FinishState> {
   const { supabase, user } = await getUser();
   if (!user?.email) redirect("/onboarding");
-  if (!(await rateLimit("onboarding", 15, 600))) return { message: "Trop de tentatives. Réessaie dans quelques minutes." };
+  const i18n = await getI18n();
+  const { m, locale } = i18n;
+  if (!(await rateLimit("onboarding", 15, 600))) return { message: m.actions.tooMany };
   const email = user.email.toLowerCase();
   const admin = createAdminClient();
 
@@ -127,7 +140,7 @@ export async function finishArc(_prev: FinishState, formData: FormData): Promise
       isPublic: formData.get("isPublic") === "on",
       adult: formData.get("adult") === "on",
     });
-    if (!parsed.success) return { message: "Indique ton année de naissance (Nonante est réservé aux majeurs)." };
+    if (!parsed.success) return { message: m.actions.onboarding.age };
     const utm = parseUtm((await cookies()).get(UTM_COOKIE)?.value);
     const { error } = await supabase.rpc("save_profile", {
       p_pseudo: parsed.data.pseudo,
@@ -136,8 +149,10 @@ export async function finishArc(_prev: FinishState, formData: FormData): Promise
       p_is_public: parsed.data.isPublic,
       p_utm_source: utm.source,
       p_utm_campaign: utm.campaign,
+      p_locale: locale,
+      p_country: await getCountry(),
     });
-    if (error) return { message: userMessage(error) };
+    if (error) return { message: userMessage(error, i18n) };
   }
 
   // Paiement nécessaire ? Alors la demande d'accès immédiat est obligatoire (droit de rétractation).
@@ -146,7 +161,7 @@ export async function finishArc(_prev: FinishState, formData: FormData): Promise
     b?.effective_plan === "fondateur" ||
     (choice.plan === "arc" && (b?.effective_plan === "pro" || Boolean(b?.arc_credits))) ||
     (choice.plan === "pro" && b?.effective_plan === "pro");
-  if (!covered && formData.get("waiver") !== "on") return { message: "Coche la case pour démarrer tout de suite." };
+  if (!covered && formData.get("waiver") !== "on") return { message: m.actions.onboarding.waiver };
 
   // L'arc, construit par Postgres avec les réponses du questionnaire.
   const { data: before } = await supabase.from("enrollments").select("id").eq("user_id", user.id).in("status", ["draft", "active"]).maybeSingle();
@@ -164,8 +179,13 @@ export async function finishArc(_prev: FinishState, formData: FormData): Promise
     p_focus_minutes: answers.focusMinutes,
     p_start_date: start.date,
     p_squad_id: start.squadId,
+    p_locale: locale,
+    p_business_types: answers.businessTypes,
+    p_business_other: answers.businessOther,
+    p_school: answers.school,
+    p_school_other: answers.schoolOther,
   });
-  if (error) return { message: userMessage(error) };
+  if (error) return { message: userMessage(error, i18n) };
   // Arc déjà construit (questionnaire refait avant le jour 1) : principes recalculés avec les nouvelles réponses.
   if (before) await supabase.rpc("regenerate_principles");
   await admin.from("pending_arcs").delete().eq("email", email);
@@ -181,8 +201,8 @@ export async function finishArc(_prev: FinishState, formData: FormData): Promise
   }
 
   if (covered) redirect("/app?nouveau=1");
-  const result = await checkoutDestination(user.id, choice);
+  const result = await checkoutDestination(user.id, choice, locale);
   if ("covered" in result) redirect("/app?nouveau=1");
-  if ("error" in result) return { message: `${result.error} Ton arc est enregistré : tu pourras le lancer depuis la page des plans.` };
+  if ("error" in result) return { message: fmt(m.actions.onboarding.arcSaved, { error: m.actions.checkout[result.error] }) };
   redirect(result.url);
 }

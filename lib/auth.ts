@@ -1,14 +1,18 @@
 import "server-only";
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
-/** Utilisateur vérifié auprès de Supabase Auth (jamais déduit du cookie seul). */
-export async function getUser(): Promise<{ supabase: Awaited<ReturnType<typeof createClient>>; user: User | null }> {
+/**
+ * Utilisateur vérifié auprès de Supabase Auth (jamais déduit du cookie seul).
+ * Une seule vérification par requête, partagée par les mises en page et la page (cache de React).
+ */
+export const getUser = cache(async (): Promise<{ supabase: Awaited<ReturnType<typeof createClient>>; user: User | null }> => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   return { supabase, user: data.user };
-}
+});
 
 export async function requireUser(next: string) {
   const { supabase, user } = await getUser();

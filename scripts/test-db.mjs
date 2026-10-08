@@ -153,7 +153,8 @@ check("pas d'activation sans abonnement", (await as(A, () => rpc("activate_my_ar
 
 const examArc = await (async () => { await profile(E); return arc(E, { p_category: "etudes", p_goal_type: "examens", p_goal_title: "Valider mon partiel de droit", p_weak_points: ["procrastination"], p_pushups: "non", p_focus_minutes: 50 }); })();
 const codesE = (await principlesOf(examArc)).map((p) => p.template_code);
-check("objectif examens : squats et révision active", codesE.includes("squats") && codesE.some((c) => ["revision_active", "grenouille", "fiches", "devoir_jour_meme", "weekend_90"].includes(c)), JSON.stringify(codesE));
+check("objectif examens, sans sport voulu : aucun principe sportif", !codesE.some((c) => ["pompes", "squats", "salle", "marche", "course"].includes(c)), JSON.stringify(codesE));
+check("objectif examens : principes d'étude", codesE.some((c) => ["revision_active", "grenouille", "fiches", "devoir_jour_meme", "weekend_90", "fac_relecture", "controle_test"].includes(c)), JSON.stringify(codesE));
 
 // ---------------------------------------------------------------------------
 console.log("\nPrincipes personnalisés");
@@ -307,6 +308,11 @@ check("moins de 90 % des battements : session cassée, − 5", broken.status ===
 const s2 = await as(B, () => rpc("start_proof_session", { p_principle_id: bureau.id }));
 const hidden = await as(B, () => rpc("heartbeat", { p_session_id: s2.id, p_nonce: s2.nonce, p_visible: true, p_hidden_ms: 11000 }));
 check("11 s hors de l'écran : session cassée", hidden.status === "broken");
+const sLeave = await as(B, () => rpc("start_proof_session", { p_principle_id: bureau.id }));
+const left = await as(B, () => rpc("leave_session"));
+check("page du minuteur quittée : session cassée, − 5", left.status === "broken"
+  && (await val("select delta from public.points_ledger where reason = 'session_broken' and ref_id = $1", [sLeave.id])) === -5);
+check("rien à casser ensuite", (await as(B, () => rpc("leave_session"))).status === "none");
 const s3 = await as(B, () => rpc("start_proof_session", { p_principle_id: bureau.id }));
 await q("update public.proof_sessions set started_at = now() - interval '90 minutes 5 seconds', heartbeats = 360, last_heartbeat_at = now() - interval '5 seconds' where id = $1", [s3.id]);
 const done = await as(B, () => rpc("complete_session", { p_session_id: s3.id, p_nonce: s3.nonce }));
@@ -354,9 +360,11 @@ await rejects("un joker par jour", () => as(B, () => rpc("use_joker")), "déjà 
 
 // ---------------------------------------------------------------------------
 console.log("\nPortefeuille");
-await rejects("Arc 90 jours : portefeuille réservé à Pro", () => service(() => rpc("add_wallet_entry", {
-  p_user: A, p_amount_cents: 5000, p_source: "vente", p_label: "Site vitrine", p_day: today, p_proof_path: null,
-})), "plan Pro");
+await rejects("arc études : pas de portefeuille", () => service(() => rpc("add_wallet_entry", {
+  p_user: E, p_amount_cents: 5000, p_source: "vente", p_label: "Cours particuliers", p_day: today, p_proof_path: null,
+})), "arcs business");
+const wA = await service(() => rpc("add_wallet_entry", { p_user: A, p_amount_cents: 5000, p_source: "vente", p_label: "Site vitrine", p_day: today, p_proof_path: null }));
+check("Arc 90 jours business : portefeuille inclus", wA.status === "declared");
 const w1 = await service(() => rpc("add_wallet_entry", { p_user: B, p_amount_cents: 12000, p_source: "client", p_label: "Acompte client", p_day: today, p_proof_path: null }));
 check("revenu sans capture : noté, non prouvé, pas de points", w1.status === "declared" && w1.points === 0);
 const path1 = await proofFile(B);
@@ -596,6 +604,82 @@ await rejects("verrouillé : plus rien ne se valide", () => as(E, () => rpc("val
 // ---------------------------------------------------------------------------
 await q("update public.enrollments set status = 'completed', closed_at = now() where id = $1", [enrA]);
 check("Arc 90 jours terminé : plus d'accès sans nouvel arc payé", (await val("select public._plan($1)", [A])) === null);
+
+// ---------------------------------------------------------------------------
+console.log("\nLangues et pays");
+const previewEn = await as(null, () => rpc("preview_principles", {
+  p_category: "business", p_goal_type: "revenu", p_weak_points: ["vente"], p_wake_time: "06:30", p_pushups: "oui", p_focus_minutes: 50, p_locale: "en",
+}), { role: "anon" });
+check("aperçu en anglais", previewEn.principles[0].if_text === "If it's 6:30" && previewEn.principles[1].then_text.startsWith("then 50 minutes of deep work"),
+  JSON.stringify(previewEn.principles.slice(0, 2).map((p) => [p.if_text, p.then_text])));
+const previewDe = await as(null, () => rpc("preview_principles", {
+  p_category: "business", p_goal_type: "revenu", p_weak_points: ["vente"], p_wake_time: "06:30", p_pushups: "oui", p_focus_minutes: 50, p_locale: "de",
+}), { role: "anon" });
+check("aperçu en allemand", previewDe.principles[0].if_text === "Wenn es 6:30 Uhr ist" && previewDe.principles[0].then_text.startsWith("dann "));
+await q("insert into auth.users (id, email) values ('99999999-0000-4000-8000-999999999999', 'en@exemple.fr')");
+const EN = "99999999-0000-4000-8000-999999999999";
+await as(EN, () => rpc("save_profile", { p_pseudo: "player_en", p_birth_year: 2000, p_adult: true, p_is_public: true, p_utm_source: null, p_utm_campaign: null, p_locale: "en", p_country: "gb" }));
+check("profil : langue et pays", (await val("select locale || '/' || country from public.profiles where id = $1", [EN])) === "en/GB");
+const enrEN = await as(EN, () => rpc("save_arc", {
+  p_category: "business", p_goal_type: "clients", p_goal_title: "Sign 10 clients", p_goal_target: 10, p_goal_unit: "clients", p_goal_public: true,
+  p_weak_points: ["vente"], p_wake_time: "07:00", p_pushups: "non", p_focus_minutes: 25, p_start_date: today, p_squad_id: null, p_locale: "en",
+}));
+const pEN = await principlesOf(enrEN);
+check("arc en anglais : principes générés en anglais", pEN[0].if_text === "If it's 7:00" && pEN[0].then_text === "then I get up right away, no snooze."
+  && pEN.some((p) => p.then_text === "then 20 messages to potential clients."), JSON.stringify(pEN.map((p) => p.then_text)));
+
+console.log("\nParcours orienté métier et école");
+const pick = (o) => as(null, () => rpc("preview_principles", {
+  p_category: "business", p_goal_type: "revenu", p_weak_points: [], p_wake_time: "07:00", p_pushups: "non", p_focus_minutes: 50,
+  p_locale: "fr", p_business_types: [], p_school: null, ...o,
+}), { role: "anon" }).then((r) => r.principles.map((p) => p.code));
+const trading = await pick({ p_business_types: ["trading"] });
+check("trading : principes de trading, aucune prospection de clients", trading.some((c) => c.startsWith("trading_"))
+  && !trading.some((c) => ["prospection", "appel_prospect", "relance", "demander_vente", "offre", "agence_prospection"].includes(c)), JSON.stringify(trading));
+const ecom = await pick({ p_business_types: ["ecommerce"], p_weak_points: ["vente"] });
+check("e-commerce : principes e-commerce", ecom.filter((c) => c.startsWith("ecom_")).length >= 2, JSON.stringify(ecom));
+const revente = await pick({ p_business_types: ["revente"] });
+check("revente : principes de revente", revente.some((c) => c.startsWith("revente_")), JSON.stringify(revente));
+check("sans sport voulu : aucun principe sportif", !trading.concat(ecom, revente).some((c) => ["pompes", "squats", "salle", "marche", "course", "pause_pompes", "marche_midi"].includes(c)));
+const sport = await pick({ p_business_types: ["saas"], p_pushups: "oui" });
+check("sport voulu : pompes, et principes SaaS", sport.includes("pompes") && sport.some((c) => c.startsWith("saas_") || c === "livrer"), JSON.stringify(sport));
+const prepa = await pick({ p_category: "etudes", p_goal_type: "examens", p_school: "prepa" });
+check("prépa : principes de prépa", prepa.some((c) => c.startsWith("prepa_")), JSON.stringify(prepa));
+const mixte = await pick({ p_category: "mixte", p_goal_type: "revenu", p_business_types: ["contenu"], p_school: "universite" });
+check("les deux : un principe métier et un principe d'école", mixte.some((c) => c.startsWith("contenu_") || c === "publier_contenu" || c === "contenu_quotidien")
+  && mixte.some((c) => ["fac_relecture", "fac_presence", "controle_test", "projet_groupe", "revision_active", "blocage_aide"].includes(c)), JSON.stringify(mixte));
+const deux = await pick({ p_category: "mixte", p_goal_type: "lancement", p_business_types: ["saas", "trading"], p_school: "universite" });
+check("deux activités : un principe pour chacune", deux.some((c) => c.startsWith("trading_")) && deux.some((c) => c.startsWith("saas_") || c === "livrer"), JSON.stringify(deux));
+const saasTrading = await pick({ p_business_types: ["saas", "trading"], p_goal_type: "clients", p_weak_points: ["vente"] });
+check("trading avec une autre activité : la prospection reste possible", saasTrading.some((c) => ["saas_utilisateur", "temoignage", "prospection", "appel_prospect"].includes(c)), JSON.stringify(saasTrading));
+check("toujours 6 principes, sans doublon", [trading, ecom, revente, sport, prepa, mixte, deux, saasTrading].every((l) => l.length === 6 && new Set(l).size === 6));
+const untranslated = Number(await val("select count(*) from public.principle_templates where not (i18n ? 'en' and i18n ? 'de' and i18n ? 'es')"));
+check("chaque gabarit traduit en anglais, allemand et espagnol", untranslated === 0, String(untranslated));
+
+console.log("\nCarnet de notes");
+await rejects("carnet : réservé aux arcs études", () => service(() => rpc("add_grade", { p_user: EN, p_subject: "Maths", p_score: 15, p_out_of: 20, p_coefficient: 1, p_day: today, p_proof_path: null })), "arcs études");
+await q("update public.profiles set comp_plan = 'arc', comp_until = '2099-01-01' where id = $1", [E]);
+await rejects("note impossible au-dessus du barème", () => service(() => rpc("add_grade", { p_user: E, p_subject: "Maths", p_score: 25, p_out_of: 20, p_coefficient: 1, p_day: today, p_proof_path: null })), "Note invalide");
+const g1 = await service(() => rpc("add_grade", { p_user: E, p_subject: "Maths", p_score: 15, p_out_of: 20, p_coefficient: 2, p_day: today, p_proof_path: null }));
+const gPath = await proofFile(E);
+const g2 = await service(() => rpc("add_grade", { p_user: E, p_subject: "Droit", p_score: 12, p_out_of: 20, p_coefficient: 1, p_day: today, p_proof_path: gPath }));
+check("note prouvée : + 10 une fois par jour", g1.status === "declared" && g1.points === 0 && g2.status === "proven");
+const grades = await as(E, () => rpc("my_grades"));
+check("moyenne pondérée sur 20 et par matière", Number(grades.average) === 14 && grades.subjects.length === 2 && grades.entries.length === 2, JSON.stringify(grades.average));
+await as(E, () => rpc("delete_grade", { p_id: g1.id }));
+await rejects("une note prouvée ne se retire pas", () => as(E, () => rpc("delete_grade", { p_id: g2.id })), "non prouvée");
+await as(EN, () => rpc("save_principle", { p_id: null, p_pillar: "focus", p_if: "i open my laptop", p_then: "Then I close all tabs", p_proof_type: "declaratif", p_target: "{}", p_days: [1, 2, 3, 4, 5, 6, 7], p_difficulty: 1 }));
+check("principe libre normalisé en anglais", Number(await val("select count(*) from public.principles where enrollment_id = $1 and if_text = 'If i open my laptop' and then_text = 'then I close all tabs.'", [enrEN])) === 1);
+const libEN = await as(EN, () => rpc("my_principles"));
+check("bibliothèque traduite", libEN.templates.find((t) => t.code === "lecture")?.then_text === "10 pages of a book, no screen");
+await as(EN, () => rpc("set_my_country", { p_country: "de" }));
+await rejects("pays invalide refusé", () => as(EN, () => rpc("set_my_country", { p_country: "Allemagne" })), "Pays invalide");
+await as(EN, () => rpc("set_my_locale", { p_locale: "es" }));
+check("langue et pays modifiables", (await val("select locale || '/' || country from public.profiles where id = $1", [EN])) === "es/DE");
+const month = await as(null, () => q("select * from public.leaderboard('mois', null, null)"), { role: "anon" });
+check("classement du mois, avec le pays", month.length > 0 && "country" in month[0], JSON.stringify(month[0]));
+const dashCode = await as(G, () => rpc("my_dashboard"));
+check("la quête porte son code", !dashCode.challenge || typeof dashCode.challenge.code === "string", JSON.stringify(dashCode.challenge));
 
 // ---------------------------------------------------------------------------
 console.log("\nSuppression de compte (RGPD)");
