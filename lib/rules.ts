@@ -18,8 +18,10 @@ export const BROKEN_SESSION_PENALTY = -5;
 /** Contrôle refusé ou non envoyé : − 3 × valeur ; revenu refusé : − 30. */
 export const FAILED_AUDIT_MULTIPLIER = 3;
 export const FAILED_WALLET_AUDIT = -30;
-/** Revenu prouvé pendant l'arc : + 15, une fois par jour. */
-export const WALLET_PROOF_POINTS = 15;
+/** Revenu pendant l'arc : 10 + 1 par tranche de 10 € (50 au plus), la moitié sans capture ; 50 points par jour au plus. */
+export const WALLET_POINTS = { base: 10, perTenEuros: 1, max: 50, dailyCap: 50 } as const;
+/** Note pendant l'arc, ramenée sur 20 : 10 → 5, 12 → 10, 14 → 15, 16 → 20, la moitié sans preuve ; 30 par jour au plus. */
+export const GRADE_POINTS = { tiers: [[16, 20], [14, 15], [12, 10], [10, 5]], dailyCap: 30 } as const;
 
 export const CHALLENGE_POINTS = {
   epreuve: { 1: { done: 100, failed: -50 }, 2: { done: 200, failed: -100 }, 3: { done: 300, failed: -150 } },

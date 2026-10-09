@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getUser } from "@/lib/auth";
 import { type ActionResult, userMessage } from "@/lib/errors";
 import type { Messages } from "@/lib/i18n/messages";
+import { fmt } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
 import { removeProofPhotos, storeProofPhoto } from "@/lib/photos";
 import { rateLimit } from "@/lib/rate-limit";
@@ -57,9 +58,10 @@ export async function addWalletEntry(_prev: ActionResult, formData: FormData): P
   const r = data as { status: string; points: number; audit: boolean };
   revalidatePath("/app/portefeuille");
   revalidatePath("/app");
-  if (r.audit) return { ok: true, message: a.wallet.provenAudit };
-  if (r.status === "proven") return { ok: true, message: r.points ? a.wallet.provenPoints : a.wallet.proven };
-  return { ok: true, message: a.wallet.noted };
+  const n = { n: r.points };
+  if (r.audit) return { ok: true, message: fmt(a.wallet.provenAudit, n) };
+  if (r.status === "proven") return { ok: true, message: r.points ? fmt(a.wallet.provenPoints, n) : a.wallet.proven };
+  return { ok: true, message: r.points ? fmt(a.wallet.notedPoints, n) : a.wallet.noted };
 }
 
 export async function deleteWalletEntry(id: string): Promise<ActionResult> {

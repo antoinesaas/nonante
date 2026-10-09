@@ -1,9 +1,8 @@
 import "server-only";
-import { reminderPush, sendArcResult, sendLoyalty, sendReminder, sendWeeklyRecap } from "@/lib/emails";
+import { sendArcResult, sendLoyalty } from "@/lib/emails";
 import { DEFAULT_LOCALE } from "@/lib/i18n/config";
 import { localesOf } from "@/lib/i18n/user";
 import { removeProofPhotos } from "@/lib/photos";
-import { sendPush } from "@/lib/push";
 import { stripeConfigured } from "@/lib/stripe";
 import { applyLoyaltyDiscount } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -11,25 +10,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // Tâches planifiées (§13). Toutes idempotentes et tolérantes à un retard : le travail fait est noté en base.
 
 type Admin = ReturnType<typeof createAdminClient>;
-
-function parisClock(now = new Date()): { hour: number; isodow: number; date: string } {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Paris",
-    hour: "2-digit",
-    hourCycle: "h23",
-    weekday: "short",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  return {
-    hour: Number(get("hour")),
-    isodow: days.indexOf(get("weekday")) + 1,
-    date: `${get("year")}-${get("month")}-${get("day")}`,
-  };
-}
 
 async function call<T>(admin: Admin, fn: string, args: Record<string, unknown> = {}): Promise<T> {
   // Les noms de fonctions sont fixes dans ce fichier : le typage précis n'apporte rien ici.
@@ -56,47 +36,6 @@ export async function taskCleanup(admin = createAdminClient()) {
   if (paths.length) await call(admin, "mark_photos_deleted", { p_paths: paths });
   await call(admin, "cleanup_rate_limits");
   return { sessions_broken: broken, photos_deleted: paths.length };
-}
-
-/** Lundi : récapitulatif des 7 derniers jours (un seul par semaine grâce à email_log). */
-export async function taskWeekly(admin = createAdminClient()) {
-  const monday = parisClock().date;
-  const targets = await call<
-    { user_id: string; email: string | null; email_reminders: boolean; points: number; green: number; days: number;
-      streak: number; level: number; ovr: number }[]
-  >(admin, "weekly_recap_targets");
-  const locales = await localesOf(admin, targets.map((t) => t.user_id));
-  let recaps = 0;
-  for (const t of targets) {
-    if (!t.email || !t.email_reminders || t.days === 0) continue;
-    const first = await call<boolean>(admin, "log_email_once", { p_user: t.user_id, p_kind: "weekly", p_ref: monday });
-    if (first && (await sendWeeklyRecap(t.email, t.user_id, t, locales.get(t.user_id) ?? DEFAULT_LOCALE))) recaps++;
-  }
-  return { recaps };
-}
-
-/** Le soir : un seul rappel par jour, push si possible, sinon email. */
-export async function taskReminders(admin = createAdminClient()) {
-  const targets = await call<
-    { user_id: string; email: string | null; remaining: number; points: number; email_reminders: boolean; has_push: boolean }[]
-  >(admin, "cron_reminder_targets");
-  const locales = await localesOf(admin, targets.map((t) => t.user_id));
-  let push = 0;
-  let email = 0;
-  for (const t of targets) {
-    const locale = locales.get(t.user_id) ?? DEFAULT_LOCALE;
-    const channel = t.has_push ? "push" : t.email_reminders && t.email ? "email" : "none";
-    // Noter d'abord : en cas de relance, personne ne reçoit deux rappels.
-    const first = await call<boolean>(admin, "mark_reminded", { p_user: t.user_id, p_channel: channel });
-    if (!first) continue;
-    const body = reminderPush(t.remaining, t.points, locale);
-    if (channel === "push" && (await sendPush(t.user_id, { title: "Nonante", body, url: "/app" }))) {
-      push++;
-    } else if (t.email_reminders && t.email && (await sendReminder(t.email, t.user_id, t.remaining, t.points, locale))) {
-      email++;
-    }
-  }
-  return { targets: targets.length, push, email };
 }
 
 /** Arcs tenus : −50 % sur la prochaine facture Pro ou le prochain Arc 90 jours (une fois). Arcs terminés : email de bilan (une fois). */
@@ -140,7 +79,6 @@ export async function taskArcEnd(admin = createAdminClient()) {
 /** Une seule route pour les plans Vercel limités : exécute tout ce qui est dû. */
 export async function runDue() {
   const admin = createAdminClient();
-  const clock = parisClock();
   const report: Record<string, unknown> = {};
 
   const rate = Number(process.env.AUDIT_RATE ?? "0.10");
@@ -150,7 +88,5 @@ export async function runDue() {
   report.dayClose = await taskDayClose(admin);
   report.audits = await taskAudits(admin);
   report.arcEnd = await taskArcEnd(admin);
-  if (clock.isodow === 1 && clock.hour < 12) report.weekly = await taskWeekly(admin);
-  if (clock.hour >= 18 && clock.hour < 22) report.reminders = await taskReminders(admin);
   return report;
 }

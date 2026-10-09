@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { fmt } from "@/lib/i18n/format";
 import { nextTitle, titleFor } from "@/lib/i18n/labels";
 import { getI18n } from "@/lib/i18n/server";
+import { SubmitButton } from "@/components/SubmitButton";
 import { btnPrimary } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,9 +31,9 @@ export default async function LevelPage() {
         <p className="mt-4 animate-rise font-serif text-3xl [animation-delay:350ms]">{titleFor(level, m)}</p>
         <p className="mt-6 animate-rise text-lg text-paper/85 [animation-delay:450ms]">{next ? fmt(t.next, { title: next.title, level: next.level }) : t.top}</p>
         <form action={markLevelSeen} className="mt-12 animate-rise [animation-delay:600ms]">
-          <button type="submit" className={btnPrimary}>
+          <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.loading}>
             {m.common.actions.continue}
-          </button>
+          </SubmitButton>
         </form>
       </main>
     </ArtBackdrop>

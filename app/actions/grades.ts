@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getUser } from "@/lib/auth";
 import { type ActionResult, userMessage } from "@/lib/errors";
+import { fmt } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
 import { removeProofPhotos, storeProofPhoto } from "@/lib/photos";
 import { rateLimit } from "@/lib/rate-limit";
@@ -63,8 +64,9 @@ export async function addGrade(_prev: ActionResult, formData: FormData): Promise
   const r = data as { status: string; points: number };
   revalidatePath("/app/notes");
   revalidatePath("/app");
-  if (r.status === "proven") return { ok: true, message: r.points ? a.grades.provenPoints : a.grades.proven };
-  return { ok: true, message: a.grades.noted };
+  const n = { n: r.points };
+  if (r.status === "proven") return { ok: true, message: r.points ? fmt(a.grades.provenPoints, n) : a.grades.proven };
+  return { ok: true, message: r.points ? fmt(a.grades.notedPoints, n) : a.grades.noted };
 }
 
 export async function deleteGrade(id: string): Promise<ActionResult> {

@@ -9,9 +9,9 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
-const noCamera = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
-// Caméra autorisée uniquement sur les pages de preuve.
-const camera = "camera=(self), microphone=(), geolocation=(), payment=(), usb=()";
+// Caméra autorisée pour le site lui-même (jamais pour un contenu tiers). L'en-tête vaut pour tout le document :
+// limité aux pages de preuve, il bloquait la caméra quand on y arrivait par la navigation de l'app (sans rechargement).
+const permissions = "camera=(self), microphone=(), geolocation=(), payment=(), usb=()";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
@@ -21,12 +21,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      { source: "/:path*", headers: [...securityHeaders, { key: "Permissions-Policy", value: noCamera }] },
-      {
-        source: "/app/:kind(reps|photo|controle|quete)/:path*",
-        headers: [{ key: "Permissions-Policy", value: camera }],
-      },
-      { source: "/app/:page(quete|avant-apres)", headers: [{ key: "Permissions-Policy", value: camera }] },
+      { source: "/:path*", headers: [...securityHeaders, { key: "Permissions-Policy", value: permissions }] },
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
     ];
   },

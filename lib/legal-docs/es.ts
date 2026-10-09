@@ -195,7 +195,6 @@ export const es: LegalSet = {
           "El pago: lo procesa Stripe. Nonante recibe el plan, el importe y el estado de la suscripción, nunca tu tarjeta.",
           "El origen de tu visita (parámetros utm_source y utm_campaign), para saber qué publicación te trajo.",
           "Una huella cifrada de tu dirección IP, para limitar abusos (demasiados intentos). La dirección en sí no se guarda.",
-          "La dirección técnica de tu navegador si activas las notificaciones.",
         ],
       },
       {
@@ -207,7 +206,7 @@ export const es: LegalSet = {
           "La ejecución del contrato: hacer funcionar tu cuenta, tu arco, tus pruebas y tu suscripción.",
           "El interés legítimo: controles antitrampa, seguridad, estadísticas internas de visitas y ventas.",
           "La obligación legal: conservar los registros de pago (contabilidad).",
-          "Tu elección: perfil público, objetivo o ingresos visibles, notificaciones. Puedes cambiar de opinión en cualquier momento.",
+          "Tu elección: perfil público, objetivo o ingresos visibles. Puedes cambiar de opinión en cualquier momento.",
         ],
       },
       { h2: "Quién tiene acceso" },
@@ -221,7 +220,6 @@ export const es: LegalSet = {
           "Stripe: pago.",
           "Resend: envío de emails, si está activado.",
           "Google: conexión a tu cuenta.",
-          "Los servicios de notificación de tu navegador (Apple, Google, Mozilla, Microsoft), si activas las notificaciones.",
         ],
       },
       {

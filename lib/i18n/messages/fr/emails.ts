@@ -1,28 +1,15 @@
-// Emails et notifications (envoyés dans la langue enregistrée du joueur).
+// Emails (envoyés dans la langue enregistrée du joueur).
 export const emails = {
   signature: "Nonante",
-  unsubscribe: "Ne plus recevoir les rappels : {url}",
   welcome: {
     subject: "Ton arc est lancé.",
     body: "Ton paiement est confirmé. Ton arc de 90 jours est lancé.\n\nTes principes t'attendent. Rien ne se valide sans preuve.",
-  },
-  reminder: {
-    subject: "Il te reste {n|# principe|# principes}.",
-    body: "Il te reste {n|# principe|# principes} à prouver aujourd'hui. {points} points en jeu.\nMinuit, heure de Paris : après, c'est trop tard.",
-    push: "Il te reste {n|# principe|# principes}. {points} points en jeu.",
   },
   audit: {
     subject: "Contrôle : envoie ta preuve.",
     labelled: "Ta validation « {label} » est contrôlée.",
     generic: "Une de tes validations est contrôlée.",
     body: "Envoie une photo de ta preuve avant {due}. Sans réponse, la pénalité est lourde.",
-  },
-  weekly: {
-    subject: "Semaine écoulée : {green} jours verts sur {days}.",
-    points: "{points} points en 7 jours.",
-    days: "{green} jours verts sur {days}. Série en cours : {streak|# jour|# jours}.",
-    level: "Niveau {level}, note globale {ovr}.",
-    reset: "Le classement de la semaine repart de zéro aujourd'hui.",
   },
   loyalty: {
     subject: "Arc tenu.",

@@ -2,12 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { getUser } from "@/lib/auth";
 import { type ActionResult, userMessage } from "@/lib/errors";
 import { getI18n } from "@/lib/i18n/server";
 import { removeAvatars, removeProofPhotos, storeAvatar } from "@/lib/photos";
-import { isAllowedPushEndpoint } from "@/lib/push";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -20,7 +18,7 @@ export async function updateSettings(_prev: ActionResult, formData: FormData): P
   const { error } = await supabase.rpc("update_profile_settings", {
     p_is_public: formData.get("isPublic") === "on",
     p_art_slug: typeof art === "string" && /^[a-z0-9-]{1,60}$/.test(art) ? art : null,
-    p_email_reminders: formData.get("emailReminders") === "on",
+    p_email_reminders: null,
     p_wallet_public: formData.get("walletPublic") === "on",
     p_bio: String(formData.get("bio") ?? "").slice(0, 200),
   });
@@ -79,39 +77,6 @@ export async function removeAvatar(): Promise<ActionResult> {
   if (old) await removeAvatars([old as string]);
   revalidatePath("/app/profil");
   return { ok: true, message: a.profile.photoRemoved };
-}
-
-const Subscription = z.object({
-  endpoint: z.url().max(1000),
-  keys: z.object({ p256dh: z.string().min(1).max(200), auth: z.string().min(1).max(100) }),
-});
-
-export async function savePushSubscription(subscription: unknown): Promise<ActionResult> {
-  const i18n = await getI18n();
-  const a = i18n.m.actions;
-  const parsed = Subscription.safeParse(subscription);
-  if (!parsed.success || !isAllowedPushEndpoint(parsed.data.endpoint)) return { ok: false, message: a.profile.pushInvalid };
-  const { supabase, user } = await getUser();
-  if (!user) return { ok: false, message: a.loginFirst };
-  if (!(await rateLimit("push", 10, 3600))) return { ok: false, message: a.tooMany };
-  const { error } = await supabase.rpc("save_push_subscription", {
-    p_endpoint: parsed.data.endpoint,
-    p_p256dh: parsed.data.keys.p256dh,
-    p_auth: parsed.data.keys.auth,
-  });
-  if (error) return { ok: false, message: userMessage(error, i18n) };
-  revalidatePath("/app/profil");
-  return { ok: true, message: a.profile.pushOn };
-}
-
-export async function disablePush(): Promise<ActionResult> {
-  const i18n = await getI18n();
-  const a = i18n.m.actions;
-  const { supabase, user } = await getUser();
-  if (!user) return { ok: false, message: a.loginFirst };
-  await supabase.rpc("delete_push_subscriptions");
-  revalidatePath("/app/profil");
-  return { ok: true, message: a.profile.pushOff };
 }
 
 export async function reportUser(_prev: ActionResult, formData: FormData): Promise<ActionResult> {

@@ -157,6 +157,24 @@
   animation: var(--animate-draw);
 }
 
+/* Forme du carnet de notes : elle s'ouvre depuis le centre du graphique. */
+@utility radar-grow {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  animation: radar-grow 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.2s both;
+}
+
+@keyframes radar-grow {
+  from {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Images qui se fondent dans le fond noir (pas de bord net). */
 @utility fade-bottom {
   mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
@@ -176,6 +194,30 @@
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 0.08),
     0 10px 30px rgb(0 0 0 / 0.45);
+}
+
+/* Bulle de verre liquide de la barre d'onglets : reflet en haut, ombre douce, elle grossit quand on la fait glisser. */
+@utility liquid-lens {
+  pointer-events: none;
+  border-radius: 9999px;
+  background-color: rgb(255 255 255 / 0.1);
+  backdrop-filter: blur(8px) saturate(190%) brightness(1.2);
+  -webkit-backdrop-filter: blur(8px) saturate(190%) brightness(1.2);
+  box-shadow:
+    inset 0 1px 0.5px rgb(255 255 255 / 0.32),
+    inset 0 -1px 1px rgb(255 255 255 / 0.08),
+    inset 0 0 14px rgb(255 255 255 / 0.06),
+    0 8px 20px rgb(0 0 0 / 0.35);
+  transition:
+    scale 0.3s cubic-bezier(0.3, 1.35, 0.4, 1),
+    background-color 0.2s ease,
+    opacity 0.2s ease;
+  will-change: transform;
+
+  &[data-drag] {
+    background-color: rgb(255 255 255 / 0.16);
+    transition: background-color 0.2s ease;
+  }
 }
 
 /* Reflet qui passe (écran de construction). */
@@ -225,6 +267,17 @@
   ::selection {
     background: var(--color-paper);
     color: var(--color-ink);
+  }
+
+  /* Champs date et heure : Safari (iPhone) leur impose une largeur minimale qui dépasse du cadre. */
+  input[type="date"],
+  input[type="time"] {
+    min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input::-webkit-date-and-time-value {
+    text-align: left;
   }
 
   :focus-visible {

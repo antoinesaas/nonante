@@ -197,7 +197,6 @@ export const fr: LegalSet = {
           "Le paiement : traité par Stripe. Nonante reçoit le plan, le montant et l'état de l'abonnement, jamais ta carte.",
           "La source de ta visite (paramètres utm_source et utm_campaign), pour savoir quelle publication t'a amené.",
           "Une empreinte chiffrée de ton adresse IP, pour limiter les abus (trop de tentatives). L'adresse elle-même n'est pas enregistrée.",
-          "L'adresse technique de ton navigateur si tu actives les notifications.",
         ],
       },
       {
@@ -209,7 +208,7 @@ export const fr: LegalSet = {
           "L'exécution du contrat : faire fonctionner ton compte, ton arc, tes preuves et ton abonnement.",
           "L'intérêt légitime : contrôles anti-triche, sécurité, statistiques internes de fréquentation et de ventes.",
           "L'obligation légale : conserver les traces de paiement (comptabilité).",
-          "Ton choix : profil public, objectif ou revenus affichés, notifications. Tu peux changer d'avis à tout moment.",
+          "Ton choix : profil public, objectif ou revenus affichés. Tu peux changer d'avis à tout moment.",
         ],
       },
       { h2: "Qui y a accès" },
@@ -223,7 +222,6 @@ export const fr: LegalSet = {
           "Stripe : paiement.",
           "Resend : envoi d'emails, s'il est activé.",
           "Google : connexion à ton compte.",
-          "Les services de notification de ton navigateur (Apple, Google, Mozilla, Microsoft), si tu actives les notifications.",
         ],
       },
       {

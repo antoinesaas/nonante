@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { openBillingPortal } from "@/app/actions/checkout";
-import { DeleteAccountForm } from "@/app/app/(main)/profil/DeleteAccountForm";
-import { InstallHint } from "@/app/app/(main)/profil/InstallHint";
 import { ProfileCard } from "@/app/app/(main)/profil/ProfileCard";
-import { PushToggle } from "@/app/app/(main)/profil/PushToggle";
-import { SettingsForm } from "@/app/app/(main)/profil/SettingsForm";
+import { SettingsSheet } from "@/app/app/(main)/profil/SettingsSheet";
 import { CopyButton } from "@/components/CopyButton";
 import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { getArt } from "@/lib/art";
@@ -79,6 +76,10 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
 
   return (
     <>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h1 className="font-serif text-4xl leading-none">{t.title}</h1>
+        <SettingsSheet isPublic={profile.is_public} walletPublic={profile.wallet_public} bio={profile.bio} email={profile.email} isAdmin={profile.is_admin} pseudo={profile.pseudo} />
+      </div>
       <ProfileCard
         pseudo={profile.pseudo}
         avatarPath={profile.avatar_path}
@@ -252,43 +253,6 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
             )}
           </section>
         ) : null}
-      </div>
-
-      <div className="lg:grid lg:grid-cols-2 lg:gap-12">
-        <section className="mt-12">
-          <h2 className="font-serif text-3xl">{t.settings}</h2>
-          <SettingsForm isPublic={profile.is_public} emailReminders={profile.email_reminders} walletPublic={profile.wallet_public} bio={profile.bio} />
-        </section>
-
-        <div>
-          <section className="mt-12">
-            <h2 className="font-serif text-3xl">{t.notifications}</h2>
-            <p className="mt-2 text-sm text-mute">{t.notificationsText}</p>
-            <PushToggle subscribed={profile.push_subscriptions > 0} publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
-            <InstallHint />
-          </section>
-
-          <section className="mt-12">
-            <h2 className="font-serif text-3xl">{t.data}</h2>
-            <p className="mt-2 text-sm text-mute">{fmt(t.connectedAs, { email: profile.email })}</p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <a href="/api/me/export" className={btnSecondary}>
-                {t.export}
-              </a>
-              <form action="/auth/signout" method="post">
-                <button type="submit" className={btnSecondary}>
-                  {t.signOut}
-                </button>
-              </form>
-              {profile.is_admin ? (
-                <Link href="/admin" className={btnSecondary}>
-                  {t.admin}
-                </Link>
-              ) : null}
-            </div>
-            <DeleteAccountForm pseudo={profile.pseudo} />
-          </section>
-        </div>
       </div>
 
       <p className="mt-12 text-xs text-mute">

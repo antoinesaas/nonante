@@ -195,7 +195,6 @@ export const de: LegalSet = {
           "Die Zahlung: von Stripe abgewickelt. Nonante erhält Plan, Betrag und Abostatus, nie deine Karte.",
           "Die Quelle deines Besuchs (Parameter utm_source und utm_campaign), um zu wissen, welcher Beitrag dich gebracht hat.",
           "Ein verschlüsselter Fingerabdruck deiner IP-Adresse, um Missbrauch zu begrenzen (zu viele Versuche). Die Adresse selbst wird nicht gespeichert.",
-          "Die technische Adresse deines Browsers, wenn du Benachrichtigungen aktivierst.",
         ],
       },
       {
@@ -207,7 +206,7 @@ export const de: LegalSet = {
           "Vertragserfüllung: Betrieb deines Kontos, deines Arcs, deiner Nachweise und deines Abos.",
           "Berechtigtes Interesse: Anti-Betrugs-Kontrollen, Sicherheit, interne Besuchs- und Verkaufsstatistiken.",
           "Rechtliche Verpflichtung: Aufbewahrung der Zahlungsbelege (Buchhaltung).",
-          "Deine Wahl: öffentliches Profil, angezeigtes Ziel oder Einnahmen, Benachrichtigungen. Du kannst deine Meinung jederzeit ändern.",
+          "Deine Wahl: öffentliches Profil, angezeigtes Ziel oder Einnahmen. Du kannst deine Meinung jederzeit ändern.",
         ],
       },
       { h2: "Wer Zugriff hat" },
@@ -221,7 +220,6 @@ export const de: LegalSet = {
           "Stripe: Zahlung.",
           "Resend: E-Mail-Versand, falls aktiviert.",
           "Google: Anmeldung mit deinem Konto.",
-          "Die Benachrichtigungsdienste deines Browsers (Apple, Google, Mozilla, Microsoft), wenn du Benachrichtigungen aktivierst.",
         ],
       },
       {

@@ -10,7 +10,6 @@ import type { Messages } from "@/lib/i18n/messages";
 import { getI18n } from "@/lib/i18n/server";
 import { translateSqlMessage } from "@/lib/i18n/sql-errors";
 import { removeProofPhotos, storeProofPhoto } from "@/lib/photos";
-import { sendPush } from "@/lib/push";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { DayDetail, StartedSession } from "@/lib/types";
@@ -36,15 +35,14 @@ function done(result: ValidationResult | null | undefined, a: Messages["actions"
   };
 }
 
-/** Contrôle déclenché : prévient tout de suite (push et email, une seule fois). */
-async function notifyAudit(a: Messages["actions"], userId: string, email: string | undefined, filter: { validationId?: string; proofId?: string }) {
+/** Contrôle déclenché : prévient par email (une seule fois). Le contrôle s'affiche aussi sur le tableau de bord. */
+async function notifyAudit(userId: string, email: string | undefined, filter: { validationId?: string; proofId?: string }) {
   try {
     const admin = createAdminClient();
     let query = admin.from("audits").select("id, due_at").eq("user_id", userId).eq("status", "open");
     query = filter.validationId ? query.eq("validation_id", filter.validationId) : query.eq("challenge_proof_id", filter.proofId!);
     const { data: audit } = await query.maybeSingle();
     if (!audit) return;
-    await sendPush(userId, { title: a.proof.auditPushTitle, body: a.proof.auditPushBody, url: `/app/controle/${audit.id}` });
     const { data: first } = await admin.rpc("log_email_once", { p_user: userId, p_kind: "audit", p_ref: audit.id });
     if (first && email) await sendAuditRequest(email, audit.id, audit.due_at, null, (await getI18n()).locale);
   } catch (e) {
@@ -73,7 +71,7 @@ export async function validateDeclaratif(principleId: string): Promise<ProofResu
   const { data, error } = await ctx.supabase.rpc("validate_declaratif", { p_principle_id: principleId });
   if (error) return { ok: false, message: userMessage(error, ctx.i18n) };
   const result = data as ValidationResult;
-  if (result.audit) await notifyAudit(ctx.a, ctx.user.id, ctx.user.email, { validationId: result.validation_id });
+  if (result.audit) await notifyAudit(ctx.user.id, ctx.user.email, { validationId: result.validation_id });
   revalidatePath("/app");
   return done(result, ctx.a);
 }
@@ -87,7 +85,7 @@ export async function validateLink(_prev: ProofResult, formData: FormData): Prom
   const { data, error } = await ctx.supabase.rpc("validate_link", { p_principle_id: principleId, p_url: url });
   if (error) return { ok: false, message: userMessage(error, ctx.i18n) };
   const result = data as ValidationResult;
-  if (result.audit) await notifyAudit(ctx.a, ctx.user.id, ctx.user.email, { validationId: result.validation_id });
+  if (result.audit) await notifyAudit(ctx.user.id, ctx.user.email, { validationId: result.validation_id });
   revalidatePath("/app");
   return done(result, ctx.a, ctx.a.proof.linkValidated);
 }
@@ -112,7 +110,7 @@ export async function submitPhoto(_prev: ProofResult, formData: FormData): Promi
       return { ok: false, message: userMessage(error, ctx.i18n) };
     }
     const validation = data as ValidationResult;
-    if (validation.audit) await notifyAudit(ctx.a, ctx.user.id, ctx.user.email, { validationId: validation.validation_id });
+    if (validation.audit) await notifyAudit(ctx.user.id, ctx.user.email, { validationId: validation.validation_id });
     result = done(validation, ctx.a, ctx.a.proof.photoValidated);
   } else if (kind.data === "arc_avant" || kind.data === "arc_apres") {
     const { data: old, error } = await admin.rpc("set_arc_photo", {
@@ -280,7 +278,7 @@ export async function validateChallengeDeclaratif(assignmentId: string): Promise
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (proof) await notifyAudit(ctx.a, ctx.user.id, ctx.user.email, { proofId: proof.id });
+    if (proof) await notifyAudit(ctx.user.id, ctx.user.email, { proofId: proof.id });
   }
   revalidatePath("/app");
   return {

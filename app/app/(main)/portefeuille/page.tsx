@@ -104,7 +104,8 @@ export default async function WalletPage() {
 
             <section className="mt-12">
               <h2 className="font-serif text-3xl">{t.add}</h2>
-              <p className="mt-2 text-sm text-mute">{w.xp_today ? t.xpDone : t.xpNext}</p>
+              <p className="mt-2 text-sm text-mute">{t.pointsRule}</p>
+              {w.points_today ? <p className="mt-1 text-sm">{fmt(t.pointsToday, { n: w.points_today, max: w.points_cap })}</p> : null}
               <div className="mt-6 border border-line bg-surface p-4">
                 <WalletEntryForm today={today} minDay={addDays(today, -30)} />
               </div>

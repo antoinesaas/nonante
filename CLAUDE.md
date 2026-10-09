@@ -22,7 +22,7 @@ côté. 90 % arrivent de TikTok, sur mobile. Ce qui les bloque :
 | Pas de structure, pas de patron | Un objectif chiffré, des principes « si… alors… » (intentions de mise en œuvre), un calendrier de 90 points |
 | Le chiffre d'affaires ne décolle pas | Principes de prospection, portefeuille de revenus prouvés, stat Business |
 | Personne pour les tenir | Classement, escouades, profil public, contrôles aléatoires, argent engagé |
-| Motivation en dents de scie | Discipline > motivation : séries, jokers, citations stoïciennes du jour, rappels |
+| Motivation en dents de scie | Discipline > motivation : séries, jokers, citations stoïciennes du jour |
 | Santé sacrifiée | Pompes et squats comptés à la caméra, réveil prouvé, stats Corps et Énergie |
 | Dispersion | Un seul objectif par arc, affiché en haut de chaque écran |
 
@@ -84,7 +84,8 @@ envoyer sous 24 h, jugé dans `/admin`). Validation le jour même avant minuit (
 ### Points (registre en ajout seul, calculés par Postgres)
 Valeur = 10 × difficulté. Raté : − valeur ; 2 jours d'affilée − 2× ; 3 et plus − 3× ; jour blanc − 2× au moins.
 Session cassée − 5. Contrôle refusé − 3× valeur et +1 preuve refusée. Semaine d'arc parfaite + 50. Quête
-réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu prouvé + 15 (une fois par jour). Succès
+réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu : 10 + 1 par 10 € (50 max), note : 5 à 20 selon la note
+(dès 10/20) ; la moitié sans preuve, plafonds 50 et 30 par jour, repris si on retire l'entrée. Succès
 + 25 à + 300. Arc tenu + 500. Constantes dans `lib/rules.ts` et en SQL (à garder synchronisées).
 
 ### Joueur
@@ -103,10 +104,11 @@ réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu prouvé + 
 
 ### Portefeuille (arcs business et Pro) et carnet de notes (arcs études et Pro)
 Modifié le 8 octobre 2026 : le portefeuille est inclus dans l'Arc 90 jours quand le profil est business (ou les deux) ;
-le carnet de notes (notes sur 20 pondérées, moyenne par matière et par semaine, capture en preuve, +10 par jour) dans
+le carnet de notes (notes sur 20 pondérées, moyenne par matière, « Ta progression » en forme de radar, une matière par
+sommet, capture en preuve) dans
 les arcs études (ou les deux). On note chaque argent gagné grâce à son projet (montant, source, libellé), avec une capture en preuve.
 Revenus prouvés = comptés dans la stat Business, les succès (1 €, 100 €, 1 000 €, 10 000 €) et l'objectif de
-revenu. Sans capture : noté mais « non prouvé ». Visible sur le profil public seulement si l'utilisateur le
+revenu. Sans capture : « non prouvé », la moitié des points, pas de succès. Visible sur le profil public seulement si l'utilisateur le
 choisit. C'est un suivi personnel, jamais un gain distribué par Nonante.
 
 ### Social
@@ -116,6 +118,12 @@ choisit. C'est un suivi personnel, jamais un gain distribué par Nonante.
   personne. Création réservée à Pro. Escouades officielles avec départ collectif.
 - **Profil public** : photo, carte de joueur, stats, calendrier, succès, preuves refusées, objectif et
   portefeuille si l'utilisateur le veut. Bouton « Signaler ». Pas de messages privés.
+- **Mon profil** : roue dentée en haut à droite = feuille Réglages (langue, bio, public, revenus publics) et données
+  (export, déconnexion, suppression du compte).
+- **Barre d'onglets** : verre liquide (bulle qui glisse avec rebond, qu'on peut faire glisser du doigt d'un onglet à
+  l'autre), `components/LiquidTabBar.tsx`.
+- **Bibliothèque de principes** : triée par pertinence (même note que le choix des 6 principes), « Pour toi » = les 6
+  meilleurs, chaque pilier = ses 3 meilleurs, barre de recherche sur toute la bibliothèque.
 
 Règles absolues : l'entreprise ne gagne jamais d'argent sur l'échec d'un utilisateur ; aucune récompense en
 argent ou en lot pour le classement (points, succès, œuvres seulement) ; aucun chiffre inventé : tout ce qui est
@@ -161,18 +169,20 @@ code, pas de mot de passe. Onglet **Aide** dans la barre de navigation : ouvre u
 lien du profil public et le code de parrainage ; visible seulement si le profil est public.
 
 ### Langues
-Français (source), anglais, allemand, espagnol : toute l'app, les emails, les notifications et les pages légales
+Français (source), anglais, allemand, espagnol : toute l'app, les emails et les pages légales
 (la version française fait foi). Langue détectée (navigateur, puis pays), modifiable dans le pied de page et le profil.
 
 ## 6. Stack et sécurité
 
 Next.js 16 (App Router, `proxy.ts`, Server Actions), TypeScript strict, Tailwind v4, Supabase (Auth, Postgres,
-RLS partout, Storage), Stripe, Web Push (VAPID), Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron).
+RLS partout, Storage), Stripe, Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron). Domaine : nonante.fr
+(Hostinger, A vers Vercel ; www redirige). Pas de notifications ni de rappels (retirés le 9 octobre 2026).
 
 - Le client ne décide jamais : toutes les écritures de jeu passent par des fonctions `security definer` qui
   vérifient propriétaire, abonnement, jour et heure du serveur. Registre des points en ajout seul (droits
   retirés + trigger).
-- CSP stricte à nonce, en-têtes de sécurité, caméra autorisée seulement sur les pages de preuve.
+- CSP stricte à nonce, en-têtes de sécurité, caméra autorisée pour le site seul (`camera=(self)` partout : l'en-tête vaut
+  pour tout le document, et la navigation de l'app ne recharge pas la page).
 - Photos de preuve : bucket privé, ré-encodées par sharp (sans EXIF/GPS), supprimées après 30 jours. Photos de
   profil : bucket public `avatars`, ré-encodées en 512 px.
 - Admin : `is_admin` + double authentification (aal2), chaque action dans `audit_log`.

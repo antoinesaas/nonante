@@ -6,6 +6,7 @@ import { IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { fmt } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
+import { SubmitButton } from "@/components/SubmitButton";
 import { btnPrimary } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -46,9 +47,9 @@ export default async function AchievementsPage() {
         </ul>
         {withArt ? <p className="mt-6 text-sm text-mute">{t.newBackground}</p> : null}
         <form action={markAchievementsSeen} className="mt-12">
-          <button type="submit" className={btnPrimary}>
+          <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.loading}>
             {m.common.actions.continue}
-          </button>
+          </SubmitButton>
         </form>
       </main>
     </ArtBackdrop>

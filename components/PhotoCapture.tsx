@@ -48,15 +48,19 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
         video: { facingMode: { ideal: facing }, width: { ideal: 1920 } },
         audio: false,
       });
+      // La vidéo n'existe qu'une fois la phase « camera » affichée : le flux s'y branche dans attachVideo.
       setPhase("camera");
-      requestAnimationFrame(async () => {
-        if (video.current) {
-          video.current.srcObject = stream.current;
-          await video.current.play().catch(() => {});
-        }
-      });
     } catch {
       setPhase("denied");
+    }
+  }
+
+  /** Branche le flux dès que la vidéo apparaît dans la page. */
+  function attachVideo(el: HTMLVideoElement | null) {
+    video.current = el;
+    if (el && stream.current && el.srcObject !== stream.current) {
+      el.srcObject = stream.current;
+      el.play().catch(() => {});
     }
   }
 
@@ -114,7 +118,7 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
 
       {phase === "camera" ? (
         <div className="aspect-[3/4] w-full animate-fade overflow-hidden rounded-xs bg-surface">
-          <video ref={video} playsInline muted className="h-full w-full object-cover" />
+          <video ref={attachVideo} playsInline muted autoPlay className="h-full w-full object-cover" />
         </div>
       ) : null}
       {phase === "preview" && preview ? (

@@ -52,11 +52,17 @@ export function nextTitle(level: number, m: Messages): { level: number; title: s
 }
 
 /** Une citation par jour, la même pour tout le monde (date au format AAAA-MM-JJ). */
+/**
+ * Citation du jour, la même pour tout le monde, nouvelle chaque jour à minuit (Paris). La liste est rangée par auteur :
+ * on la parcourt par sauts de 17 (premier avec 37, donc chaque citation revient une fois par cycle), pour que deux
+ * jours de suite ne tombent pas sur le même auteur.
+ */
 export function quoteOfDay(date: string, m: Messages) {
   const [y, mo, d] = date.split("-").map(Number);
   const dayNumber = Math.floor(Date.UTC(y, mo - 1, d) / 86_400_000);
   const quotes = m.game.quotes;
-  return quotes[((dayNumber % quotes.length) + quotes.length) % quotes.length];
+  const n = quotes.length;
+  return quotes[(((dayNumber * 17) % n) + n) % n];
 }
 
 /** « alors 20 pompes. » / « then 20 push-ups. » → « 20 pompes » */

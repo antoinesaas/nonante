@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
+import { LiquidTabBar } from "@/components/LiquidTabBar";
 import { Logo } from "@/components/Logo";
 import { EDITOR } from "@/lib/legal";
 
@@ -71,7 +72,8 @@ const HREF: Record<Key, string> = {
 };
 
 /**
- * Navigation de l'app, façon iPhone : une capsule de verre qui flotte en bas de l'écran, icône et libellé.
+ * Navigation de l'app, façon iPhone : une capsule de verre qui flotte en bas de l'écran, avec une bulle de verre
+ * liquide qu'on peut faire glisser d'un onglet à l'autre (LiquidTabBar).
  * Sur ordinateur : barre en haut. Les onglets Portefeuille et Notes suivent le profil de l'arc.
  * Aide ouvre un email à l'adresse de contact (pas de page : une question, une réponse humaine).
  */
@@ -88,27 +90,10 @@ export function BottomNav({ wallet, grades }: { wallet: boolean; grades: boolean
     <>
       {/* Téléphone */}
       <nav aria-label={m.common.nav.aria} className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
-        <ul className={`glass pointer-events-auto mx-auto flex max-w-md items-stretch justify-between rounded-full p-1.5 ${crowded ? "gap-0.5" : "gap-1"}`}>
-          {keys.map((k) => {
-            const active = MATCH[k](pathname);
-            return (
-              <li key={k} className="min-w-0 flex-1">
-                <NavLink
-                  href={href(k)}
-                  active={active}
-                  className={`flex h-14 flex-col items-center justify-center gap-0.5 rounded-full font-medium transition-[background-color,color,transform] duration-200 active:scale-90 ${
-                    crowded ? "text-[9px]" : "text-[10px] tracking-wide"
-                  } ${active ? "bg-paper/12 text-paper" : "text-mute hover:text-paper"}`}
-                >
-                  <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    {ICONS[k]}
-                  </svg>
-                  <span className="max-w-full truncate px-0.5">{label(k)}</span>
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
+        <LiquidTabBar
+          crowded={crowded}
+          tabs={keys.map((k) => ({ key: k, href: href(k), label: label(k), icon: ICONS[k], active: MATCH[k](pathname) }))}
+        />
       </nav>
 
       {/* Ordinateur */}

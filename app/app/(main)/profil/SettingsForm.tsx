@@ -6,9 +6,9 @@ import { useI18n } from "@/components/I18nProvider";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { idle } from "@/lib/errors";
-import { btnSecondary, input, label } from "@/lib/ui";
+import { btnPrimary, input, label } from "@/lib/ui";
 
-export function SettingsForm({ isPublic, emailReminders, walletPublic, bio }: { isPublic: boolean; emailReminders: boolean; walletPublic: boolean; bio: string | null }) {
+export function SettingsForm({ isPublic, walletPublic, bio }: { isPublic: boolean; walletPublic: boolean; bio: string | null }) {
   const { m } = useI18n();
   const t = m.app.profile;
   const [state, action] = useActionState(updateSettings, idle);
@@ -38,14 +38,7 @@ export function SettingsForm({ isPublic, emailReminders, walletPublic, bio }: { 
           </span>
           <input type="checkbox" name="walletPublic" defaultChecked={walletPublic} className="size-5 shrink-0 accent-paper" />
         </label>
-        <label className="flex items-center justify-between gap-4">
-          <span>
-            {t.reminders}
-            <span className="block text-xs text-mute">{t.remindersHint}</span>
-          </span>
-          <input type="checkbox" name="emailReminders" defaultChecked={emailReminders} className="size-5 shrink-0 accent-paper" />
-        </label>
-        <SubmitButton className={btnSecondary} pendingLabel={m.common.actions.saving}>
+        <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.saving}>
           {m.common.actions.save}
         </SubmitButton>
         <FormMessage message={state.message} ok={state.ok} />

@@ -13,10 +13,10 @@ Le cahier des charges est dans [`CLAUDE.md`](CLAUDE.md). Ce README explique comm
 | Principes | 84 gabarits sourcés et traduits (travail profond, grenouille, règle des 2 minutes, prospection, e-commerce, SaaS, revente, trading, prépa, fac…), choisis selon le profil, l'activité (au moins un principe par activité, pas de prospection pour le trading seul), l'école, l'objectif, les points faibles et le sport voulu ; 100 % modifiables dans une feuille avec « Enregistrer » toujours visible ; difficulté calculée par le serveur ; modification effective le lendemain |
 | Preuves | Minuteur (Lancer / Stop à −5 ; quitter l'écran plus de 10 s, faire retour ou fermer l'onglet casse la session), pompes et squats comptés à la caméra (modèle préchargé, repli processeur), réveil à code, photo, capture, lien, déclaratif ; contrôles aléatoires |
 | Jeu | XP, niveaux, titres, 6 stats sur 30 jours (Discipline, Focus, Corps, Business, Esprit, Énergie), note globale, séries, jokers, quête de la semaine, succès avec rareté réelle, fonds de carte à débloquer, avant / après, citation du jour |
-| Portefeuille et notes | Portefeuille (arcs business, Pro) : revenus avec capture en preuve, +15 par jour prouvé, succès 1 € → 10 000 € ; carnet de notes (arcs études, Pro) : notes sur 20 pondérées, moyenne par matière et par semaine, +10 par jour prouvé |
+| Portefeuille et notes | Portefeuille (arcs business, Pro) : revenus avec capture en preuve, 10 points + 1 par 10 € (la moitié sans capture, 50 par jour), succès 1 € → 10 000 € ; carnet de notes (arcs études, Pro) : notes sur 20 pondérées, moyenne par matière, forme radar « Ta progression », 5 à 20 points par note dès 10/20 (la moitié sans preuve, 30 par jour) |
 | Social | Classement semaine / mois / général, monde ou pays, filtres, onglet par escouade ; escouades privées (code) ou publiques ; profil public avec photo et carte de joueur (photo et fond modifiables d'un toucher) |
-| Langues | Français, anglais, allemand, espagnol : détection par le navigateur puis le pays, sélecteur dans le pied de page et le profil ; textes dans `lib/i18n/messages/<langue>/`, messages Postgres traduits dans `lib/i18n/sql-errors.ts`, pages légales dans `lib/legal-docs/` (la version française fait foi) ; emails et notifications dans la langue du joueur |
-| Parcours | Questionnaire sans compte (une question par écran, activité et école selon le profil, sport facultatif, transitions animées, geste retour du téléphone respecté), écran de construction (vrai calcul des principes), résultat personnalisé avec preuve sociale réelle et plans, email + code (ou Apple / Google), dernière étape, paiement |
+| Langues | Français, anglais, allemand, espagnol : détection par le navigateur puis le pays, sélecteur dans le pied de page et le profil ; textes dans `lib/i18n/messages/<langue>/`, messages Postgres traduits dans `lib/i18n/sql-errors.ts`, pages légales dans `lib/legal-docs/` (la version française fait foi) ; emails dans la langue du joueur (aucune notification ni rappel) |
+| Parcours | Questionnaire sans compte (une question par écran, activité et école selon le profil, sport facultatif, transitions animées, geste retour du téléphone respecté), écran de construction (vrai calcul des principes), résultat personnalisé avec preuve sociale réelle et plans, connexion Google, dernière étape, paiement |
 | Paiement | Arc 90 jours 19,99 € une fois par arc, Pro 14,99 €/mois ou 99,99 €/an, Fondateur 199 € une fois (100 places) ; portail client ; parrainage (−20 % pour l'ami et −20 % pour le parrain) ; fidélité (−50 % sur l'arc ou la facture suivante) |
 | Contenu | FAQ (`/faq`), CGU, CGV, confidentialité, mentions légales |
 | Admin | Double authentification, ventes, contrôles (preuves et revenus), signalements, escouades officielles, accès offerts, journal |
@@ -44,7 +44,6 @@ npm run dev
 | `RESEND_API_KEY`, `EMAIL_FROM` | Resend (facultatif) | emails applicatifs ; sans clé, rien n'est envoyé hors connexion |
 | `CRON_SECRET` | `openssl rand -hex 32` | protège `/api/cron/*`, clé HMAC de l'empreinte IP |
 | `NEXT_PUBLIC_SITE_URL` | URL publique | liens des emails et retours Stripe |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | `npx web-push generate-vapid-keys` | notifications push |
 | `AUDIT_RATE` | `0.10` | part des preuves faibles contrôlées |
 
 ## Supabase
@@ -61,6 +60,7 @@ Dans l'ordre, depuis [`supabase/migrations/`](supabase/migrations/) (SQL Editor 
 6. `20261008100000_v3_langues_pays.sql` : langue et pays du joueur, gabarits traduits, classement du mois et par pays
 7. `20261008110000_v4_parcours_metier.sql` : activité et école, 47 nouveaux gabarits, choix des principes par métier, carnet de notes, portefeuille dans l'arc business
 8. `20261008120000_v5_session_quittee.sql` : `leave_session` (page du minuteur quittée = session cassée)
+9. `20261009100000_v6_points_bibliotheque.sql` : points des notes et des revenus selon leur valeur (repris si on les retire), bibliothèque de principes notée par pertinence
 
 Les migrations v3 à v5 sont regroupées dans `../deploy-v3-v5.sql` (une transaction) pour l'éditeur SQL.
 

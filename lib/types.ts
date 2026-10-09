@@ -60,6 +60,10 @@ export type TemplateView = {
   why: string;
   source: string;
   recommended: boolean;
+  score: number;
+  for_business: boolean;
+  for_school: boolean;
+  added: boolean;
 };
 
 export type CalendarDay = { day: string; status: DayStatus };
@@ -299,7 +303,8 @@ export type Wallet = {
   declared_cents: number;
   month_cents: number;
   arc_cents: number;
-  xp_today: boolean;
+  points_today: number;
+  points_cap: number;
   goal: { title: string; target: number | null; unit: string | null } | null;
   months: { month: string; proven_cents: number; declared_cents: number }[];
   entries: WalletEntry[];
@@ -375,7 +380,8 @@ export type GradeEntry = {
 
 export type Grades = {
   enabled: boolean;
-  xp_today: boolean;
+  points_today: number;
+  points_cap: number;
   average: number | null;
   count: number;
   subjects: { subject: string; average: number; count: number }[];
