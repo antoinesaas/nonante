@@ -313,6 +313,7 @@ export const app: typeof fr = {
     limit: "Your plan allows {n} principles.",
     goPro: "Go Pro to get 12",
     removeOne: "Remove one to add another.",
+    full: "You already have {n} principles, your plan's maximum: remove one or go Pro to add more.",
     library: "Library",
     libraryHint: "The 3 best for you in each category. For the rest, search.",
     forYou: "For you",

@@ -313,6 +313,7 @@ export const app: typeof fr = {
     limit: "Tu plan permite {n} principios.",
     goPro: "Pásate a Pro para tener 12",
     removeOne: "Quita uno para añadir otro.",
+    full: "Ya tienes {n} principios, el máximo de tu plan: quita uno o pásate a Pro para añadir más.",
     library: "Biblioteca",
     libraryHint: "Los 3 mejores para ti en cada categoría. Para los demás, busca.",
     forYou: "Para ti",

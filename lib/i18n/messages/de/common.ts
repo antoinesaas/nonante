@@ -39,6 +39,7 @@ export const common: typeof fr = {
   },
   errors: {
     generic: "Etwas ist schiefgelaufen. Versuch es gleich noch einmal.",
+    updated: "Die App wurde gerade aktualisiert: Die Seite lädt neu, nimm deine Änderung noch einmal vor.",
     already: "Schon erledigt.",
     forbidden: "Aktion nicht erlaubt.",
     tooMany: "Zu viele Versuche. Versuch es in ein paar Minuten noch einmal.",

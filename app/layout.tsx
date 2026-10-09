@@ -1,4 +1,5 @@
 import { Analytics } from "@vercel/analytics/next";
+import { Haptics } from "@/components/Haptics";
 import type { Metadata, Viewport } from "next";
 import { Caveat, Instrument_Serif, Inter } from "next/font/google";
 import { connection } from "next/server";
@@ -61,6 +62,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         </I18nProvider>
         {/* Mesure d'audience Vercel : sans cookie, servie par le même domaine (script injecté, autorisé par la CSP). */}
         <Analytics />
+        <Haptics />
       </body>
     </html>
   );

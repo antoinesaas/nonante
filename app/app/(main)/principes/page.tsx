@@ -19,6 +19,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function PrinciplesPage({ searchParams }: PageProps<"/app/principes">) {
   const [{ supabase }, { m, locale }, params] = await Promise.all([requireUser("/app/principes"), getI18n(), searchParams]);
   const t = m.app.principles;
+  // Arc écrit dans une autre langue que celle affichée : traduit avant lecture.
+  const { data: arc } = await supabase.from("enrollments").select("locale").in("status", ["draft", "active"]).maybeSingle();
+  if (arc && arc.locale !== locale) await supabase.rpc("set_my_locale", { p_locale: locale });
   const { data, error } = await supabase.rpc("my_principles");
   if (error) throw new Error(`Principes indisponibles (${error.code})`);
   const d = data as MyPrinciples;
@@ -105,7 +108,7 @@ export default async function PrinciplesPage({ searchParams }: PageProps<"/app/p
             <h2 className="font-serif text-3xl">{t.library}</h2>
             <p className="mt-2 text-sm text-mute">{t.libraryHint}</p>
             <div className="mt-6">
-              <TemplateLibrary templates={d.templates ?? []} disabled={principles.length >= limits.max_principles} />
+              <TemplateLibrary templates={d.templates ?? []} full={principles.length >= limits.max_principles ? fmt(t.full, { n: limits.max_principles }) : null} />
             </div>
           </section>
         ) : null}

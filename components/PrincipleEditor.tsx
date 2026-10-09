@@ -5,10 +5,11 @@ import { addTemplate, removePrinciple, savePrinciple } from "@/app/actions/princ
 import { useI18n } from "@/components/I18nProvider";
 import { Sheet } from "@/components/Sheet";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
-import { idle } from "@/lib/errors";
+import { type ActionResult, idle } from "@/lib/errors";
 import { fmt, formatTime } from "@/lib/i18n/format";
 import { daysLabel, targetHint } from "@/lib/i18n/labels";
 import { isStrong, LINK_DOMAINS } from "@/lib/proofs";
+import { guarded } from "@/lib/stale";
 import type { EditablePrinciple, Pillar, ProofType, TemplateView } from "@/lib/types";
 import { btnLink, btnPrimary, btnSecondary, btnSmall, input, label } from "@/lib/ui";
 
@@ -49,10 +50,10 @@ function chip(on: boolean) {
 }
 
 /** Formulaire d'un principe, dans une feuille : les champs défilent, la barre Annuler / Enregistrer reste dessous, toujours visible. */
-export function PrincipleForm({ principle, onDone, onCancel }: { principle?: EditablePrinciple; onDone?: () => void; onCancel?: () => void }) {
+export function PrincipleForm({ principle, onDone, onCancel }: { principle?: EditablePrinciple; onDone?: (message: string | null) => void; onCancel?: () => void }) {
   const { m, locale } = useI18n();
   const t = m.app.principles;
-  const [state, formAction] = useActionState(savePrinciple, idle);
+  const [state, formAction] = useActionState((prev: ActionResult, data: FormData) => guarded(() => savePrinciple(prev, data), m.common.errors.updated), idle);
   const [pillar, setPillar] = useState<Pillar>(principle?.pillar ?? "focus");
   const [proof, setProof] = useState<ProofType>(principle?.proof_type ?? "declaratif");
   const [days, setDays] = useState<number[]>(principle?.days ?? [1, 2, 3, 4, 5, 6, 7]);
@@ -66,7 +67,7 @@ export function PrincipleForm({ principle, onDone, onCancel }: { principle?: Edi
   const time = (v: string) => formatTime(v, locale);
 
   useEffect(() => {
-    if (state.ok) onDone?.();
+    if (state.ok) onDone?.(state.message);
   }, [state, onDone]);
 
   return (
@@ -289,8 +290,14 @@ export function NewPrinciple() {
   const { m } = useI18n();
   const t = m.app.principles;
   const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   return (
     <>
+      {message ? (
+        <p role="status" className="mb-4 animate-rise text-sm">
+          {message}
+        </p>
+      ) : null}
       <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
         <span aria-hidden="true" className="mr-2 text-xl leading-none">
           +
@@ -298,7 +305,15 @@ export function NewPrinciple() {
         {t.createButton}
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title={t.create} bare>
-        {open ? <PrincipleForm onDone={() => setOpen(false)} onCancel={() => setOpen(false)} /> : null}
+        {open ? (
+          <PrincipleForm
+            onDone={(msg) => {
+              setOpen(false);
+              setMessage(msg);
+            }}
+            onCancel={() => setOpen(false)}
+          />
+        ) : null}
       </Sheet>
     </>
   );
@@ -344,7 +359,16 @@ export function PrincipleRow({ principle, editable }: { principle: EditablePrinc
       {message ? <p className="mt-2 animate-rise text-sm">{message}</p> : null}
 
       <Sheet open={editing} onClose={() => setEditing(false)} title={t.editTitle} bare>
-        {editing ? <PrincipleForm principle={principle} onDone={() => setEditing(false)} onCancel={() => setEditing(false)} /> : null}
+        {editing ? (
+          <PrincipleForm
+            principle={principle}
+            onDone={(msg) => {
+              setEditing(false);
+              setMessage(msg);
+            }}
+            onCancel={() => setEditing(false)}
+          />
+        ) : null}
       </Sheet>
       <Sheet open={confirmRemove} onClose={() => setConfirmRemove(false)} title={t.removeTitle}>
         <p className="mt-2 text-sm text-mute">{t.removeText}</p>
@@ -353,7 +377,7 @@ export function PrincipleRow({ principle, editable }: { principle: EditablePrinc
             type="button"
             onClick={() => {
               setConfirmRemove(false);
-              startTransition(async () => setMessage((await removePrinciple(principle.id)).message));
+              startTransition(async () => setMessage((await guarded(() => removePrinciple(principle.id), m.common.errors.updated)).message));
             }}
             className={btnPrimary}
           >
@@ -377,7 +401,7 @@ function plain(text: string) {
  * Bibliothèque : déjà triée par pertinence pour le joueur (métier, école, objectif, points faibles).
  * « Pour toi » : les 3 meilleurs ; chaque catégorie : ses 3 meilleurs ; la recherche parcourt tout.
  */
-export function TemplateLibrary({ templates, disabled }: { templates: TemplateView[]; disabled: boolean }) {
+export function TemplateLibrary({ templates, full }: { templates: TemplateView[]; full: string | null }) {
   const { m } = useI18n();
   const t = m.app.principles;
   const [filter, setFilter] = useState<Pillar | "recommande">("recommande");
@@ -444,11 +468,13 @@ export function TemplateLibrary({ templates, disabled }: { templates: TemplateVi
               ) : (
                 <button
                   type="button"
-                  disabled={disabled || pending}
+                  disabled={pending}
                   onClick={() => {
+                    // Plan complet : le bouton reste actif et explique pourquoi, au lieu de ne rien faire.
+                    if (full) return setMessage(full);
                     setAdding(x.code);
                     startTransition(async () => {
-                      setMessage((await addTemplate(x.code)).message);
+                      setMessage((await guarded(() => addTemplate(x.code), m.common.errors.updated)).message);
                       setAdding(null);
                     });
                   }}

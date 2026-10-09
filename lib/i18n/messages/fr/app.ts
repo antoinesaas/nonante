@@ -312,6 +312,7 @@ export const app = {
     limit: "Ton plan permet {n} principes.",
     goPro: "Passe Pro pour en avoir 12",
     removeOne: "Retires-en un pour en ajouter un autre.",
+    full: "Tu as déjà {n} principes, le maximum de ton plan : retires-en un ou passe Pro pour en ajouter.",
     library: "Bibliothèque",
     libraryHint: "Les 3 meilleurs pour toi dans chaque catégorie. Pour les autres, cherche.",
     forYou: "Pour toi",

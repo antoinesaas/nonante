@@ -696,6 +696,12 @@ await as(EN, () => rpc("set_my_country", { p_country: "de" }));
 await rejects("pays invalide refusé", () => as(EN, () => rpc("set_my_country", { p_country: "Allemagne" })), "Pays invalide");
 await as(EN, () => rpc("set_my_locale", { p_locale: "es" }));
 check("langue et pays modifiables", (await val("select locale || '/' || country from public.profiles where id = $1", [EN])) === "es/DE");
+const pES = await principlesOf(enrEN);
+check("changer de langue traduit l'arc : principes de la bibliothèque en espagnol", pES.some((p) => p.if_text === "Si son las 7:00")
+  && (await val("select locale from public.enrollments where id = $1", [enrEN])) === "es", JSON.stringify(pES.map((p) => p.if_text)));
+check("changer de langue : le principe écrit par le joueur reste mot pour mot", pES.some((p) => p.if_text === "If i open my laptop"));
+const libES = await as(EN, () => rpc("my_principles"));
+check("bibliothèque dans la nouvelle langue", libES.templates.find((t) => t.code === "lecture")?.then_text.startsWith("10 páginas"), libES.templates.find((t) => t.code === "lecture")?.then_text);
 const month = await as(null, () => q("select * from public.leaderboard('mois', null, null)"), { role: "anon" });
 check("classement du mois, avec le pays", month.length > 0 && "country" in month[0], JSON.stringify(month[0]));
 const dashCode = await as(G, () => rpc("my_dashboard"));

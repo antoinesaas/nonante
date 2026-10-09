@@ -38,6 +38,7 @@ export const common = {
   },
   errors: {
     generic: "Une erreur est survenue. Réessaie dans un instant.",
+    updated: "L'app vient d'être mise à jour : la page se recharge, refais ta modification.",
     already: "C'est déjà fait.",
     forbidden: "Action non autorisée.",
     tooMany: "Trop de tentatives. Réessaie dans quelques minutes.",
