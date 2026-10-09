@@ -23,7 +23,7 @@ const supabase = createClient<Database>(env("NEXT_PUBLIC_SUPABASE_URL"), env("SU
 
 type Entry = { amount: number; price_id: string | null; live_price_id?: string | null };
 
-const LIVE = env("STRIPE_SECRET_KEY").startsWith("sk_live_");
+const LIVE = /^(sk|rk)_live_/.test(env("STRIPE_SECRET_KEY"));
 type Plans = { arc: { once: Entry }; pro: { month: Entry; year: Entry }; fondateur: { lifetime: Entry; limit: number } };
 
 const PRODUCTS = {

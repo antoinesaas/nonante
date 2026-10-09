@@ -9,11 +9,11 @@ export function stripeConfigured(): boolean {
 }
 
 /**
- * Clé live (sk_live_…) : les prix et le portail « live » rangés en base sont utilisés (live_price_id, stripe_portal_live),
+ * Clé live (sk_live_… ou clé restreinte rk_live_…) : les prix et le portail « live » rangés en base sont utilisés (live_price_id, stripe_portal_live),
  * sinon ceux du mode test. Passer en production = changer la clé sur Vercel, rien d'autre.
  */
 export function stripeLive(): boolean {
-  return (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_live_");
+  return /^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "");
 }
 
 export function getStripe(): Stripe {
