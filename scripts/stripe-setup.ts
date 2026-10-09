@@ -21,7 +21,9 @@ const supabase = createClient<Database>(env("NEXT_PUBLIC_SUPABASE_URL"), env("SU
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-type Entry = { amount: number; price_id: string | null };
+type Entry = { amount: number; price_id: string | null; live_price_id?: string | null };
+
+const LIVE = env("STRIPE_SECRET_KEY").startsWith("sk_live_");
 type Plans = { arc: { once: Entry }; pro: { month: Entry; year: Entry }; fondateur: { lifetime: Entry; limit: number } };
 
 const PRODUCTS = {
@@ -58,8 +60,9 @@ async function ensureProduct(plan: keyof typeof PRODUCTS): Promise<string> {
 }
 
 async function ensurePrice(product: string, entry: Entry, interval: "month" | "year" | null, plan: string): Promise<string> {
-  if (entry.price_id) {
-    const existing = await stripe.prices.retrieve(entry.price_id).catch(() => null);
+  const current = LIVE ? entry.live_price_id : entry.price_id;
+  if (current) {
+    const existing = await stripe.prices.retrieve(current).catch(() => null);
     if (existing?.active && existing.unit_amount === entry.amount && existing.currency === "eur"
       && (existing.recurring?.interval ?? null) === interval) {
       return existing.id;
@@ -78,7 +81,7 @@ async function ensurePrice(product: string, entry: Entry, interval: "month" | "y
 }
 
 async function main() {
-  console.log(`Stripe en mode ${env("STRIPE_SECRET_KEY").startsWith("sk_live_") ? "PRODUCTION" : "test"}.`);
+  console.log(`Stripe en mode ${LIVE ? "PRODUCTION" : "test"}.`);
   await ensureCoupons();
 
   const { data, error } = await supabase.from("settings").select("value").eq("key", "plans").single();
@@ -88,10 +91,12 @@ async function main() {
   const arc = await ensureProduct("arc");
   const pro = await ensureProduct("pro");
   const fondateur = await ensureProduct("fondateur");
-  plans.arc.once.price_id = await ensurePrice(arc, plans.arc.once, null, "arc");
-  plans.pro.month.price_id = await ensurePrice(pro, plans.pro.month, "month", "pro");
-  plans.pro.year.price_id = await ensurePrice(pro, plans.pro.year, "year", "pro");
-  plans.fondateur.lifetime.price_id = await ensurePrice(fondateur, plans.fondateur.lifetime, null, "fondateur");
+  // Test et live cohabitent en base : price_id (test), live_price_id (live).
+  const field = LIVE ? "live_price_id" : "price_id";
+  plans.arc.once[field] = await ensurePrice(arc, plans.arc.once, null, "arc");
+  plans.pro.month[field] = await ensurePrice(pro, plans.pro.month, "month", "pro");
+  plans.pro.year[field] = await ensurePrice(pro, plans.pro.year, "year", "pro");
+  plans.fondateur.lifetime[field] = await ensurePrice(fondateur, plans.fondateur.lifetime, null, "fondateur");
 
   const { error: saveError } = await supabase.from("settings").update({ value: plans as unknown as Json }).eq("key", "plans");
   if (saveError) throw new Error(`Enregistrement des prix impossible : ${saveError.message}`);
@@ -110,12 +115,12 @@ async function main() {
         default_allowed_updates: ["price"],
         proration_behavior: "create_prorations",
         products: [
-          { product: pro, prices: [plans.pro.month.price_id!, plans.pro.year.price_id!] },
+          { product: pro, prices: [plans.pro.month[field]!, plans.pro.year[field]!] },
         ],
       },
     },
   });
-  await supabase.from("settings").upsert({ key: "stripe_portal", value: portal.id as unknown as Json });
+  await supabase.from("settings").upsert({ key: LIVE ? "stripe_portal_live" : "stripe_portal", value: portal.id as unknown as Json });
   console.log(`Portail client : ${portal.id}`);
 }
 

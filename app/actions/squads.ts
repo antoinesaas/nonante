@@ -18,6 +18,8 @@ export async function createSquad(_prev: ActionResult, formData: FormData): Prom
     p_name: String(formData.get("name") ?? "").slice(0, 60),
     p_description: String(formData.get("description") ?? "").slice(0, 200) || null,
     p_is_public: formData.get("isPublic") === "on",
+    p_start_date: /^\d{4}-\d{2}-\d{2}$/.test(String(formData.get("startDate") ?? "")) ? String(formData.get("startDate")) : null,
+    p_category: ["etudes", "business", "mixte"].includes(String(formData.get("category"))) ? String(formData.get("category")) : null,
   });
   if (error) return { ok: false, message: userMessage(error, i18n) };
   revalidatePath("/app/escouades");

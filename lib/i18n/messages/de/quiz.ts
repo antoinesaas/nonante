@@ -127,6 +127,9 @@ export const quiz: typeof fr = {
     members: "{n} angemeldet",
     other: "Ein anderes Datum",
     error: "Wähle ein Datum in den nächsten 4 Monaten.",
+    party: "{name} · {date}",
+    partyHint: "Alle starten an diesem Tag, mit eurer eigenen Rangliste.",
+    parties: { etudes: "Studium-Partie", business: "Business-Partie", mixte: "Studium + Business-Partie" },
   },
   commitment: {
     title: "Ehrlich, wo stehst du?",

@@ -557,11 +557,23 @@ check("succès « Escouade »", Boolean(await val("select 1 from public.user_ach
 check("escouade privée invisible pour un non-membre", (await as(D, () => q("select * from public.leaderboard('semaine', null, $1)", [squadId]))).length === 0);
 const squadBoard = await as(A, () => q("select * from public.leaderboard('semaine', null, $1)", [squadId]));
 check("classement de l'escouade : ses 2 membres", squadBoard.length === 2, JSON.stringify(squadBoard));
-const official = await val("select id from public.squads where is_official");
+const official = await val("select id from public.squads where is_official and category = 'business'");
 await as(D, () => rpc("join_public_squad", { p_id: official }));
-check("escouade officielle rejointe", Boolean(await val("select 1 from public.squad_members where squad_id = $1 and user_id = $2", [official, D])));
+check("partie officielle rejointe", Boolean(await val("select 1 from public.squad_members where squad_id = $1 and user_id = $2", [official, D])));
+const monday = await val("select (public.paris_today() + (8 - extract(isodow from public.paris_today())::int))::text");
+const partyCode = await as(B, () => rpc("create_squad", { p_name: "Les lève-tôt de novembre", p_description: null, p_is_public: true, p_start_date: monday, p_category: "business" }));
 const starts = await as(null, () => rpc("collective_starts"), { role: "anon" });
-check("départ collectif du 1er janvier proposé", starts.some((s) => s.start_date === "2027-01-01"));
+check("plus de départ du 1er janvier", !starts.some((s) => s.start_date === "2027-01-01") && !(await val("select 1 from public.squads where code = 'JANV27'")));
+check("une partie officielle par catégorie, départ le lundi qui vient", ["etudes", "business", "mixte"].every((c) => starts.some((s) => s.official && s.category === c && s.start_date === monday)), JSON.stringify(starts));
+check("la partie créée par un joueur est proposée", starts.some((s) => !s.official && s.name === "Les lève-tôt de novembre" && s.start_date === monday));
+await rejects("jour 1 d'une partie : dans les 4 mois", () => as(B, () => rpc("create_squad", { p_name: "Trop loin", p_description: null, p_is_public: true, p_start_date: "2099-01-01", p_category: null })), "4 prochains mois");
+const P = "77777777-1111-4000-8000-777777777777";
+await q("insert into auth.users (id, email) values ($1, 'p@exemple.fr')", [P]);
+await profile(P, { p_pseudo: "joueur_partie" });
+const partyId = await val("select id from public.squads where code = $1", [partyCode]);
+const enrP = await arc(P, { p_start_date: today, p_squad_id: partyId });
+check("rejoindre une partie : son jour 1 et l'escouade", (await val("select start_date::text from public.enrollments where id = $1", [enrP])) === monday
+  && Boolean(await val("select 1 from public.squad_members where squad_id = $1 and user_id = $2", [partyId, P])));
 await as(B, () => rpc("leave_squad", { p_id: squadId }));
 check("le créateur part : A devient propriétaire", (await val("select owner_id from public.squads where id = $1", [squadId])) === A);
 

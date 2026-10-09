@@ -28,7 +28,7 @@ export const faq = {
       {
         id: "quand",
         q: "Je peux commencer quand ?",
-        a: "Quand tu veux : aujourd'hui, demain, lundi prochain, une date précise, ou avec un départ collectif (comme le 1er janvier). Ton arc dure 90 jours à partir de ton jour 1.",
+        a: "Quand tu veux : aujourd'hui, demain, lundi prochain, une date précise, ou en rejoignant une partie : tout le monde démarre le même jour (une partie officielle par profil part chaque lundi, et chacun peut créer la sienne). Ton arc dure 90 jours à partir de ton jour 1.",
       },
       {
         id: "temps",

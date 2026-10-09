@@ -17,7 +17,7 @@ import { fmt, formatDay, formatMoney, formatNumber, formatTime } from "@/lib/i18
 import type { Category, GoalType, Interval, PlanId, Preview, PublicPlans } from "@/lib/types";
 import { btnLink, btnPrimary, input, label } from "@/lib/ui";
 
-export type CollectiveStart = { id: string; name: string; start_date: string; members: number };
+export type CollectiveStart = { id: string; name: string; start_date: string; members: number; official: boolean; category: Category | null };
 
 type Props = {
   loggedIn: boolean;
@@ -804,6 +804,8 @@ export function Quiz({
   const single =
     ["situation", "objectif", "focus", "sport", "engagement"].includes(step) || (step === "depart" && d.start !== "date") || (step === "ecole" && d.school !== "autre");
   const muted = (on: boolean) => (on ? "text-ink/65" : "text-mute");
+  // Parties ouvertes : celles de la catégorie du joueur (et celles ouvertes à tous).
+  const parties = collectiveStarts.filter((c) => !c.category || c.category === d.category);
 
   return (
     <div className="relative min-h-dvh overflow-hidden">
@@ -1087,16 +1089,18 @@ export function Quiz({
                   <span className="block text-sm">{fmt(q.start.monday, { date: formatDay(nextMonday(today), locale, { year: false }) })}</span>
                   <span className={`mt-0.5 block text-xs ${muted(d.start === "monday")}`}>{q.start.mondayHint}</span>
                 </Choice>
-                {collectiveStarts.map((c, i) => (
+                {parties.map((c, i) => (
                   <Choice key={c.id} index={4 + i} selected={d.start === `squad:${c.id}`} onClick={() => pick(() => set("start", `squad:${c.id}`))}>
-                    <span className="block text-sm">{fmt(q.start.collective, { date: formatDay(c.start_date, locale) })}</span>
+                    <span className="block text-sm">
+                      {fmt(q.start.party, { name: c.official && c.category ? q.start.parties[c.category] : c.name, date: formatDay(c.start_date, locale, { weekday: true, year: false }) })}
+                    </span>
                     <span className={`mt-0.5 block text-xs ${muted(d.start === `squad:${c.id}`)}`}>
-                      {c.name}
-                      {c.members >= 10 ? ` · ${fmt(q.start.members, { n: formatNumber(c.members, locale) })}` : ""}
+                      {q.start.partyHint}
+                      {c.members >= 3 ? ` · ${fmt(q.start.members, { n: formatNumber(c.members, locale) })}` : ""}
                     </span>
                   </Choice>
                 ))}
-                <Choice index={5 + collectiveStarts.length} selected={d.start === "date"} onClick={() => set("start", "date")}>
+                <Choice index={4 + parties.length} selected={d.start === "date"} onClick={() => set("start", "date")}>
                   <span className="text-sm">{q.start.other}</span>
                 </Choice>
                 {d.start === "date" ? (

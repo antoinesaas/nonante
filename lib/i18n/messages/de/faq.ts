@@ -29,7 +29,7 @@ export const faq: typeof fr = {
         {
           id: "quand",
           q: "Wann kann ich anfangen?",
-          a: "Wann du willst: heute, morgen, nächsten Montag, an einem bestimmten Datum oder mit einem gemeinsamen Start (wie am 1. Januar). Dein Arc dauert 90 Tage ab deinem Tag 1.",
+          a: "Wann du willst: heute, morgen, nächsten Montag, an einem bestimmten Datum oder in einer Partie: Alle starten am selben Tag (eine offizielle Partie pro Profil startet jeden Montag, und jeder kann seine eigene erstellen). Dein Arc dauert 90 Tage ab deinem Tag 1.",
         },
         {
           id: "temps",

@@ -3,10 +3,13 @@ import Link from "next/link";
 import { ArtBand } from "@/components/Art";
 import { BackLink } from "@/components/BackLink";
 import { CopyButton } from "@/components/CopyButton";
+import { addDays } from "@/lib/answers";
 import { IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
+import { todayParis } from "@/lib/dates";
 import { siteUrl } from "@/lib/env";
 import { fmt, formatDay } from "@/lib/i18n/format";
+import { squadName } from "@/lib/i18n/labels";
 import { getI18n } from "@/lib/i18n/server";
 import type { PlanState, SquadView } from "@/lib/types";
 import { btnLink, label } from "@/lib/ui";
@@ -47,14 +50,14 @@ export default async function SquadsPage() {
                   <li key={s.id} className="py-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <p className="text-lg">{s.name}</p>
+                        <p className="text-lg">{squadName(s, m)}</p>
                         <p className="mt-1 text-xs text-mute">
                           {members(s.members)}
                           {s.is_official ? t.official : s.is_public ? t.public : t.private}
-                          {s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale, { year: false }) }) : ""}
+                          {s.is_official ? t.everyMonday : s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale, { year: false }) }) : ""}
                           {s.is_owner ? t.owner : ""}
                         </p>
-                        {s.description ? <p className="mt-2 text-sm text-mute">{s.description}</p> : null}
+                        {s.description && !s.is_official ? <p className="mt-2 text-sm text-mute">{s.description}</p> : null}
                       </div>
                       <Link href={`/classement?escouade=${s.id}`} className={btnLink}>
                         {t.leaderboard}
@@ -66,7 +69,7 @@ export default async function SquadsPage() {
                           <span className="text-xs text-mute">{t.code}</span>
                           <span className="font-serif text-2xl tracking-widest">{s.code}</span>
                         </span>
-                        <CopyButton value={fmt(t.inviteText, { name: s.name, code: s.code, url: `${siteUrl()}/app/escouades` })} label={t.invite} />
+                        <CopyButton value={fmt(t.inviteText, { name: squadName(s, m), code: s.code, url: `${siteUrl()}/app/escouades` })} label={t.invite} />
                       </div>
                     ) : null}
                     <div className="mt-3">
@@ -93,13 +96,12 @@ export default async function SquadsPage() {
                 {publicSquads.map((s) => (
                   <li key={s.id} className="flex items-start justify-between gap-4 py-4">
                     <div className="min-w-0">
-                      <p>{s.name}</p>
+                      <p>{squadName(s, m)}</p>
                       <p className="mt-1 text-xs text-mute">
                         {members(s.members)}
-                        {s.is_official ? t.official : ""}
-                        {s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale) }) : ""}
+                        {s.is_official ? `${t.official}${t.everyMonday}` : s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale) }) : ""}
                       </p>
-                      {s.description ? <p className="mt-1 text-sm text-mute">{s.description}</p> : null}
+                      {s.description && !s.is_official ? <p className="mt-1 text-sm text-mute">{s.description}</p> : null}
                     </div>
                     <JoinPublicButton id={s.id} />
                   </li>
@@ -112,7 +114,7 @@ export default async function SquadsPage() {
             <h2 className="font-serif text-3xl">{t.create}</h2>
             <div className="mt-6 rounded-xs border border-line bg-surface p-4">
               {canCreate ? (
-                <CreateForm />
+                <CreateForm today={todayParis()} maxDay={addDays(todayParis(), 120)} />
               ) : (
                 <p className="text-sm">
                   {t.proOnly}{" "}

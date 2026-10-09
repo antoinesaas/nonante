@@ -12,7 +12,7 @@ import type { Interval, PlanId } from "@/lib/types";
 // Appelé par le webhook ET au retour de Stripe : tout est idempotent (grant_arc_pass, sync_subscription,
 // record_payment, record_referral).
 
-type PlansSetting = Record<string, Record<string, { amount: number; price_id: string | null }>>;
+type PlansSetting = Record<string, Record<string, { amount: number; price_id: string | null; live_price_id?: string | null }>>;
 
 export function idOf(value: string | { id: string } | null | undefined): string | null {
   if (!value) return null;
@@ -32,7 +32,7 @@ export async function planFromPrice(priceId: string | null | undefined): Promise
   const plans = await plansSetting();
   for (const [plan, intervals] of Object.entries(plans)) {
     for (const [interval, entry] of Object.entries(intervals)) {
-      if (entry && typeof entry === "object" && entry.price_id === priceId) {
+      if (entry && typeof entry === "object" && (entry.price_id === priceId || entry.live_price_id === priceId)) {
         return { plan: plan as PlanId, interval: interval as Interval };
       }
     }

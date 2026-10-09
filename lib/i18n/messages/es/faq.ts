@@ -29,7 +29,7 @@ export const faq: typeof fr = {
         {
           id: "quand",
           q: "¿Cuándo puedo empezar?",
-          a: "Cuando quieras: hoy, mañana, el lunes que viene, una fecha concreta o con una salida colectiva (como el 1 de enero). Tu arco dura 90 días desde tu día 1.",
+          a: "Cuando quieras: hoy, mañana, el lunes que viene, una fecha concreta o uniéndote a una partida: todos empiezan el mismo día (una partida oficial por perfil sale cada lunes, y cualquiera puede crear la suya). Tu arco dura 90 días desde tu día 1.",
         },
         {
           id: "temps",

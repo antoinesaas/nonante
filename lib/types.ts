@@ -317,6 +317,7 @@ export type SquadView = {
   is_public: boolean;
   is_official: boolean;
   start_date: string | null;
+  category: Category | null;
   members: number;
   is_member: boolean;
   is_owner: boolean;

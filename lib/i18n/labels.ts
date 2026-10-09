@@ -1,7 +1,7 @@
 import type { Locale } from "@/lib/i18n/config";
 import { fmt, formatNumber, formatTime } from "@/lib/i18n/format";
 import type { Messages } from "@/lib/i18n/messages";
-import type { ProofType, Target } from "@/lib/types";
+import type { Category, ProofType, Target } from "@/lib/types";
 
 // Libellés du jeu dans la langue de l'utilisateur.
 
@@ -68,4 +68,9 @@ export function quoteOfDay(date: string, m: Messages) {
 /** « alors 20 pompes. » / « then 20 push-ups. » → « 20 pompes » */
 export function bareThen(text: string): string {
   return text.replace(/^(alors|then|dann|entonces) /i, "").replace(/\.$/, "");
+}
+
+/** Nom d'une escouade : les parties officielles (une par catégorie) sont traduites, les autres gardent le leur. */
+export function squadName(s: { name: string; is_official?: boolean; category?: Category | null }, m: Messages): string {
+  return s.is_official && s.category ? m.app.squads.parties[s.category] : s.name;
 }

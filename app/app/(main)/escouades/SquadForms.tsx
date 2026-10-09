@@ -28,7 +28,7 @@ export function JoinForm() {
   );
 }
 
-export function CreateForm() {
+export function CreateForm({ today, maxDay }: { today: string; maxDay: string }) {
   const { m } = useI18n();
   const t = m.app.squads;
   const [state, formAction] = useActionState(createSquad, idle);
@@ -46,6 +46,22 @@ export function CreateForm() {
         <input type="checkbox" name="isPublic" className="mt-0.5 size-5 accent-paper" />
         {t.publicCheck}
       </label>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block min-w-0">
+          <span className={label}>{t.startLabel}</span>
+          <input name="startDate" type="date" min={today} max={maxDay} className={`${input} mt-2`} />
+        </label>
+        <label className="block min-w-0">
+          <span className={label}>{t.categoryLabel}</span>
+          <select name="category" defaultValue="" className={`${input} mt-2`}>
+            <option value="">{t.categoryAny}</option>
+            <option value="etudes">{m.game.category.etudes}</option>
+            <option value="business">{m.game.category.business}</option>
+            <option value="mixte">{m.game.category.mixte}</option>
+          </select>
+        </label>
+      </div>
+      <p className="text-xs text-mute">{t.startHint}</p>
       <SubmitButton className={btnPrimary} pendingLabel={t.creating}>
         {t.createButton}
       </SubmitButton>

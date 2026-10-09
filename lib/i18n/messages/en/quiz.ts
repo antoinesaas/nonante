@@ -127,6 +127,9 @@ export const quiz: typeof fr = {
     members: "{n} joined",
     other: "Another date",
     error: "Pick a date within the next 4 months.",
+    party: "{name} · {date}",
+    partyHint: "Everyone starts that day, with your own leaderboard.",
+    parties: { etudes: "Studies party", business: "Business party", mixte: "Studies + Business party" },
   },
   commitment: {
     title: "Honestly, where are you at?",

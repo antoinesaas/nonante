@@ -216,7 +216,7 @@ export const de: LegalSet = {
       {
         ul: [
           "Supabase: Datenbank, Authentifizierung und Dateien.",
-          "Vercel: Hosting der Website (USA).",
+          "Vercel: Hosting der Website (Server in Dublin, Irland) und anonyme Reichweitenmessung ohne Cookie: Seitenaufrufe, Land, Gerätetyp, nie deine Identität.",
           "Stripe: Zahlung.",
           "Resend: E-Mail-Versand, falls aktiviert.",
           "Google: Anmeldung mit deinem Konto.",
@@ -236,7 +236,7 @@ export const de: LegalSet = {
       },
       { h2: "Cookies" },
       {
-        p: "Nonante nutzt weder Werbung noch Tracking durch Dritte. Nur notwendige Cookies von Nonante, die nie geteilt werden: deine Anmeldesitzung; deine Sprache, wenn du sie wählst; die Quelle deines Besuchs, 30 Tage lang; und höchstens eine Stunde lang deine Antworten im Fragebogen während deiner Anmeldung mit Google.",
+        p: "Nonante nutzt weder Werbung noch Tracking durch Dritte. Nur notwendige Cookies von Nonante, die nie geteilt werden: deine Anmeldesitzung; deine Sprache, wenn du sie wählst; die Quelle deines Besuchs, 30 Tage lang; und höchstens eine Stunde lang deine Antworten im Fragebogen während deiner Anmeldung mit Google. Die Reichweitenmessung setzt kein Cookie und verfolgt dich nicht von Website zu Website.",
       },
       { h2: "Deine Rechte" },
       {

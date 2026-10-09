@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { JokerButton, StartTodayButton } from "@/app/app/(main)/DayActions";
 import { ArtBand } from "@/components/Art";
 import { CalendarInteractive } from "@/components/CalendarInteractive";
+import { CelebrationOverlay } from "@/components/Celebration";
 import { CopyButton } from "@/components/CopyButton";
 import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { Countdown } from "@/components/Countdown";
@@ -84,8 +85,29 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
   const photoDaysLeft = running && !e.has_before_photo && d.day_number && d.day_number <= 7 ? 8 - d.day_number : 0;
   const rs = d.running_session;
 
+  const r = m.app.rewards;
+  const month = d.today!.slice(0, 7);
+
   return (
     <>
+      {/* Fêtes : une fois par jour pour une journée prouvée, une fois par mois pour l'objectif de revenu atteint. */}
+      {running && !d.joker_today && principles.length && !remaining.length ? (
+        <CelebrationOverlay
+          storageKey={`nonante:jour:${e.id}:${d.today}`}
+          kind="day"
+          hand={r.dayHand}
+          title={r.dayTitle}
+          text={fmt(r.dayText, { n: principles.length }, locale)}
+        />
+      ) : revenueGoal && plan.limits.wallet && (d.wallet_month_cents ?? 0) >= revenueGoal ? (
+        <CelebrationOverlay
+          storageKey={`nonante:objectif:${e.id}:${month}`}
+          kind="goal"
+          hand={r.goalHand}
+          title={r.goalTitle}
+          text={fmt(r.goalText, { amount: formatMoney(d.wallet_month_cents ?? 0, locale), target: formatMoney(revenueGoal, locale) })}
+        />
+      ) : null}
       {/* Joueur */}
       <header className="flex items-center gap-4">
         <Link href="/app/profil" aria-label={t.profileAria} className="transition-transform active:scale-95">

@@ -1100,6 +1100,7 @@ export type Database = {
       };
       squads: {
         Row: {
+          category: string | null;
           code: string;
           created_at: string;
           description: string | null;
@@ -1111,6 +1112,7 @@ export type Database = {
           start_date: string | null;
         };
         Insert: {
+          category?: string | null;
           code: string;
           created_at?: string;
           description?: string | null;
@@ -1122,6 +1124,7 @@ export type Database = {
           start_date?: string | null;
         };
         Update: {
+          category?: string | null;
           code?: string;
           created_at?: string;
           description?: string | null;
@@ -1321,7 +1324,7 @@ export type Database = {
       complete_reps: { Args: { p_session_id: string | null; p_nonce: string | null; p_reps: Json | null }; Returns: Json };
       complete_session: { Args: { p_session_id: string | null; p_nonce: string | null }; Returns: Json };
       complete_wake_check: { Args: { p_session_id: string | null; p_nonce: string | null; p_code: string | null }; Returns: Json };
-      create_squad: { Args: { p_name: string | null; p_description: string | null; p_is_public: boolean | null }; Returns: string };
+      create_squad: { Args: { p_name: string | null; p_description: string | null; p_is_public: boolean | null; p_start_date?: string | null; p_category?: string | null }; Returns: string };
       cron_arc_results: { Args: never; Returns: { enrollment_id: string; user_id: string; email: string; status: string; green: number; arc_number: number }[] };
       cron_close_days: { Args: never; Returns: number };
       cron_expire_audits: { Args: never; Returns: number };

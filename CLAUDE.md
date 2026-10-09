@@ -46,7 +46,8 @@ Google Images, jamais le visage d'une personne connue, jamais de marque.**
 
 ### Arc
 - 90 jours à partir du **jour 1 choisi** : aujourd'hui, demain, lundi prochain, une date (60 jours max) ou un
-  **départ collectif** (escouade officielle, ex. 1er janvier).
+  **partie** à rejoindre : une partie officielle par catégorie (études, business, les deux) part chaque lundi, et chaque
+  escouade peut fixer un jour 1 commun (`squads.start_date`, `squads.category`, `_party_start`). Plus de départ du 1er janvier.
 - Un seul arc en cours. Après un arc (tenu, raté ou lâché), on en recommence un (arc n° 2…).
 - Arc **tenu** : jours verts + jokers ≥ 75 et jamais plus de 3 jours non verts d'affilée (hors jokers).
 - **Lâché** : 7 jours blancs d'affilée.
@@ -115,14 +116,17 @@ choisit. C'est un suivi personnel, jamais un gain distribué par Nonante.
 - **Classement** : Semaine (depuis lundi, tout le monde repart à zéro), Mois, Général (points cumulés), Monde ou
   pays du joueur, filtre catégorie, onglet par escouade. Égalité : série, puis note globale.
 - **Escouades** : groupes rejoints par code (privés) ou publics, 50 membres max, 3 escouades max par
-  personne. Création réservée à Pro. Escouades officielles avec départ collectif.
+  personne (les parties officielles n'ont pas de limite de membres). Création réservée à Pro, avec un jour 1 commun
+  facultatif : la partie est alors proposée à l'inscription.
 - **Profil public** : photo, carte de joueur, stats, calendrier, succès, preuves refusées, objectif et
   portefeuille si l'utilisateur le veut. Bouton « Signaler ». Pas de messages privés.
 - **Mon profil** : roue dentée en haut à droite = feuille Réglages (langue, bio, public, revenus publics) et données
   (export, déconnexion, suppression du compte).
+- **Fêtes** : motion design noir et blanc (`components/Celebration.tsx`) pour un succès, un niveau, une journée
+  prouvée (une fois par jour) et l'objectif de revenu du mois atteint.
 - **Barre d'onglets** : verre liquide (bulle qui glisse avec rebond, qu'on peut faire glisser du doigt d'un onglet à
   l'autre), `components/LiquidTabBar.tsx`.
-- **Bibliothèque de principes** : triée par pertinence (même note que le choix des 6 principes), « Pour toi » = les 6
+- **Bibliothèque de principes** : triée par pertinence (même note que le choix des 6 principes), « Pour toi » = les 3
   meilleurs, chaque pilier = ses 3 meilleurs, barre de recherche sur toute la bibliothèque.
 
 Règles absolues : l'entreprise ne gagne jamais d'argent sur l'échec d'un utilisateur ; aucune récompense en
@@ -140,6 +144,8 @@ lancer. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jour
 | Pro | 14,99 €/mois ou 99,99 €/an | Tous les arcs tant que l'abonnement est actif, 12 principes, portefeuille, créer des escouades, 3 jokers |
 | Fondateur | 199 € une fois | Pro à vie, 100 places (compteur réel) |
 
+- Test et live cohabitent : `settings.plans.*.price_id` (test) et `live_price_id` (live), `stripe_portal` /
+  `stripe_portal_live` ; la clé `STRIPE_SECRET_KEY` (sk_live_ ou sk_test_) décide (`stripeLive()`). Voir `supabase/ops/stripe-live.sql`.
 - Stripe Checkout (`payment` pour l'Arc 90 jours et Fondateur, `subscription` pour Pro), codes promo, portail client
   Stripe (factures, abonnement Pro). Prix et identifiants Stripe dans `settings.plans`.
 - L'Arc 90 jours se rattache à l'arc ouvert (`enrollments.arc_paid`), ou reste en crédit (`profiles.arc_credits`)
@@ -175,7 +181,8 @@ Français (source), anglais, allemand, espagnol : toute l'app, les emails et les
 ## 6. Stack et sécurité
 
 Next.js 16 (App Router, `proxy.ts`, Server Actions), TypeScript strict, Tailwind v4, Supabase (Auth, Postgres,
-RLS partout, Storage), Stripe, Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron). Domaine : nonante.fr
+RLS partout, Storage), Stripe, Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron, Web Analytics sans cookie,
+fonctions à Dublin `dub1`, à côté de Supabase eu-west-1). Domaine : nonante.fr (Search Console : propriété de domaine)
 (Hostinger, A vers Vercel ; www redirige). Pas de notifications ni de rappels (retirés le 9 octobre 2026).
 
 - Le client ne décide jamais : toutes les écritures de jeu passent par des fonctions `security definer` qui

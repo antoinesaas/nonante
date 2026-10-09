@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { markAchievementsSeen } from "@/app/actions/seen";
 import { ArtBackdrop } from "@/components/Art";
+import { CelebrationBurst, CelebrationTitle } from "@/components/Celebration";
 import { IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { fmt } from "@/lib/i18n/format";
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type NewAchievement = { code: string; title: string; description: string; points: number; art_slug: string | null };
 
-const DELAYS = ["[animation-delay:150ms]", "[animation-delay:300ms]", "[animation-delay:450ms]", "[animation-delay:600ms]"];
+const DELAYS = ["", "[animation-delay:1000ms]", "[animation-delay:1150ms]", "[animation-delay:1300ms]"];
 
 /** Succès débloqués depuis la dernière visite, avec l'œuvre qu'ils débloquent. */
 export default async function AchievementsPage() {
@@ -30,14 +31,17 @@ export default async function AchievementsPage() {
   return (
     <ArtBackdrop slug={withArt?.art_slug ?? IMAGES.arcDone}>
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-end px-5 pb-16">
-        <p className="animate-rise text-xs tracking-[0.2em] text-mute uppercase">{items.length > 1 ? t.unlockedMany : t.unlockedOne}</p>
+        <div className="grid flex-1 place-items-center pt-10">
+          <CelebrationBurst kind="achievement" className="size-60" />
+        </div>
+        <p className="animate-rise text-xs tracking-[0.2em] text-mute uppercase [animation-delay:500ms]">{items.length > 1 ? t.unlockedMany : t.unlockedOne}</p>
         <ul className="mt-6 space-y-6">
           {items.map((a, i) => {
             const text = m.content.achievements[a.code] ?? a;
             return (
-              <li key={a.code} className={`animate-rise ${DELAYS[i] ?? ""}`}>
-                <p className="font-serif text-5xl leading-none">{text.title}</p>
-                <p className="mt-3 text-paper/80">
+              <li key={a.code} className={i ? `animate-rise ${DELAYS[i] ?? ""}` : ""}>
+                <p className="font-serif text-5xl leading-none">{i ? text.title : <CelebrationTitle text={text.title} />}</p>
+                <p className={`mt-3 text-paper/80 ${i ? "" : "animate-rise [animation-delay:900ms]"}`}>
                   {text.description}
                   {a.points ? fmt(t.points, { n: a.points }) : ""}
                 </p>
@@ -45,8 +49,8 @@ export default async function AchievementsPage() {
             );
           })}
         </ul>
-        {withArt ? <p className="mt-6 text-sm text-mute">{t.newBackground}</p> : null}
-        <form action={markAchievementsSeen} className="mt-12">
+        {withArt ? <p className="mt-6 animate-rise text-sm text-mute [animation-delay:1000ms]">{t.newBackground}</p> : null}
+        <form action={markAchievementsSeen} className="mt-12 animate-rise [animation-delay:1100ms]">
           <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.loading}>
             {m.common.actions.continue}
           </SubmitButton>

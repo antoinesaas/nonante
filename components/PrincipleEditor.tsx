@@ -375,7 +375,7 @@ function plain(text: string) {
 
 /**
  * Bibliothèque : déjà triée par pertinence pour le joueur (métier, école, objectif, points faibles).
- * « Pour toi » : les 6 meilleurs ; chaque catégorie : ses 3 meilleurs ; la recherche parcourt tout.
+ * « Pour toi » : les 3 meilleurs ; chaque catégorie : ses 3 meilleurs ; la recherche parcourt tout.
  */
 export function TemplateLibrary({ templates, disabled }: { templates: TemplateView[]; disabled: boolean }) {
   const { m } = useI18n();
@@ -390,7 +390,7 @@ export function TemplateLibrary({ templates, disabled }: { templates: TemplateVi
   const shown = words.length
     ? templates.filter((x) => words.every((w) => plain(`${x.if_text} ${x.then_text} ${x.why} ${x.source} ${m.game.pillar[x.pillar]}`).includes(w))).slice(0, 20)
     : filter === "recommande"
-      ? fresh.filter((x) => x.score > 0).slice(0, 6)
+      ? fresh.filter((x) => x.score > 0).slice(0, 3)
       : fresh.filter((x) => x.pillar === filter).slice(0, 3);
 
   return (

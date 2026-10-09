@@ -126,6 +126,9 @@ export const quiz = {
     members: "{n} inscrits",
     other: "Une autre date",
     error: "Choisis une date dans les 4 prochains mois.",
+    party: "{name} · {date}",
+    partyHint: "Tout le monde démarre ce jour-là, avec votre classement.",
+    parties: { etudes: "Partie Études", business: "Partie Business", mixte: "Partie Études + Business" },
   },
   commitment: {
     title: "Honnêtement, tu en es où ?",

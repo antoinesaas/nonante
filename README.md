@@ -8,7 +8,7 @@ Le cahier des charges est dans [`CLAUDE.md`](CLAUDE.md). Ce README explique comm
 
 | Domaine | Contenu |
 |---|---|
-| Arc | Départ libre (aujourd'hui, demain, lundi, une date à 60 jours max) ou départ collectif d'une escouade officielle ; arc n° 2, 3… à la suite |
+| Arc | Départ libre (aujourd'hui, demain, lundi, une date à 60 jours max) ou une partie à rejoindre (une officielle par profil, départ chaque lundi, ou celle d'une escouade) ; arc n° 2, 3… à la suite |
 | Objectif | Type, phrase, chiffre et unité, affiché en haut du tableau de bord |
 | Principes | 84 gabarits sourcés et traduits (travail profond, grenouille, règle des 2 minutes, prospection, e-commerce, SaaS, revente, trading, prépa, fac…), choisis selon le profil, l'activité (au moins un principe par activité, pas de prospection pour le trading seul), l'école, l'objectif, les points faibles et le sport voulu ; 100 % modifiables dans une feuille avec « Enregistrer » toujours visible ; difficulté calculée par le serveur ; modification effective le lendemain |
 | Preuves | Minuteur (Lancer / Stop à −5 ; quitter l'écran plus de 10 s, faire retour ou fermer l'onglet casse la session), pompes et squats comptés à la caméra (modèle préchargé, repli processeur), réveil à code, photo, capture, lien, déclaratif ; contrôles aléatoires |
@@ -56,11 +56,14 @@ Dans l'ordre, depuis [`supabase/migrations/`](supabase/migrations/) (SQL Editor 
 2. `20261007100100_v2_schema.sql` : tables, RLS, buckets `proofs` (privé) et `avatars` (public)
 3. `20261007100200_v2_logic.sql` : règles du jeu
 4. `20261007100300_v2_read_admin_cron.sql` : lectures, escouades, paiements, admin, crons
-5. `20261007100400_v2_seed.sql` : plans, gabarits, quêtes, succès, escouade officielle du 1er janvier
+5. `20261007100400_v2_seed.sql` : plans, gabarits, quêtes, succès
 6. `20261008100000_v3_langues_pays.sql` : langue et pays du joueur, gabarits traduits, classement du mois et par pays
 7. `20261008110000_v4_parcours_metier.sql` : activité et école, 47 nouveaux gabarits, choix des principes par métier, carnet de notes, portefeuille dans l'arc business
 8. `20261008120000_v5_session_quittee.sql` : `leave_session` (page du minuteur quittée = session cassée)
 9. `20261009100000_v6_points_bibliotheque.sql` : points des notes et des revenus selon leur valeur (repris si on les retire), bibliothèque de principes notée par pertinence
+10. `20261009110000_v7_parties.sql` : parties (une officielle par profil, départ chaque lundi ; jour 1 commun pour les escouades), plus de départ du 1er janvier
+
+Stripe en production : `supabase/ops/stripe-live.sql` (identifiants live, et remise à zéro des clients de test au passage en live).
 
 Les migrations v3 à v5 sont regroupées dans `../deploy-v3-v5.sql` (une transaction) pour l'éditeur SQL.
 

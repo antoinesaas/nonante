@@ -4,7 +4,7 @@ import type Stripe from "stripe";
 import { siteUrl } from "@/lib/env";
 import type { Locale } from "@/lib/i18n/config";
 import { getMessages, type Messages } from "@/lib/i18n/messages";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
+import { getStripe, stripeConfigured, stripeLive } from "@/lib/stripe";
 import { ensureCoupons, LOYALTY_COUPON, REFERRAL_COUPON } from "@/lib/stripe-codes";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Interval, PlanId, PublicPlans } from "@/lib/types";
@@ -68,12 +68,18 @@ export async function billing(userId: string): Promise<Billing | null> {
   return (data as Billing | null) ?? null;
 }
 
-/** Client Stripe de l'utilisateur, créé une seule fois. */
+/** Client Stripe de l'utilisateur, créé une seule fois (et recréé s'il vient du mode test, inconnu en live). */
 async function ensureCustomer(userId: string, b: Billing): Promise<string> {
-  if (b.stripe_customer_id) return b.stripe_customer_id;
+  if (b.stripe_customer_id) {
+    const known = await getStripe()
+      .customers.retrieve(b.stripe_customer_id)
+      .then((c) => !c.deleted)
+      .catch(() => false);
+    if (known) return b.stripe_customer_id;
+  }
   const customer = await getStripe().customers.create(
     { email: b.email ?? undefined, name: b.pseudo, metadata: { user_id: userId } },
-    { idempotencyKey: `customer-${userId}` },
+    { idempotencyKey: `customer-${userId}-${stripeLive() ? "live" : "test"}` },
   );
   await createAdminClient().rpc("set_stripe_customer", { p_user: userId, p_customer: customer.id });
   return customer.id;
@@ -81,7 +87,7 @@ async function ensureCustomer(userId: string, b: Billing): Promise<string> {
 
 export async function portalUrl(customer: string, locale: Locale = "fr"): Promise<string | null> {
   const admin = createAdminClient();
-  const { data: setting } = await admin.from("settings").select("value").eq("key", "stripe_portal").maybeSingle();
+  const { data: setting } = await admin.from("settings").select("value").eq("key", stripeLive() ? "stripe_portal_live" : "stripe_portal").maybeSingle();
   const configuration = typeof setting?.value === "string" ? setting.value : undefined;
   try {
     const session = await getStripe().billingPortal.sessions.create({
@@ -128,7 +134,8 @@ export async function checkoutDestination(
     admin.rpc("plan_price", { p_plan: plan, p_interval: interval }),
     admin.rpc("plans_public"),
   ]);
-  const priceId = (price as { price_id: string | null } | null)?.price_id;
+  const entry = price as { price_id: string | null; live_price_id?: string | null } | null;
+  const priceId = stripeLive() ? entry?.live_price_id : entry?.price_id;
   if (!priceId) return { error: "unavailable" };
   const p = plans as PublicPlans | null;
   if (plan === "fondateur" && p && p.fondateur.sold >= p.fondateur.limit) return { error: "soldOut" };

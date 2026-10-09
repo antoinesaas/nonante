@@ -29,7 +29,7 @@ export const faq: typeof fr = {
         {
           id: "quand",
           q: "When can I start?",
-          a: "Whenever you want: today, tomorrow, next Monday, a specific date, or with a group start (like January 1st). Your arc lasts 90 days from your day 1.",
+          a: "Whenever you want: today, tomorrow, next Monday, a specific date, or by joining a party: everyone starts on the same day (an official party per profile starts every Monday, and anyone can create their own). Your arc lasts 90 days from your day 1.",
         },
         {
           id: "temps",

@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { getUser } from "@/lib/auth";
 import { fmt } from "@/lib/i18n/format";
+import { squadName } from "@/lib/i18n/labels";
 import { getCountry, getI18n } from "@/lib/i18n/server";
 import { navTabs } from "@/lib/nav";
 import type { Category, LeaderboardRow, SquadView } from "@/lib/types";
@@ -62,7 +63,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/clas
             <Logo size="sm" />
           </Link>
         )}
-        <p className={`${label} ${user ? "mt-4" : "mt-10"}`}>{squad ? fmt(t.squad, { name: squad.name }) : t.allPlayers}</p>
+        <p className={`${label} ${user ? "mt-4" : "mt-10"}`}>{squad ? fmt(t.squad, { name: squadName(squad, m) }) : t.allPlayers}</p>
         <h1 className="mt-3 font-serif text-5xl leading-none">{t.title}</h1>
         {stats && !squad ? (
           <p className="mt-4 text-sm text-mute">
@@ -88,7 +89,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/clas
                 aria-current={escouade === s.id ? "page" : undefined}
                 className={`rounded-full border px-3.5 py-1.5 ${escouade === s.id ? "border-paper bg-paper text-ink" : "border-line text-mute"}`}
               >
-                {s.name}
+                {squadName(s, m)}
               </Link>
             ))}
           </nav>
