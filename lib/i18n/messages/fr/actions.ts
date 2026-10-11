@@ -106,6 +106,7 @@ export const actions = {
     stripeKey: "Paiement indisponible : la clé Stripe du site est refusée. Il faut la remplacer sur Vercel.",
     stripePermissions: "Paiement indisponible : la clé Stripe du site n'a pas les droits nécessaires. Utilise une clé secrète standard (sk_live_…).",
     stripeAccount: "Paiement indisponible : le compte Stripe n'est pas encore activé pour encaisser.",
+    stripeMethods: "Paiement indisponible : aucun moyen de paiement n'est activé dans Stripe (Paramètres > Moyens de paiement, activer « Cartes »).",
     stripePrice: "Paiement indisponible : ce prix n'existe pas dans le compte Stripe utilisé (test ou live).",
     stripeNotice: "Tu demandes l'accès immédiat. En cas de rétractation dans les 14 jours, le service déjà fourni reste dû au prorata.",
   },

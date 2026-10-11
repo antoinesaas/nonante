@@ -107,6 +107,7 @@ export const actions: typeof fr = {
     stripeKey: "Payment unavailable: the site's Stripe key is rejected. It needs replacing on Vercel.",
     stripePermissions: "Payment unavailable: the site's Stripe key lacks the required permissions. Use a standard secret key (sk_live_…).",
     stripeAccount: "Payment unavailable: the Stripe account isn't activated for payments yet.",
+    stripeMethods: "Payment unavailable: no payment method is enabled in Stripe (Settings > Payment methods, turn on \"Cards\").",
     stripePrice: "Payment unavailable: this price doesn't exist in the Stripe account in use (test or live).",
     stripeNotice: "You're asking for immediate access. If you withdraw within 14 days, the service already provided remains due pro rata.",
   },

@@ -107,6 +107,7 @@ export const actions: typeof fr = {
     stripeKey: "Zahlung nicht verfügbar: Der Stripe-Schlüssel der Website wird abgelehnt. Er muss auf Vercel ersetzt werden.",
     stripePermissions: "Zahlung nicht verfügbar: Dem Stripe-Schlüssel der Website fehlen Rechte. Nutze einen normalen geheimen Schlüssel (sk_live_…).",
     stripeAccount: "Zahlung nicht verfügbar: Das Stripe-Konto ist noch nicht für Zahlungen aktiviert.",
+    stripeMethods: "Zahlung nicht verfügbar: In Stripe ist keine Zahlungsmethode aktiviert (Einstellungen > Zahlungsmethoden, „Karten“ aktivieren).",
     stripePrice: "Zahlung nicht verfügbar: Dieser Preis existiert im verwendeten Stripe-Konto (Test oder Live) nicht.",
     stripeNotice: "Du verlangst sofortigen Zugang. Bei Widerruf innerhalb von 14 Tagen ist die bereits erbrachte Leistung anteilig zu zahlen.",
   },

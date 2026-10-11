@@ -72,8 +72,14 @@ function stripeFailure(where: string, e: unknown): CheckoutError {
   if (err.type === "StripeAuthenticationError") return "stripeKey";
   if (err.type === "StripePermissionError") return "stripePermissions";
   if (err.code === "resource_missing" && /price/i.test(`${err.param ?? ""} ${err.message ?? ""}`)) return "stripePrice";
-  if (/activat|live charges|cannot currently|charges_enabled|account.*(restricted|not.*enabled)/i.test(err.message ?? "")) return "stripeAccount";
+  if (/payment method types/i.test(err.message ?? "")) return "stripeMethods";
+  if (/live charges|cannot currently (make|accept)|charges_enabled|activate your account|account.*(restricted|not.*enabled)/i.test(err.message ?? "")) return "stripeAccount";
   return "failed";
+}
+
+/** Aucun moyen de paiement « dynamique » activé dans le tableau de bord Stripe (fréquent au passage en live). */
+function noPaymentMethods(e: unknown): boolean {
+  return /payment method types/i.test(((e ?? {}) as StripeFailure).message ?? "");
 }
 
 /** Code promo d'un ami créé dans l'autre mode (test ou live) : refusé par Stripe. */
@@ -204,6 +210,11 @@ export async function checkoutDestination(
     const session = await getStripe()
       .checkout.sessions.create(params)
       .catch((e: unknown) => {
+        if (noPaymentMethods(e)) {
+          // Moyens de paiement non configurés : la carte bancaire seule, toujours disponible.
+          params.allowed_payment_method_types = ["card"];
+          return getStripe().checkout.sessions.create(params);
+        }
         if (!staleDiscount(e)) throw e;
         // La remise vient de l'autre mode : on paie sans elle (le champ code promo reste ouvert).
         delete params.discounts;
