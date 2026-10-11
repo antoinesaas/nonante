@@ -227,6 +227,8 @@ await rejects("le nonce d'une session n'est pas lisible", () => as(A, () => q("s
 
 // ---------------------------------------------------------------------------
 console.log("\nValidations et anti-triche");
+// Tous les jours de la semaine : les tests ne dépendent pas du jour où ils tournent (dimanche compris).
+await q("update public.principles set days = '{1,2,3,4,5,6,7}' where enrollment_id = $1", [enrA]);
 const declOnly = (await principlesOf(enrA)).find((p) => p.proof_type === "declaratif");
 const res1 = await as(A, () => rpc("validate_declaratif", { p_principle_id: declOnly.id }));
 check("preuve faible : 50 % des points", res1.points === 5 * declOnly.difficulty, JSON.stringify(res1));
@@ -271,8 +273,51 @@ check("la validation d'aujourd'hui reste", Boolean(await val("select 1 from publ
 check("toujours le même nombre de principes", (await principlesOf(enrA)).length === before);
 const dashTomorrow = await as(A, () => rpc("my_principles"));
 check("onglet Principes : la version de demain", dashTomorrow.started && dashTomorrow.principles.some((p) => p.id === v2 && p.pending));
+const usedToday = async (id) => Boolean(await val("select public._used_today($1)", [id]));
+const pA0used = await usedToday(pA[0].id);
 await as(A, () => rpc("remove_principle", { p_id: pA[0].id }));
-check("retiré pendant l'arc : s'arrête ce soir", (await val("select active_until::text from public.principles where id = $1", [pA[0].id])) === today);
+const removedUntil = await val("select coalesce(active_until::text, 'aucune') from public.principles where id = $1", [pA[0].id]);
+check("retiré pendant l'arc : déjà prouvé, s'arrête ce soir ; sinon retiré dès aujourd'hui", pA0used ? removedUntil === today : removedUntil !== "aucune" && removedUntil !== today, String(removedUntil));
+const fresh = [];
+for (const p of await principlesOf(enrA)) if (!(await usedToday(p.id))) fresh.push(p);
+if (fresh.length) {
+  const f = fresh[0];
+  // En vigueur depuis hier : changer crée une nouvelle version.
+  await q("update public.principles set active_from = public.paris_today() - 1 where id = $1", [f.id]);
+  const vNow = await as(A, () => rpc("save_principle", {
+    p_id: f.id, p_pillar: f.pillar, p_if: f.if_text, p_then: "une version tout de suite", p_proof_type: "declaratif",
+    p_target: "{}", p_days: [1, 2, 3, 4, 5, 6, 7], p_difficulty: 1,
+  }));
+  check("pas encore prouvé aujourd'hui : la nouvelle version compte dès aujourd'hui", (await val("select active_from::text from public.principles where id = $1", [vNow])) === today
+    && (await val("select active_until::text from public.principles where id = $1", [f.id])) < today);
+  const dashNow = await as(A, () => rpc("my_dashboard"));
+  check("« Aujourd'hui » montre tout de suite la nouvelle version", dashNow.principles.some((p) => p.id === vNow) && !dashNow.principles.some((p) => p.id === f.id));
+  const again = await as(A, () => rpc("save_principle", {
+    p_id: vNow, p_pillar: f.pillar, p_if: f.if_text, p_then: "retouchée encore", p_proof_type: "declaratif",
+    p_target: "{}", p_days: [1, 2, 3, 4, 5, 6, 7], p_difficulty: 1,
+  }));
+  check("retouchée le même jour : modifiée sur place, sans nouvelle version", again === vNow
+    && (await val("select then_text from public.principles where id = $1", [vNow])) === "alors retouchée encore.");
+}
+check("au moins un principe à modifier tout de suite dans le test", fresh.length > 0);
+const addedNow = await as(A, () => rpc("save_principle", {
+  p_id: null, p_pillar: "esprit", p_if: "je finis ma journée", p_then: "je note trois choses", p_proof_type: "declaratif",
+  p_target: "{}", p_days: [1, 2, 3, 4, 5, 6, 7], p_difficulty: 1,
+}));
+check("ajouté pendant l'arc : compte dès aujourd'hui", (await val("select active_from::text from public.principles where id = $1", [addedNow])) === today);
+await as(A, () => rpc("remove_principle", { p_id: addedNow }));
+check("ajouté puis retiré le même jour sans preuve : effacé", !(await val("select 1 from public.principles where id = $1", [addedNow])));
+const sessP = await as(A, () => rpc("save_principle", {
+  p_id: null, p_pillar: "focus", p_if: "je m'assois", p_then: "50 minutes de travail profond", p_proof_type: "session",
+  p_target: JSON.stringify({ minutes: 50 }), p_days: [1, 2, 3, 4, 5, 6, 7], p_difficulty: 1,
+}));
+await q("update public.principles set active_from = public.paris_today() - 1 where id = $1", [sessP]);
+const sess25 = await as(A, () => rpc("set_session_minutes", { p_id: sessP, p_minutes: 25 }));
+const s25 = await one("select * from public.principles where id = $1", [sess25]);
+check("minuteur : durée changée avant de lancer (cible, difficulté, texte, dès aujourd'hui)", s25.target.minutes === 25 && s25.difficulty === 1
+  && s25.then_text === "alors 25 minutes de travail profond." && s25.active_from.toISOString().slice(0, 10) === today, JSON.stringify(s25));
+await rejects("minuteur : durée hors liste refusée", () => as(A, () => rpc("set_session_minutes", { p_id: sess25, p_minutes: 40 })), "Durée invalide");
+await as(A, () => rpc("remove_principle", { p_id: sess25 }));
 await rejects("modifier le principe d'un autre", () => as(B, () => rpc("remove_principle", { p_id: v2 })), "introuvable");
 
 // ---------------------------------------------------------------------------
@@ -281,8 +326,6 @@ const linkP = await as(B, () => rpc("save_principle", {
   p_id: null, p_pillar: "business", p_if: "c'est un jour", p_then: "je publie", p_proof_type: "lien",
   p_target: JSON.stringify({ domains: ["tiktok.com", "youtube.com"] }), p_days: [1, 2, 3, 4, 5, 6, 7], p_difficulty: 2,
 }));
-// Ajouté pendant l'arc : valable demain. On l'avance à aujourd'hui pour le test.
-await q("update public.principles set active_from = public.paris_today() where id = $1", [linkP]);
 await rejects("domaine non autorisé", () => as(B, () => rpc("validate_link", { p_principle_id: linkP, p_url: "https://evil.com/x" })), "doit venir de");
 await rejects("http refusé", () => as(B, () => rpc("validate_link", { p_principle_id: linkP, p_url: "http://tiktok.com/@a/video/1" })), "https");
 await rejects("lien vers le site, pas une publication", () => as(B, () => rpc("validate_link", { p_principle_id: linkP, p_url: "https://www.tiktok.com/" })), "publication");

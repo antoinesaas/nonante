@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArtBand } from "@/components/Art";
-import { NewPrinciple, PrincipleRow, TemplateLibrary } from "@/components/PrincipleEditor";
+import { NewPrinciple, PrincipleNotice, PrincipleRow, TemplateLibrary } from "@/components/PrincipleEditor";
 import { IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { fmt, formatDay } from "@/lib/i18n/format";
@@ -56,6 +56,7 @@ export default async function PrinciplesPage({ searchParams }: PageProps<"/app/p
             {beforeStart && editable ? <RegenerateButton /> : null}
           </div>
 
+          <PrincipleNotice />
           <ul className="divide-y divide-line border-b border-line">
             {principles.map((p) => (
               <PrincipleRow key={p.id} principle={p} editable={editable} />
@@ -83,6 +84,7 @@ export default async function PrinciplesPage({ searchParams }: PageProps<"/app/p
             <section className="mt-12">
               <h2 className="font-serif text-3xl">{t.create}</h2>
               <p className="mt-2 text-sm text-mute">{t.createHint}</p>
+              <PrincipleNotice />
               <div className="mt-6">
                 {principles.length < limits.max_principles ? (
                   <NewPrinciple />

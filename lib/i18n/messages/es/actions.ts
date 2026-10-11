@@ -104,6 +104,10 @@ export const actions: typeof fr = {
     lifetime: "Ya tienes acceso de por vida.",
     soldOut: "Las 100 plazas de Fundador se han agotado.",
     failed: "El pago no pudo empezar. Inténtalo de nuevo en un momento.",
+    stripeKey: "Pago no disponible: la clave de Stripe del sitio es rechazada. Hay que cambiarla en Vercel.",
+    stripePermissions: "Pago no disponible: la clave de Stripe del sitio no tiene los permisos necesarios. Usa una clave secreta estándar (sk_live_…).",
+    stripeAccount: "Pago no disponible: la cuenta de Stripe aún no está activada para cobrar.",
+    stripePrice: "Pago no disponible: este precio no existe en la cuenta de Stripe usada (test o live).",
     stripeNotice: "Pides el acceso inmediato. Si desistes en 14 días, el servicio ya prestado se paga a prorrata.",
   },
 };

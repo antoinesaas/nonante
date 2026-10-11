@@ -18,7 +18,7 @@ import { parisMidnight } from "@/lib/dates";
 import { siteUrl } from "@/lib/env";
 import { INTL } from "@/lib/i18n/config";
 import { fmt, formatDay, formatMoney, formatPoints, signed } from "@/lib/i18n/format";
-import { bareThen, titleFor } from "@/lib/i18n/labels";
+import { bareThen, daysLabel, titleFor } from "@/lib/i18n/labels";
 import type { Messages } from "@/lib/i18n/messages";
 import { getI18n } from "@/lib/i18n/server";
 import { fulfillCheckout } from "@/lib/payments";
@@ -84,6 +84,17 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
   // Photo du jour 1 : proposée pendant la première semaine, tant qu'elle n'est pas prise.
   const photoDaysLeft = running && !e.has_before_photo && d.day_number && d.day_number <= 7 ? 8 - d.day_number : 0;
   const rs = d.running_session;
+
+  // Les principes prévus un autre jour de la semaine : listés sous ceux du jour, pour tout voir d'un coup d'œil.
+  const refDay = running ? d.today! : e.start_date;
+  const shown = new Set(principles.map((p) => p.id));
+  const { data: allPrinciples } = await supabase
+    .from("principles")
+    .select("id, position, pillar, if_text, then_text, proof_type, days, active_from, active_until")
+    .eq("enrollment_id", e.id)
+    .lte("active_from", refDay)
+    .order("position");
+  const otherDays = (allPrinciples ?? []).filter((p) => !shown.has(p.id) && (!p.active_until || p.active_until >= refDay));
 
   const r = m.app.rewards;
   const month = d.today!.slice(0, 7);
@@ -291,6 +302,25 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
               </div>
             ) : null}
           </section>
+
+          {otherDays.length ? (
+            <section className="mt-10">
+              <h2 className="font-serif text-2xl">{t.otherDays}</h2>
+              <p className="mt-1 text-sm text-mute">{t.otherDaysHint}</p>
+              <ul className="mt-4 divide-y divide-line border-y border-line">
+                {otherDays.map((p) => (
+                  <li key={p.id} className="py-4">
+                    <p className="text-[10px] tracking-[0.2em] text-mute uppercase">{m.game.pillar[p.pillar as keyof Messages["game"]["pillar"]]}</p>
+                    <p className="mt-1 text-sm text-mute">{p.if_text},</p>
+                    <p className="mt-0.5 leading-snug">{p.then_text}</p>
+                    <p className="mt-1.5 text-xs text-mute">
+                      {m.game.proof.label[p.proof_type as keyof Messages["game"]["proof"]["label"]]} · {daysLabel(p.days, m)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </div>
 
         <div>

@@ -152,13 +152,25 @@ export async function submitPhoto(_prev: ProofResult, formData: FormData): Promi
 // ---------------------------------------------------------------------------
 // Sessions : minuteur, répétitions, réveil
 // ---------------------------------------------------------------------------
-export async function startSession(principleId: string): Promise<{ session?: StartedSession; message?: string }> {
+/**
+ * Lance le minuteur d'un principe. Durée changée juste avant (25, 50 ou 90 min) : le principe est d'abord modifié
+ * (il peut changer d'identifiant s'il était déjà en vigueur), puis la session part sur lui.
+ */
+export async function startSession(principleId: string, minutes?: number): Promise<{ session?: StartedSession; principleId?: string; message?: string }> {
   if (!Id.safeParse(principleId).success) return { message: await invalid() };
+  if (minutes !== undefined && ![25, 50, 90].includes(minutes)) return { message: (await getI18n()).m.actions.proof.invalidLength };
   const ctx = await context("session", 20);
   if ("error" in ctx) return { message: ctx.error!.message ?? undefined };
-  const { data, error } = await ctx.supabase.rpc("start_proof_session", { p_principle_id: principleId });
-  if (error) return { message: userMessage(error, ctx.i18n) };
-  return { session: data as StartedSession };
+  let id = principleId;
+  if (minutes !== undefined) {
+    const { data: changed, error: changeError } = await ctx.supabase.rpc("set_session_minutes", { p_id: principleId, p_minutes: minutes });
+    if (changeError) return { message: userMessage(changeError, ctx.i18n) };
+    // Pas de revalidatePath ici : il rafraîchirait la page du minuteur et remettrait l'ancienne adresse.
+    id = changed as string;
+  }
+  const { data, error } = await ctx.supabase.rpc("start_proof_session", { p_principle_id: id });
+  if (error) return { message: userMessage(error, ctx.i18n), principleId: id };
+  return { session: data as StartedSession, principleId: id };
 }
 
 export async function startChallengeSession(

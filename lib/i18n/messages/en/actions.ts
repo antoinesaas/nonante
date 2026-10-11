@@ -104,6 +104,10 @@ export const actions: typeof fr = {
     lifetime: "You already have lifetime access.",
     soldOut: "All 100 Founder places are gone.",
     failed: "Payment couldn't start. Try again in a moment.",
+    stripeKey: "Payment unavailable: the site's Stripe key is rejected. It needs replacing on Vercel.",
+    stripePermissions: "Payment unavailable: the site's Stripe key lacks the required permissions. Use a standard secret key (sk_live_…).",
+    stripeAccount: "Payment unavailable: the Stripe account isn't activated for payments yet.",
+    stripePrice: "Payment unavailable: this price doesn't exist in the Stripe account in use (test or live).",
     stripeNotice: "You're asking for immediate access. If you withdraw within 14 days, the service already provided remains due pro rata.",
   },
 };

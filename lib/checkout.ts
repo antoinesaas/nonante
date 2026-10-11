@@ -63,6 +63,25 @@ export async function upcomingDiscount(
   return friend ? { percent: 20, kind: "friend", pseudo: friend.pseudo } : null;
 }
 
+type StripeFailure = { type?: string; code?: string; param?: string; message?: string };
+
+/** Erreur Stripe en clair dans les journaux Vercel (jamais de clé : Stripe la masque), et le message à montrer. */
+function stripeFailure(where: string, e: unknown): CheckoutError {
+  const err = (e ?? {}) as StripeFailure;
+  console.error(`[${where}] Stripe a refusé : ${err.type ?? "erreur"} ${err.code ?? ""} ${err.param ?? ""} ${err.message ?? ""}`.trim());
+  if (err.type === "StripeAuthenticationError") return "stripeKey";
+  if (err.type === "StripePermissionError") return "stripePermissions";
+  if (err.code === "resource_missing" && /price/i.test(`${err.param ?? ""} ${err.message ?? ""}`)) return "stripePrice";
+  if (/activat|live charges|cannot currently|charges_enabled|account.*(restricted|not.*enabled)/i.test(err.message ?? "")) return "stripeAccount";
+  return "failed";
+}
+
+/** Code promo d'un ami créé dans l'autre mode (test ou live) : refusé par Stripe. */
+function staleDiscount(e: unknown): boolean {
+  const err = (e ?? {}) as StripeFailure;
+  return err.code === "resource_missing" && /discount|promotion|coupon/i.test(`${err.param ?? ""} ${err.message ?? ""}`);
+}
+
 export async function billing(userId: string): Promise<Billing | null> {
   const { data } = await createAdminClient().rpc("billing_profile", { p_user: userId });
   return (data as Billing | null) ?? null;
@@ -98,7 +117,7 @@ export async function portalUrl(customer: string, locale: Locale = "fr"): Promis
     });
     return session.url;
   } catch (e) {
-    console.error(`[portail] ouverture impossible : ${e instanceof Error ? e.name : "erreur"}`);
+    stripeFailure("portail", e);
     return null;
   }
 }
@@ -182,10 +201,18 @@ export async function checkoutDestination(
     } else {
       params.subscription_data = { metadata };
     }
-    const session = await getStripe().checkout.sessions.create(params);
+    const session = await getStripe()
+      .checkout.sessions.create(params)
+      .catch((e: unknown) => {
+        if (!staleDiscount(e)) throw e;
+        // La remise vient de l'autre mode : on paie sans elle (le champ code promo reste ouvert).
+        delete params.discounts;
+        params.allow_promotion_codes = true;
+        return getStripe().checkout.sessions.create(params);
+      });
     if (session.url) return { url: session.url };
   } catch (e) {
-    console.error(`[checkout] session Stripe impossible : ${e instanceof Error ? e.name : "inconnue"}`);
+    return { error: stripeFailure("checkout", e) };
   }
   return { error: "failed" };
 }

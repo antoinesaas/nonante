@@ -37,6 +37,37 @@ function stripThen(text: string) {
   return text.replace(/^(alors |then |dann |entonces )/i, "").replace(/\.$/, "");
 }
 
+const NOTICE = "nonante:principes";
+
+/** Message après un ajout ou une modification : la ligne peut être remplacée (nouvelle version), on l'affiche en haut. */
+function notify(message: string | null) {
+  if (message) window.dispatchEvent(new CustomEvent(NOTICE, { detail: message }));
+}
+
+/** Bandeau de confirmation, au-dessus de la liste des principes. */
+export function PrincipleNotice() {
+  const [message, setMessage] = useState<string | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const on = (e: Event) => {
+      setMessage((e as CustomEvent<string>).detail);
+      clearTimeout(timer);
+      timer = setTimeout(() => setMessage(null), 5000);
+    };
+    window.addEventListener(NOTICE, on);
+    return () => {
+      window.removeEventListener(NOTICE, on);
+      clearTimeout(timer);
+    };
+  }, []);
+  if (!message) return null;
+  return (
+    <p role="status" className="mt-4 animate-rise rounded-xs border border-paper px-4 py-3 text-sm">
+      {message}
+    </p>
+  );
+}
+
 const MINUTE_WORDS = "minutes|minute|min|Minuten|minutos";
 const REP_WORDS = "pompes|squats|push-ups|Liegestütze|Kniebeugen|flexiones|sentadillas";
 
@@ -290,14 +321,8 @@ export function NewPrinciple() {
   const { m } = useI18n();
   const t = m.app.principles;
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   return (
     <>
-      {message ? (
-        <p role="status" className="mb-4 animate-rise text-sm">
-          {message}
-        </p>
-      ) : null}
       <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
         <span aria-hidden="true" className="mr-2 text-xl leading-none">
           +
@@ -309,7 +334,7 @@ export function NewPrinciple() {
           <PrincipleForm
             onDone={(msg) => {
               setOpen(false);
-              setMessage(msg);
+              notify(msg);
             }}
             onCancel={() => setOpen(false)}
           />
@@ -364,7 +389,7 @@ export function PrincipleRow({ principle, editable }: { principle: EditablePrinc
             principle={principle}
             onDone={(msg) => {
               setEditing(false);
-              setMessage(msg);
+              notify(msg);
             }}
             onCancel={() => setEditing(false)}
           />

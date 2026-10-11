@@ -65,7 +65,10 @@ une unité facultatifs. Affiché en haut du tableau de bord.
   l'onboarding. Tout est modifiable, on peut en créer de zéro.
 - La **difficulté est calculée par le serveur** depuis la preuve et la cible (25/50/90 min → 1/2/3 ; pompes
   ≤ 15/≤ 40/plus ; squats ≤ 25/≤ 60/plus ; réveil ≥ 7 h 30/≥ 6 h 30/avant). Preuves faibles : 1 ou 2 au choix.
-- Pendant l'arc, une modification prend effet **le lendemain** (versions `active_from` / `active_until`).
+- Pendant l'arc, un ajout, une modification ou un retrait compte **tout de suite** ; seul un principe déjà prouvé (ou
+  dont une session a été lancée) aujourd'hui change **le lendemain** (versions `active_from` / `active_until`, v9).
+  Le minuteur peut changer de durée (25/50/90) juste avant d'être lancé : le principe suit (`set_session_minutes`).
+- « Aujourd'hui » liste les principes du jour, puis « Les autres jours ». Changer de langue traduit l'arc ouvert (v8).
 - Nombre max : 6 (Arc 90 jours), 12 (Pro et Fondateur).
 
 ### Preuves

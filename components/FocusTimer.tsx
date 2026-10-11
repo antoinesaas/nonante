@@ -74,6 +74,7 @@ export function FocusTimer(props: Props) {
   const [points, setPoints] = useState<number | null>(null);
 
   const session = useRef<StartedSession | null>(null);
+  const principleId = useRef(props.mode === "principle" ? props.principleId : "");
   const phaseRef = useRef<Phase>("ready");
   const skew = useRef(0);
   const hiddenAt = useRef<number | null>(null);
@@ -152,7 +153,16 @@ export function FocusTimer(props: Props) {
   async function start() {
     setPhase("starting");
     setMessage(null);
-    const r = props.mode === "principle" ? await startSession(props.principleId) : await startChallengeSession(props.assignmentId, minutes);
+    const r =
+      props.mode === "principle"
+        ? await startSession(principleId.current, minutes === props.minutes ? undefined : minutes)
+        : await startChallengeSession(props.assignmentId, minutes);
+    const newId: string | undefined = "principleId" in r && typeof r.principleId === "string" ? r.principleId : undefined;
+    if (newId && newId !== principleId.current) {
+      // Durée changée : le principe a une nouvelle version, l'adresse suit (un rechargement casse la bonne session).
+      principleId.current = newId;
+      window.history.replaceState(window.history.state, "", `/app/session/${newId}`);
+    }
     if (!r.session) {
       setPhase("ready");
       setMessage(r.message ?? t.startFailed);
@@ -163,7 +173,7 @@ export function FocusTimer(props: Props) {
     setMinutes(r.session.minutes ?? minutes);
     setRemaining((r.session.minutes ?? minutes) * 60);
     // Le geste « retour » ouvre la confirmation au lieu de quitter la page.
-    window.history.pushState({ ...window.history.state, nonanteSession: true }, "");
+    window.history.pushState({ ...window.history.state, nonanteSession: true }, "", window.location.href);
     setPhase("running");
     await requestWakeLock();
     void beat(true, 0);
@@ -205,7 +215,7 @@ export function FocusTimer(props: Props) {
     };
     const onPopState = () => {
       // Retour pendant la session : on reste sur la page et on demande confirmation.
-      window.history.pushState({ ...window.history.state, nonanteSession: true }, "");
+      window.history.pushState({ ...window.history.state, nonanteSession: true }, "", window.location.href);
       setConfirmStop(true);
     };
     const onPageHide = () => {
@@ -250,7 +260,9 @@ export function FocusTimer(props: Props) {
       <div className="flex h-11 items-center">
         {running ? <BackArrow label={t.back} onClick={() => setConfirmStop(true)} /> : <BackArrow label={t.back} href="/app" />}
       </div>
-      <p className="mt-2 text-center text-sm text-mute">{props.label}</p>
+      <p className="mt-2 text-center text-sm text-mute">
+        {props.mode === "principle" ? props.label.replace(/\b\d+(?=\s?(minutes|minute|min|Minuten|minutos)\b)/, String(minutes)) : props.label}
+      </p>
 
       <div className="relative my-auto flex items-center justify-center py-8">
         <div className={`transition-transform duration-700 ease-out ${running ? "scale-100" : "scale-[0.97]"}`}>
@@ -265,7 +277,7 @@ export function FocusTimer(props: Props) {
       <div className="w-full space-y-4 text-center">
         {phase === "ready" || phase === "starting" ? (
           <>
-            {props.mode === "challenge" ? (
+            <div className="space-y-2">
               <div className="flex justify-center gap-2">
                 {[25, 50, 90].map((n) => (
                   <button
@@ -282,7 +294,8 @@ export function FocusTimer(props: Props) {
                   </button>
                 ))}
               </div>
-            ) : null}
+              {props.mode === "principle" ? <p className="text-xs text-mute">{t.durationHint}</p> : null}
+            </div>
             <button type="button" onClick={start} disabled={phase === "starting"} className={btnPrimary}>
               {phase === "starting" ? t.starting : t.start}
             </button>
