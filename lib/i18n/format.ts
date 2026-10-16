@@ -72,6 +72,13 @@ export function formatTime(hhmm: string, locale: Locale): string {
 }
 
 /** Nom d'un pays dans la langue de l'utilisateur (« FR » → « France »). */
+/** « FR » → drapeau (symboles d'indicateur régional). */
+export function countryFlag(code: string): string {
+  const c = code.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(c)) return "";
+  return String.fromCodePoint(...[...c].map((ch) => 0x1f1e6 + ch.charCodeAt(0) - 65));
+}
+
 export function countryName(code: string, locale: Locale): string {
   try {
     return new Intl.DisplayNames([INTL[locale]], { type: "region" }).of(code.toUpperCase()) ?? code;

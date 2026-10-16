@@ -33,7 +33,7 @@ export const faq = {
       {
         id: "temps",
         q: "Combien de temps ça prend par jour ?",
-        a: "Ça dépend des principes que tu gardes. Une preuve prend quelques secondes (photo, code, bouton) ; seules les sessions de concentration durent 25, 50 ou 90 minutes, et c'est du temps de travail que tu aurais fait de toute façon, sans téléphone.",
+        a: "Ça dépend des principes que tu gardes. Une preuve prend quelques secondes (photo, calcul, bouton) ; seules les sessions de concentration durent 25, 50 ou 90 minutes, et c'est du temps de travail que tu aurais fait de toute façon, sans téléphone.",
       },
     ],
   },
@@ -43,7 +43,7 @@ export const faq = {
       {
         id: "preuves",
         q: "Comment on prouve ?",
-        a: "Selon le principe : un minuteur qui casse si tu quittes l'écran, la caméra qui compte tes pompes ou tes squats, un code à recopier à ton réveil, une photo prise dans l'app, une capture d'écran ou un lien. Une preuve forte rapporte tous les points, une preuve faible la moitié.",
+        a: "Selon le principe : un minuteur qui casse si tu quittes l'écran, la caméra qui compte tes pompes ou tes squats, trois calculs de tête à ton réveil, une photo prise dans l'app, une capture d'écran ou un lien. Une preuve forte rapporte tous les points, une preuve faible la moitié.",
       },
       {
         id: "triche",
@@ -58,7 +58,7 @@ export const faq = {
       {
         id: "rate",
         q: "Et si je rate un jour ?",
-        a: "Tu perds des points, et la série repart de zéro. Rater deux jours d'affilée coûte plus cher (« jamais deux fois »). Tu as aussi des jokers : un joker rend une journée neutre, sans points ni pénalité. Un arc est tenu avec 75 jours verts sur 90.",
+        a: "Tu perds les points du principe non validé, rien de plus, et la série repart de zéro. Si ton total tombe à −500, il repart à 0. Tu as aussi des jokers : un joker rend une journée neutre, sans points ni pénalité. Un arc est tenu avec 75 jours verts sur 90.",
       },
     ],
   },

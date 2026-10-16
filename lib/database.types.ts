@@ -471,6 +471,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      mental_math: {
+        Row: {
+          correct: number;
+          created_at: string;
+          day: string;
+          enrollment_id: string | null;
+          id: string;
+          level: number;
+          points: number;
+          questions: Json;
+          session_id: string | null;
+          total: number;
+          user_id: string;
+        };
+        Insert: {
+          correct: number;
+          created_at?: string;
+          day: string;
+          enrollment_id?: string | null;
+          id?: string;
+          level: number;
+          points?: number;
+          questions: Json;
+          session_id?: string | null;
+          total?: number;
+          user_id: string;
+        };
+        Update: {
+          correct?: number;
+          created_at?: string;
+          day?: string;
+          enrollment_id?: string | null;
+          id?: string;
+          level?: number;
+          points?: number;
+          questions?: Json;
+          session_id?: string | null;
+          total?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       misses: {
         Row: {
           day: string;
@@ -1324,6 +1366,7 @@ export type Database = {
       complete_reps: { Args: { p_session_id: string | null; p_nonce: string | null; p_reps: Json | null }; Returns: Json };
       complete_session: { Args: { p_session_id: string | null; p_nonce: string | null }; Returns: Json };
       complete_wake_check: { Args: { p_session_id: string | null; p_nonce: string | null; p_code: string | null }; Returns: Json };
+      complete_wake_quiz: { Args: { p_session_id: string | null; p_nonce: string | null; p_answers: number[] | null }; Returns: Json };
       create_squad: { Args: { p_name: string | null; p_description: string | null; p_is_public: boolean | null; p_start_date?: string | null; p_category?: string | null }; Returns: string };
       cron_arc_results: { Args: never; Returns: { enrollment_id: string; user_id: string; email: string; status: string; green: number; arc_number: number }[] };
       cron_close_days: { Args: never; Returns: number };
@@ -1345,7 +1388,7 @@ export type Database = {
       heartbeat: { Args: { p_session_id: string | null; p_nonce: string | null; p_visible: boolean | null; p_hidden_ms: number | null }; Returns: Json };
       join_public_squad: { Args: { p_id: string | null }; Returns: undefined };
       join_squad: { Args: { p_code: string | null }; Returns: string };
-      leaderboard: { Args: { p_period?: string | null; p_category?: string | null; p_squad?: string | null }; Returns: { rank: number; pseudo: string; avatar_path: string; level: number; ovr: number; category: string; country: string; points: number; streak: number; is_me: boolean; is_public: boolean }[] };
+      leaderboard: { Args: { p_period?: string | null; p_category?: string | null; p_squad?: string | null }; Returns: { rank: number; pseudo: string; avatar_path: string; level: number; ovr: number; category: string; country: string; points: number; streak: number; is_me: boolean; is_public: boolean; business: string[]; business_other: string }[] };
       leave_session: { Args: never; Returns: Json };
       leave_squad: { Args: { p_id: string | null }; Returns: undefined };
       log_email_once: { Args: { p_user: string | null; p_kind: string | null; p_ref: string | null }; Returns: boolean };
@@ -1358,6 +1401,7 @@ export type Database = {
       my_arc_photos: { Args: never; Returns: Json };
       my_dashboard: { Args: never; Returns: Json };
       my_grades: { Args: never; Returns: Json };
+      my_mental_math: { Args: never; Returns: Json };
       my_plan: { Args: never; Returns: Json };
       my_principles: { Args: never; Returns: Json };
       my_profile: { Args: never; Returns: Json };

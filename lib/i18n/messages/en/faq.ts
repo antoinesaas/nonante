@@ -34,7 +34,7 @@ export const faq: typeof fr = {
         {
           id: "temps",
           q: "How much time does it take each day?",
-          a: "It depends on the principles you keep. A proof takes a few seconds (photo, code, button); only focus sessions last 25, 50 or 90 minutes, and that's work you would have done anyway, without your phone.",
+          a: "It depends on the principles you keep. A proof takes a few seconds (photo, sums, button); only focus sessions last 25, 50 or 90 minutes, and that's work you would have done anyway, without your phone.",
         },
       ],
     },
@@ -44,7 +44,7 @@ export const faq: typeof fr = {
         {
           id: "preuves",
           q: "How do I prove things?",
-          a: "Depending on the principle: a timer that breaks if you leave the screen, the camera counting your push-ups or squats, a code to copy when you wake up, a photo taken in the app, a screenshot or a link. A strong proof earns all the points, a weak proof half.",
+          a: "Depending on the principle: a timer that breaks if you leave the screen, the camera counting your push-ups or squats, three mental maths questions when you wake up, a photo taken in the app, a screenshot or a link. A strong proof earns all the points, a weak proof half.",
         },
         {
           id: "triche",
@@ -59,7 +59,7 @@ export const faq: typeof fr = {
         {
           id: "rate",
           q: "What if I miss a day?",
-          a: "You lose points, and your streak resets. Missing two days in a row costs more (“never twice”). You also have jokers: a joker makes a day neutral, with no points and no penalty. An arc is held with 75 green days out of 90.",
+          a: "You lose the points of the principle you didn't prove, nothing more, and your streak resets. If your total drops to −500, it goes back to 0. You also have jokers: a joker makes a day neutral, with no points and no penalty. An arc is held with 75 green days out of 90.",
         },
       ],
     },

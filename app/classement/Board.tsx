@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { Avatar } from "@/components/Player";
-import { countryName, fmt, formatPoints } from "@/lib/i18n/format";
+import { countryFlag, countryName, fmt, formatPoints } from "@/lib/i18n/format";
 import { titleFor } from "@/lib/i18n/labels";
 import type { Category, LeaderboardRow } from "@/lib/types";
 
@@ -58,6 +58,13 @@ export function Board({
     return scope === "monde" && category === "toutes" ? list : rerank(list);
   }, [period, category, scope, data, country]);
   const me = rows.find((r) => r.is_me);
+  const types = m.quiz.business.types as Record<string, { label: string }>;
+  /** Activité du joueur : « SaaS ou application · Agence ou freelance », « Autre » remplacé par ses mots. */
+  const business = (r: LeaderboardRow) =>
+    (r.business ?? [])
+      .map((b) => (b === "autre" ? r.business_other || types.autre?.label : types[b]?.label))
+      .filter(Boolean)
+      .join(" · ");
 
   function update(next: { period?: Period; category?: Filter; scope?: Scope }) {
     const p = next.period ?? period;
@@ -100,7 +107,7 @@ export function Board({
           <div className="flex gap-2" role="tablist" aria-label={t.scopeAria}>
             {(["monde", "pays"] as const).map((s) => (
               <button key={s} type="button" role="tab" aria-selected={scope === s} onClick={() => update({ scope: s })} className={chip(scope === s)}>
-                {s === "monde" ? t.world : countryName(country, locale)}
+                {s === "monde" ? t.world : `${countryFlag(country)} ${countryName(country, locale)}`}
               </button>
             ))}
           </div>
@@ -126,6 +133,11 @@ export function Board({
               {r.is_public ? (
                 <Link href={`/u/${r.pseudo}`} className="block truncate hover:underline">
                   {r.pseudo}
+                  {r.country ? (
+                    <span className="ml-1.5 no-underline" role="img" aria-label={countryName(r.country, locale)} title={countryName(r.country, locale)}>
+                      {countryFlag(r.country)}
+                    </span>
+                  ) : null}
                   {r.is_me ? <span className="text-mute">{t.youShort}</span> : null}
                 </Link>
               ) : (
@@ -137,8 +149,8 @@ export function Board({
               <span className="block truncate text-xs text-mute">
                 {fmt(t.line, { level: r.level, title: titleFor(r.level, m), ovr: r.ovr })}
                 {r.streak ? fmt(t.streak, { n: r.streak }) : ""}
-                {r.country && r.is_public && scope === "monde" ? ` · ${r.country}` : ""}
               </span>
+              {business(r) ? <span className="block truncate text-xs text-paper/80">{business(r)}</span> : null}
             </div>
             <span className="shrink-0 font-serif text-xl tabular-nums">{formatPoints(r.points, locale)}</span>
           </li>

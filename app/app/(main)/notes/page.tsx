@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtBand } from "@/components/Art";
+import { MentalMathPanel } from "@/components/MentalMathPanel";
 import { IMAGES } from "@/lib/art";
 import { addDays } from "@/lib/answers";
 import { requireUser } from "@/lib/auth";
 import { todayParis } from "@/lib/dates";
 import { fmt, formatDay, formatNumber } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
-import type { Grades } from "@/lib/types";
+import type { Grades, MentalMath } from "@/lib/types";
 import { btnPrimary, label } from "@/lib/ui";
 import { DeleteGradeButton, GradeForm } from "./GradeForms";
 
@@ -70,9 +71,10 @@ function SubjectRadar({ subjects, aria, n }: { subjects: Grades["subjects"]; ari
 export default async function GradesPage() {
   const [{ supabase }, { m, locale }] = await Promise.all([requireUser("/app/notes"), getI18n()]);
   const t = m.app.grades;
-  const { data, error } = await supabase.rpc("my_grades");
+  const [{ data, error }, { data: mathData }] = await Promise.all([supabase.rpc("my_grades"), supabase.rpc("my_mental_math")]);
   if (error) throw new Error(`Carnet indisponible (${error.code})`);
   const g = data as Grades;
+  const math = mathData as MentalMath | null;
   const today = todayParis();
   const n = (v: number) => formatNumber(Math.round(Number(v) * 100) / 100, locale);
 
@@ -83,6 +85,8 @@ export default async function GradesPage() {
         <p className="mt-2 font-serif text-6xl leading-none tabular-nums">{g.average !== null ? n(g.average) : "—"}</p>
         <p className="mt-2 text-sm text-mute">{g.average !== null ? `${t.average} · ${fmt(t.count, { n: g.count }, locale)}` : t.noAverage}</p>
       </ArtBand>
+
+      {math ? <MentalMathPanel data={math} today={today} m={m} locale={locale} /> : null}
 
       {!g.enabled ? (
         <section className="mt-8 animate-rise border border-paper p-5">

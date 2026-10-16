@@ -9,11 +9,14 @@ export const PRINCIPLE_VALUE = { 1: 10, 2: 20, 3: 30 } as const;
 /** Part des points gagnés selon la force de la preuve. */
 export const PROOF_STRENGTH_RATIO = { forte: 1, faible: 0.5 } as const;
 
-/** Multiplicateur de pénalité d'un principe raté, selon le nombre de jours d'affilée. */
-export const MISS_MULTIPLIER = { first: 1, second: 2, thirdOrMore: 3 } as const;
+/** Principe raté (jour blanc compris) : on perd sa valeur, rien de plus (v10). */
+export const MISS_MULTIPLIER = 1;
 
-/** Jour blanc : chaque principe du jour compte − 2 × valeur. */
-export const WHITE_DAY_MULTIPLIER = 2;
+/** Total à −500 ou moins : il repart à 0 (ligne « reset », hors XP et hors points de la semaine, du mois ou du jour). */
+export const POINTS_FLOOR = -500;
+
+/** Réveil : trois calculs de tête selon le niveau d'études ; +5 par bonne réponse, une erreur ne coûte rien. */
+export const MENTAL_MATH = { questions: 3, pointsPerRight: 5 } as const;
 export const BROKEN_SESSION_PENALTY = -5;
 /** Contrôle refusé ou non envoyé : − 3 × valeur ; revenu refusé : − 30. */
 export const FAILED_AUDIT_MULTIPLIER = 3;

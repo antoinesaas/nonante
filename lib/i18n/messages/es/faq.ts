@@ -34,7 +34,7 @@ export const faq: typeof fr = {
         {
           id: "temps",
           q: "¿Cuánto tiempo lleva al día?",
-          a: "Depende de los principios que mantengas. Una prueba lleva unos segundos (foto, código, botón); solo las sesiones de concentración duran 25, 50 o 90 minutos, y es tiempo de trabajo que habrías hecho igualmente, sin el móvil.",
+          a: "Depende de los principios que mantengas. Una prueba lleva unos segundos (foto, cálculo, botón); solo las sesiones de concentración duran 25, 50 o 90 minutos, y es tiempo de trabajo que habrías hecho igualmente, sin el móvil.",
         },
       ],
     },
@@ -44,7 +44,7 @@ export const faq: typeof fr = {
         {
           id: "preuves",
           q: "¿Cómo se demuestra?",
-          a: "Según el principio: un temporizador que se rompe si sales de la pantalla, la cámara que cuenta tus flexiones o sentadillas, un código que copiar al despertarte, una foto hecha en la app, una captura de pantalla o un enlace. Una prueba fuerte da todos los puntos; una débil, la mitad.",
+          a: "Según el principio: un temporizador que se rompe si sales de la pantalla, la cámara que cuenta tus flexiones o sentadillas, tres cálculos mentales al despertarte, una foto hecha en la app, una captura de pantalla o un enlace. Una prueba fuerte da todos los puntos; una débil, la mitad.",
         },
         {
           id: "triche",
@@ -59,7 +59,7 @@ export const faq: typeof fr = {
         {
           id: "rate",
           q: "¿Y si fallo un día?",
-          a: "Pierdes puntos y la racha vuelve a cero. Fallar dos días seguidos cuesta más («nunca dos veces»). También tienes comodines: un comodín deja el día neutro, sin puntos ni penalización. Un arco se cumple con 75 días verdes de 90.",
+          a: "Pierdes los puntos del principio no validado, nada más, y la racha vuelve a cero. Si tu total cae a −500, vuelve a 0. También tienes comodines: un comodín deja el día neutro, sin puntos ni penalización. Un arco se cumple con 75 días verdes de 90.",
         },
       ],
     },

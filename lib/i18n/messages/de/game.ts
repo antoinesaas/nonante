@@ -5,7 +5,7 @@ export const game: typeof fr = {
     label: {
       session: "Timer",
       reps: "Kamera",
-      reveil: "Weckcode",
+      reveil: "Kopfrechnen beim Aufstehen",
       photo: "Foto",
       capture: "Screenshot",
       lien: "Link",
@@ -14,7 +14,7 @@ export const game: typeof fr = {
     help: {
       session: "Timer, der abbricht, wenn du den Bildschirm verlässt. Starker Nachweis: 100 % der Punkte.",
       reps: "Liegestütze oder Kniebeugen, von der Kamera auf deinem Handy gezählt. Starker Nachweis: 100 %.",
-      reveil: "Öffne die App vor deiner Uhrzeit und tippe einen Code ab. Starker Nachweis: 100 %.",
+      reveil: "Öffne die App vor deiner Uhrzeit und löse drei Rechenaufgaben. Starker Nachweis: 100 %, +5 pro richtiger Antwort.",
       photo: "Foto, in der App aufgenommen. Schwacher Nachweis: 50 %, Stichproben.",
       capture: "Screenshot (Nachrichten, Verkäufe, Schrittzähler). Schwacher Nachweis: 50 %.",
       lien: "Link zu deinem Beitrag. Schwacher Nachweis: 50 %.",

@@ -44,13 +44,13 @@ export const landing: typeof fr = {
     items: [
       { title: "Timer", text: "25, 50 oder 90 Minuten. Verlässt du den Bildschirm länger als 10 Sekunden, bricht die Session ab." },
       { title: "Kamera", text: "Liegestütze und Kniebeugen, von KI gezählt, auf deinem Handy. Kein Bild verlässt es." },
-      { title: "Wecken", text: "Ein Code zum Abtippen vor deiner Aufstehzeit. Aus dem Bett heraus schummeln? Unmöglich." },
+      { title: "Wecken", text: "Drei Kopfrechenaufgaben vor deiner Aufstehzeit, auf deinem Niveau. Jede richtige Antwort bringt einen Bonus." },
       { title: "Foto, Screenshot, Link", text: "Das Gym, deine Akquise-Nachrichten, dein Beitrag. Stichproben." },
     ],
   },
   calendar: {
     label: "Beispiel: Tag 23",
-    text: "Ein Punkt pro Tag. Grün: alles bewiesen. Rot: ein Nachweis fehlt. Weiß: Du hast nichts getan, und das kostet doppelt. Ein Joker, und der Tag zählt nicht.",
+    text: "Ein Punkt pro Tag. Grün: alles bewiesen. Rot: ein Nachweis fehlt. Weiß: Du hast nichts getan, und jedes verpasste Prinzip kostet seine Punkte. Ein Joker, und der Tag zählt nicht.",
   },
   wallet: {
     label: "Portemonnaie",
@@ -66,7 +66,7 @@ export const landing: typeof fr = {
     title: "Keine weitere Gewohnheits-App.",
     elsewhere: "Anderswo",
     rows: [
-      ["Bestätigung", "Ein Häkchen", "Ein Nachweis: Kamera, Timer, Code"],
+      ["Bestätigung", "Ein Häkchen", "Ein Nachweis: Kamera, Timer, Rechnen"],
       ["Prinzipien", "Für alle gleich", "Für dein Ziel gebaut"],
       ["Dein Business", "Nichts", "Akquise, Einnahmen-Portemonnaie"],
       ["Fortschritt", "Eine Serie", "6 Werte, eine Note, Level"],

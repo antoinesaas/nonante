@@ -385,11 +385,26 @@ if (await val("select public.paris_now()::time > '22:59'")) {
 } else {
   await q("update public.principles set target = jsonb_build_object('before', to_char(public.paris_now() + interval '1 hour', 'HH24:MI')) where id = $1", [reveilB.id]);
   const w = await as(B, () => rpc("start_proof_session", { p_principle_id: reveilB.id }));
-  check("code à 6 chiffres", /^\d{6}$/.test(w.code));
-  const wrong = await as(B, () => rpc("complete_wake_check", { p_session_id: w.id, p_nonce: w.nonce, p_code: w.code === "000000" ? "111111" : "000000" }));
-  check("mauvais code refusé", wrong.status === "running" && wrong.error === "Code incorrect.");
-  const ok = await as(B, () => rpc("complete_wake_check", { p_session_id: w.id, p_nonce: w.nonce, p_code: w.code }));
-  check("bon code : preuve forte", ok.status === "completed" && ok.validation.points === 10 * reveilB.difficulty, JSON.stringify(ok));
+  check("trois questions de calcul, sans les réponses", w.code === null && w.questions.length === 3 && w.questions.every((x) => !("answer" in x)), JSON.stringify(w.questions));
+  const answers = (await val("select data -> 'questions' from public.proof_sessions where id = $1", [w.id])).map((x) => x.answer);
+  check("niveau Pro business : niveau 2 (×, ÷, %)", w.questions.map((x) => x.op).sort().join("") === "%/x".split("").sort().join(""), JSON.stringify(w.questions));
+  await rejects("il faut répondre aux trois", () => as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: [answers[0]] })), "trois questions");
+  const xpBefore = Number(await val("select xp from public.player_stats where user_id = $1", [B]));
+  const ok = await as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: [answers[0], answers[1], answers[2] + 1] }));
+  check("une erreur ne bloque pas le réveil : preuve forte", ok.status === "completed" && ok.validation.points === 10 * reveilB.difficulty, JSON.stringify(ok));
+  check("2 bonnes réponses sur 3 : +10 de bonus", ok.correct === 2 && ok.bonus === 10 && ok.questions[2].correct === false && ok.questions[2].given === answers[2] + 1);
+  check("bonus inscrit au registre", Number(await val("select sum(delta) from public.points_ledger where user_id = $1 and reason = 'mental_math'", [B])) === 10);
+  check("XP : réveil + bonus", Number(await val("select xp from public.player_stats where user_id = $1", [B])) === xpBefore + 10 * reveilB.difficulty + 10);
+  const mm = await as(B, () => rpc("my_mental_math"));
+  check("suivi du calcul mental", mm.quizzes === 1 && mm.correct === 2 && mm.total === 3 && mm.points === 10 && mm.entries[0].questions.length === 3, JSON.stringify(mm));
+  check("rien à rejouer ensuite", (await as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: answers }))).status === "completed"
+    && Number(await val("select count(*) from public.mental_math where user_id = $1", [B])) === 1);
+  check("niveaux : lycée 1, prépa 3, sinon 2", (await val("select array[public._math_level('lycee'), public._math_level('prepa'), public._math_level('ingenieur'), public._math_level(null)]")).join() === "1,3,3,2");
+  for (const level of [1, 2, 3]) {
+    const qs = await val("select public._math_questions($1)", [level]);
+    const good = qs.every((x) => Number.isInteger(x.answer) && x.answer === ({ "+": x.a + x.b, "-": x.a - x.b, x: x.a * x.b, "/": x.a / x.b, "%": (x.a * x.b) / 100, sq: x.a * x.a })[x.op]);
+    check(`niveau ${level} : réponses entières et justes`, good && new Set(qs.map((x) => x.op)).size === 3, JSON.stringify(qs));
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -534,7 +549,7 @@ check("vert, rouge, blanc, puis vert", statuses.slice(0, 4).join(",") === "green
 const miss9 = await one("select * from public.misses where enrollment_id = $1 and day = public.paris_today() - 9 and principle_id = $2", [enrD, pD[0].id]);
 const miss8 = await one("select * from public.misses where enrollment_id = $1 and day = public.paris_today() - 8 and principle_id = $2", [enrD, pD[0].id]);
 check("raté : − valeur", miss9.points === -10 * pD[0].difficulty && miss9.streak === 1, JSON.stringify(miss9));
-check("raté deux jours d'affilée et jour blanc : − 2 × valeur", miss8.points === -20 * pD[0].difficulty && miss8.streak === 2 && miss8.white);
+check("raté deux jours d'affilée et jour blanc : − valeur seulement", miss8.points === -10 * pD[0].difficulty && miss8.streak === 2 && miss8.white, JSON.stringify(miss8));
 check("idempotent : rien de plus au second passage", (await service(() => rpc("cron_close_days"))) === 0);
 check("premier vert débloqué", Boolean(await val("select 1 from public.user_achievements ua join public.achievements a on a.id = ua.achievement_id where a.code = 'premier_vert' and ua.user_id = $1", [D])));
 const sD = await one("select * from public.player_stats where user_id = $1", [D]);
@@ -542,6 +557,18 @@ check("série : 7 jours verts", sD.streak === 7, JSON.stringify(sD));
 check("discipline = jours verts / jours clos", sD.discipline === Math.round(99 * 8 / 10), String(sD.discipline));
 check("XP = somme des gains, niveau calculé", sD.xp === Number(await val("select coalesce(sum(delta), 0) from public.points_ledger where user_id = $1 and delta > 0", [D]))
   && sD.level === Math.floor(Math.sqrt(sD.xp / 50)) + 1);
+
+// −500 : le total repart de zéro, sans gonfler l'XP ni les points de la semaine.
+const xpD = sD.xp;
+const weekD = Number(await val("select points from public.leaderboard('semaine', null, null) where pseudo = (select pseudo from public.profiles where id = $1)", [D]));
+await q("select public._award($1, $2, public.paris_today(), -(500 + (select coalesce(sum(delta), 0) from public.points_ledger where user_id = $2)::int + 40), 'audit_failed', gen_random_uuid())", [enrD, D]);
+check("à −500 ou moins : le total repart à 0", Number(await val("select sum(delta) from public.points_ledger where user_id = $1", [D])) === 0);
+await q("select public._refresh_stats($1)", [D]);
+check("la remise à zéro ne compte pas en XP", Number(await val("select xp from public.player_stats where user_id = $1", [D])) === xpD);
+const weekAfter = Number(await val("select points from public.leaderboard('semaine', null, null) where pseudo = (select pseudo from public.profiles where id = $1)", [D]));
+check("ni dans les points de la semaine", weekAfter < weekD, `${weekD} → ${weekAfter}`);
+await q("select public._award($1, $2, public.paris_today(), -30, 'audit_failed', gen_random_uuid())", [enrD, D]);
+check("au-dessus de −500 : on perd normalement", Number(await val("select sum(delta) from public.points_ledger where user_id = $1", [D])) === -30);
 
 // Joker : journée neutre, la série continue.
 const enrG = await pastArc(G, 3, { p_weak_points: [] });
@@ -623,6 +650,9 @@ check("le créateur part : A devient propriétaire", (await val("select owner_id
 // ---------------------------------------------------------------------------
 console.log("\nClassement, profils et statistiques honnêtes");
 const board = await as(null, () => q("select * from public.leaderboard('total', null, null)"), { role: "anon" });
+await q("update public.enrollments set business_types = '{saas,agence}' where user_id = (select id from public.profiles where pseudo = $1)", [board.find((r) => r.is_public).pseudo]);
+const boardBiz = await as(null, () => q("select * from public.leaderboard('total', null, null)"), { role: "anon" });
+check("classement : activité business des joueurs publics, rien pour les anonymes", boardBiz.every((r) => Array.isArray(r.business) && (r.is_public || (r.business.length === 0 && r.business_other === null))) && boardBiz.some((r) => r.business.join() === "saas,agence"), JSON.stringify(boardBiz.map((r) => [r.pseudo, r.business])));
 const sumB = Number(await val("select coalesce(sum(delta), 0) from public.points_ledger where user_id = $1", [B]));
 check("points du classement = somme du registre", board.find((r) => r.pseudo === "joueur_2222")?.points === sumB, JSON.stringify(board.slice(0, 3)));
 check("les arcs en construction n'apparaissent pas", !board.some((r) => r.pseudo === "joueur_6666"));

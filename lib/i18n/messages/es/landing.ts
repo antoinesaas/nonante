@@ -44,13 +44,13 @@ export const landing: typeof fr = {
     items: [
       { title: "Temporizador", text: "25, 50 o 90 minutos. Si sales de la pantalla más de 10 segundos, la sesión se rompe." },
       { title: "Cámara", text: "Flexiones y sentadillas contadas por la IA, en tu móvil. Ninguna imagen sale de él." },
-      { title: "Despertar", text: "Un código que copiar antes de tu hora de levantarte. Imposible hacer trampa desde la cama." },
+      { title: "Despertar", text: "Tres cálculos mentales antes de tu hora de levantarte, a tu nivel. Cada respuesta correcta da un bonus." },
       { title: "Foto, captura, enlace", text: "El gimnasio, tus mensajes de prospección, tu publicación. Controles al azar." },
     ],
   },
   calendar: {
     label: "Ejemplo: día 23",
-    text: "Un punto por día. Verde: todo probado. Rojo: falta una prueba. Blanco: no hiciste nada, y cuesta el doble. Un comodín y el día no cuenta.",
+    text: "Un punto por día. Verde: todo probado. Rojo: falta una prueba. Blanco: no hiciste nada, y cada principio fallado cuesta sus puntos. Un comodín y el día no cuenta.",
   },
   wallet: {
     label: "Cartera",
@@ -66,7 +66,7 @@ export const landing: typeof fr = {
     title: "No es otra app de hábitos.",
     elsewhere: "En otras",
     rows: [
-      ["Validación", "Una casilla", "Una prueba: cámara, temporizador, código"],
+      ["Validación", "Una casilla", "Una prueba: cámara, temporizador, cálculo"],
       ["Principios", "Los mismos para todos", "Hechos para tu objetivo"],
       ["Tu negocio", "Nada", "Prospección, cartera de ingresos"],
       ["Progreso", "Una racha", "6 estadísticas, una nota, niveles"],

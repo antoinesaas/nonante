@@ -95,7 +95,7 @@ export const quiz: typeof fr = {
     title: "Wann stehst du auf?",
     hand: "jeden Tag, auch am Wochenende",
     other: "Andere Uhrzeit:",
-    note: "Du beweist es mit einem Code, den du beim Aufwachen abtippst. Aus dem Bett heraus schummeln? Unmöglich.",
+    note: "Du beweist es beim Aufwachen mit drei Kopfrechenaufgaben auf deinem Niveau. Mit geschlossenen Augen schummeln? Unmöglich.",
   },
   focus: {
     title: "Wie lange kannst du dich konzentrieren?",

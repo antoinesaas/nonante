@@ -34,7 +34,7 @@ export const faq: typeof fr = {
         {
           id: "temps",
           q: "Wie viel Zeit kostet das pro Tag?",
-          a: "Das hängt von den Prinzipien ab, die du behältst. Ein Nachweis dauert ein paar Sekunden (Foto, Code, Button); nur Fokus-Sessions dauern 25, 50 oder 90 Minuten, und das ist Arbeitszeit, die du ohnehin gemacht hättest, nur ohne Handy.",
+          a: "Das hängt von den Prinzipien ab, die du behältst. Ein Nachweis dauert ein paar Sekunden (Foto, Rechnen, Button); nur Fokus-Sessions dauern 25, 50 oder 90 Minuten, und das ist Arbeitszeit, die du ohnehin gemacht hättest, nur ohne Handy.",
         },
       ],
     },
@@ -44,7 +44,7 @@ export const faq: typeof fr = {
         {
           id: "preuves",
           q: "Wie beweise ich etwas?",
-          a: "Je nach Prinzip: ein Timer, der abbricht, wenn du den Bildschirm verlässt, die Kamera, die deine Liegestütze oder Kniebeugen zählt, ein Code zum Abtippen beim Aufwachen, ein in der App aufgenommenes Foto, ein Screenshot oder ein Link. Ein starker Nachweis bringt alle Punkte, ein schwacher die Hälfte.",
+          a: "Je nach Prinzip: ein Timer, der abbricht, wenn du den Bildschirm verlässt, die Kamera, die deine Liegestütze oder Kniebeugen zählt, drei Kopfrechenaufgaben beim Aufwachen, ein in der App aufgenommenes Foto, ein Screenshot oder ein Link. Ein starker Nachweis bringt alle Punkte, ein schwacher die Hälfte.",
         },
         {
           id: "triche",
@@ -59,7 +59,7 @@ export const faq: typeof fr = {
         {
           id: "rate",
           q: "Und wenn ich einen Tag verpasse?",
-          a: "Du verlierst Punkte, und die Serie beginnt von vorn. Zwei Tage hintereinander zu verpassen kostet mehr („nie zweimal“). Du hast auch Joker: Ein Joker macht einen Tag neutral, ohne Punkte und ohne Strafe. Ein Arc gilt als gehalten mit 75 grünen Tagen von 90.",
+          a: "Du verlierst die Punkte des nicht bewiesenen Prinzips, mehr nicht, und die Serie beginnt von vorn. Fällt dein Punktestand auf −500, startet er wieder bei 0. Du hast auch Joker: Ein Joker macht einen Tag neutral, ohne Punkte und ohne Strafe. Ein Arc gilt als gehalten mit 75 grünen Tagen von 90.",
         },
       ],
     },

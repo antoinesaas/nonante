@@ -285,6 +285,8 @@ export type LeaderboardRow = {
   streak: number;
   is_me: boolean;
   is_public: boolean;
+  business: string[];
+  business_other: string | null;
 };
 
 export type WalletEntry = {
@@ -339,7 +341,22 @@ export type StartedSession = {
   started_at: string;
   server_now: string;
   code: string | null;
+  /** Réveil : trois calculs (sans les réponses). */
+  questions?: MathQuestion[];
   target: Target & ChallengeRule;
+};
+
+/** Calcul mental du réveil. op : + - x / % (b % de a) sq (a au carré). */
+export type MathQuestion = { a: number; op: "+" | "-" | "x" | "/" | "%" | "sq"; b: number };
+export type MathChecked = MathQuestion & { answer: number; given: number; correct: boolean };
+
+export type MentalMath = {
+  level: 1 | 2 | 3;
+  quizzes: number;
+  correct: number;
+  total: number;
+  points: number;
+  entries: { id: string; day: string; level: number; questions: MathChecked[]; correct: number; total: number; points: number }[];
 };
 
 /** Aperçu des principes pour un visiteur (preview_principles). */

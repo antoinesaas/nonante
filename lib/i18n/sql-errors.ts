@@ -7,6 +7,7 @@ type Table = Record<string, string>;
 
 const EN: Table = {
   "Code incorrect.": "Wrong code.",
+  "Réponds aux trois questions.": "Answer all three questions.",
   "Les battements se sont arrêtés.": "The connection dropped for too long.",
   "Trop d'essais.": "Too many attempts.",
   "Trop peu de battements reçus.": "Not enough time spent on the screen.",
@@ -146,6 +147,7 @@ const EN: Table = {
 
 const DE: Table = {
   "Code incorrect.": "Falscher Code.",
+  "Réponds aux trois questions.": "Beantworte alle drei Fragen.",
   "Les battements se sont arrêtés.": "Die Verbindung war zu lange unterbrochen.",
   "Trop d'essais.": "Zu viele Versuche.",
   "Trop peu de battements reçus.": "Zu wenig Zeit auf dem Bildschirm.",
@@ -285,6 +287,7 @@ const DE: Table = {
 
 const ES: Table = {
   "Code incorrect.": "Código incorrecto.",
+  "Réponds aux trois questions.": "Responde a las tres preguntas.",
   "Les battements se sont arrêtés.": "La conexión se cortó demasiado tiempo.",
   "Trop d'essais.": "Demasiados intentos.",
   "Trop peu de battements reçus.": "Muy poco tiempo en la pantalla.",

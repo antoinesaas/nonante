@@ -5,7 +5,7 @@ export const game: typeof fr = {
     label: {
       session: "Timer",
       reps: "Camera",
-      reveil: "Wake-up code",
+      reveil: "Wake-up maths",
       photo: "Photo",
       capture: "Screenshot",
       lien: "Link",
@@ -14,7 +14,7 @@ export const game: typeof fr = {
     help: {
       session: "Timer that breaks if you leave the screen. Strong proof: 100% of the points.",
       reps: "Push-ups or squats counted by the camera, on your phone. Strong proof: 100%.",
-      reveil: "Open the app before your time and copy a code. Strong proof: 100%.",
+      reveil: "Open the app before your time and answer three sums. Strong proof: 100%, +5 per right answer.",
       photo: "Photo taken in the app. Weak proof: 50%, random checks.",
       capture: "Screenshot (messages, sales, step counter). Weak proof: 50%.",
       lien: "Link to your post. Weak proof: 50%.",

@@ -76,7 +76,7 @@ une unité facultatifs. Affiché en haut du tableau de bord.
 |---|---|---|
 | `session` | forte | Minuteur 25/50/90 min, deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée |
 | `reps` | forte | Pompes ou squats comptés à la caméra (MediaPipe, sur l'appareil, aucune image envoyée) |
-| `reveil` | forte | Ouvrir l'app dans les 2 h 30 avant l'heure et recopier un code à 6 chiffres |
+| `reveil` | forte | Ouvrir l'app dans les 2 h 30 avant l'heure et répondre à 3 calculs de tête selon le niveau d'études (lycée 1, prépa et ingénieur 3, sinon 2) ; +5 par bonne réponse, une erreur ne coûte rien (v10, `complete_wake_quiz`, table `mental_math`) |
 | `photo` | faible | Photo prise dans l'app (pas la galerie) |
 | `capture` | faible | Capture d'écran (galerie autorisée) : messages de prospection, ventes, statistiques |
 | `lien` | faible | Lien d'une publication, domaine autorisé, jamais réutilisé, jamais téléchargé par le serveur |
@@ -86,7 +86,9 @@ Preuve forte = 100 % des points, faible = 50 %. 10 % des preuves faibles déclen
 envoyer sous 24 h, jugé dans `/admin`). Validation le jour même avant minuit (Europe/Paris), définitive.
 
 ### Points (registre en ajout seul, calculés par Postgres)
-Valeur = 10 × difficulté. Raté : − valeur ; 2 jours d'affilée − 2× ; 3 et plus − 3× ; jour blanc − 2× au moins.
+Valeur = 10 × difficulté. Raté (jour blanc compris) : − valeur, rien de plus (v10). Total à −500 ou moins : il repart à 0
+(ligne `reset`, jamais comptée en XP ni dans les points de la semaine, du mois ou du jour). Calcul mental du réveil : + 5 par
+bonne réponse.
 Session cassée − 5. Contrôle refusé − 3× valeur et +1 preuve refusée. Semaine d'arc parfaite + 50. Quête
 réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu : 10 + 1 par 10 € (50 max), note : 5 à 20 selon la note
 (dès 10/20) ; la moitié sans preuve, plafonds 50 et 30 par jour, repris si on retire l'entrée. Succès
@@ -110,14 +112,15 @@ réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu : 10 + 1 p
 Modifié le 8 octobre 2026 : le portefeuille est inclus dans l'Arc 90 jours quand le profil est business (ou les deux) ;
 le carnet de notes (notes sur 20 pondérées, moyenne par matière, « Ta progression » en forme de radar, une matière par
 sommet, capture en preuve) dans
-les arcs études (ou les deux). On note chaque argent gagné grâce à son projet (montant, source, libellé), avec une capture en preuve.
+les arcs études (ou les deux). Le carnet porte aussi le suivi du calcul mental (réussite, graphique sur 14 jours,
+récapitulatif jour par jour), visible par tous. On note chaque argent gagné grâce à son projet (montant, source, libellé), avec une capture en preuve.
 Revenus prouvés = comptés dans la stat Business, les succès (1 €, 100 €, 1 000 €, 10 000 €) et l'objectif de
 revenu. Sans capture : « non prouvé », la moitié des points, pas de succès. Visible sur le profil public seulement si l'utilisateur le
 choisit. C'est un suivi personnel, jamais un gain distribué par Nonante.
 
 ### Social
 - **Classement** : Semaine (depuis lundi, tout le monde repart à zéro), Mois, Général (points cumulés), Monde ou
-  pays du joueur, filtre catégorie, onglet par escouade. Égalité : série, puis note globale.
+  pays du joueur, filtre catégorie, onglet par escouade. Chaque ligne : drapeau du pays et activité business du joueur public. Égalité : série, puis note globale.
 - **Escouades** : groupes rejoints par code (privés) ou publics, 50 membres max, 3 escouades max par
   personne (les parties officielles n'ont pas de limite de membres). Création réservée à Pro, avec un jour 1 commun
   facultatif : la partie est alors proposée à l'inscription.

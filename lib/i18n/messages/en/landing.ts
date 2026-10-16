@@ -44,13 +44,13 @@ export const landing: typeof fr = {
     items: [
       { title: "Timer", text: "25, 50 or 90 minutes. Leave the screen for more than 10 seconds: the session breaks." },
       { title: "Camera", text: "Push-ups and squats counted by AI, on your phone. No image ever leaves it." },
-      { title: "Wake-up", text: "A code to copy before your wake-up time. Impossible to cheat from your bed." },
+      { title: "Wake-up", text: "Three mental maths questions before your wake-up time, at your level. Every right answer earns a bonus." },
       { title: "Photo, screenshot, link", text: "The gym, your prospecting messages, your post. Random checks." },
     ],
   },
   calendar: {
     label: "Example: day 23",
-    text: "One dot per day. Green: everything proven. Red: a proof is missing. White: you did nothing, and it costs double. A joker, and the day doesn't count.",
+    text: "One dot per day. Green: everything proven. Red: a proof is missing. White: you did nothing, and each missed principle costs its points. A joker, and the day doesn't count.",
   },
   wallet: {
     label: "Wallet",
@@ -66,7 +66,7 @@ export const landing: typeof fr = {
     title: "Not just another habit app.",
     elsewhere: "Elsewhere",
     rows: [
-      ["Validation", "A checkbox", "A proof: camera, timer, code"],
+      ["Validation", "A checkbox", "A proof: camera, timer, maths"],
       ["Principles", "The same for everyone", "Built for your goal"],
       ["Your business", "Nothing", "Prospecting, income wallet"],
       ["Progress", "A streak", "6 stats, a rating, levels"],

@@ -12,7 +12,7 @@ import { translateSqlMessage } from "@/lib/i18n/sql-errors";
 import { removeProofPhotos, storeProofPhoto } from "@/lib/photos";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { DayDetail, StartedSession } from "@/lib/types";
+import type { DayDetail, MathChecked, StartedSession } from "@/lib/types";
 
 // Les vérifications qui comptent (propriétaire, jour, heure, plausibilité) sont faites dans Postgres.
 // Ici : validation des entrées, limitation de débit, et notifications.
@@ -256,19 +256,27 @@ export async function completeReps(sessionId: string, nonce: string, reps: unkno
   return localized({ status: r.status, reason: r.reason, count: r.count, points: r.validation?.points }, ctx.i18n);
 }
 
-export async function completeWake(sessionId: string, nonce: string, code: string): Promise<SessionStatus & { points?: number; error?: string }> {
+export async function completeWakeQuiz(
+  sessionId: string,
+  nonce: string,
+  answers: number[],
+): Promise<SessionStatus & { points?: number; correct?: number; total?: number; bonus?: number; questions?: MathChecked[] }> {
   if (!Id.safeParse(sessionId).success || !Nonce.safeParse(nonce).success) return { status: "error", message: await invalid() };
+  const parsed = z.array(z.number().int().min(-1_000_000).max(1_000_000)).min(1).max(3).safeParse(answers);
+  if (!parsed.success) return { status: "error", message: await invalid() };
   const ctx = await context("wake", 20);
   if ("error" in ctx) return { status: "error", message: ctx.error!.message ?? undefined };
-  const { data, error } = await ctx.supabase.rpc("complete_wake_check", {
-    p_session_id: sessionId,
-    p_nonce: nonce,
-    p_code: code.replace(/\D/g, "").slice(0, 6),
-  });
+  const { data, error } = await ctx.supabase.rpc("complete_wake_quiz", { p_session_id: sessionId, p_nonce: nonce, p_answers: parsed.data });
   if (error) return { status: "error", message: userMessage(error, ctx.i18n) };
   revalidatePath("/app");
-  const r = data as { status: string; reason?: string; error?: string; validation?: ValidationResult | null };
-  return localized({ status: r.status, reason: r.reason, error: r.error, points: r.validation?.points }, ctx.i18n);
+  const r = data as { status: string; reason?: string; validation?: ValidationResult | null; correct?: number; total?: number; bonus?: number; questions?: MathChecked[] };
+  return {
+    ...localized({ status: r.status, reason: r.reason, points: r.validation?.points }, ctx.i18n),
+    correct: r.correct,
+    total: r.total,
+    bonus: r.bonus,
+    questions: r.questions,
+  };
 }
 
 // ---------------------------------------------------------------------------

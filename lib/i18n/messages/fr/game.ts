@@ -4,7 +4,7 @@ export const game = {
     label: {
       session: "Minuteur",
       reps: "Caméra",
-      reveil: "Code de réveil",
+      reveil: "Calcul au réveil",
       photo: "Photo",
       capture: "Capture d'écran",
       lien: "Lien",
@@ -13,7 +13,7 @@ export const game = {
     help: {
       session: "Minuteur qui casse si tu quittes l'écran. Preuve forte : 100 % des points.",
       reps: "Pompes ou squats comptés à la caméra, sur ton téléphone. Preuve forte : 100 %.",
-      reveil: "Ouvre l'app avant l'heure et recopie un code. Preuve forte : 100 %.",
+      reveil: "Ouvre l'app avant l'heure et réponds à trois calculs. Preuve forte : 100 %, +5 par bonne réponse.",
       photo: "Photo prise dans l'app. Preuve faible : 50 %, contrôles aléatoires.",
       capture: "Capture d'écran (messages, ventes, compteur de pas). Preuve faible : 50 %.",
       lien: "Lien de ta publication. Preuve faible : 50 %.",

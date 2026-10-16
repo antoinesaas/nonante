@@ -94,7 +94,7 @@ export const quiz = {
     title: "Tu te lèves à quelle heure ?",
     hand: "tous les jours, week-end compris",
     other: "Autre heure :",
-    note: "Tu le prouveras avec un code à recopier au réveil. Impossible de tricher depuis ton lit.",
+    note: "Tu le prouveras avec trois calculs de tête au réveil, à ton niveau. Impossible de tricher les yeux fermés.",
   },
   focus: {
     title: "Combien de temps tu tiens concentré ?",

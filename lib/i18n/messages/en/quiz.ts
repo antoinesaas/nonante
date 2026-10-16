@@ -95,7 +95,7 @@ export const quiz: typeof fr = {
     title: "What time do you get up?",
     hand: "every day, weekends included",
     other: "Other time:",
-    note: "You'll prove it with a code to copy when you wake up. Impossible to cheat from your bed.",
+    note: "You'll prove it with three mental maths questions when you wake up, at your level. Impossible to cheat with your eyes closed.",
   },
   focus: {
     title: "How long can you stay focused?",

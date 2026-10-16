@@ -43,13 +43,13 @@ export const landing = {
     items: [
       { title: "Minuteur", text: "25, 50 ou 90 minutes. Tu quittes l'écran plus de 10 secondes : la session casse." },
       { title: "Caméra", text: "Pompes et squats comptés par l'IA, sur ton téléphone. Aucune image n'en sort." },
-      { title: "Réveil", text: "Un code à recopier avant ton heure de lever. Impossible de tricher depuis ton lit." },
+      { title: "Réveil", text: "Trois calculs de tête avant ton heure de lever, à ton niveau. Chaque bonne réponse rapporte un bonus." },
       { title: "Photo, capture, lien", text: "La salle, tes messages de prospection, ta publication. Contrôles aléatoires." },
     ],
   },
   calendar: {
     label: "Exemple : jour 23",
-    text: "Un point par jour. Vert : tout est prouvé. Rouge : il manque une preuve. Blanc : tu n'as rien fait, et ça coûte double. Un joker, et la journée ne compte pas.",
+    text: "Un point par jour. Vert : tout est prouvé. Rouge : il manque une preuve. Blanc : tu n'as rien fait, et chaque principe raté coûte ses points. Un joker, et la journée ne compte pas.",
   },
   wallet: {
     label: "Portefeuille",
@@ -65,7 +65,7 @@ export const landing = {
     title: "Pas une app d'habitudes de plus.",
     elsewhere: "Ailleurs",
     rows: [
-      ["Validation", "Une case à cocher", "Une preuve : caméra, minuteur, code"],
+      ["Validation", "Une case à cocher", "Une preuve : caméra, minuteur, calcul"],
       ["Principes", "Les mêmes pour tous", "Construits pour ton objectif"],
       ["Ton business", "Rien", "Prospection, portefeuille de revenus"],
       ["Progression", "Une série", "6 stats, une note, des niveaux"],

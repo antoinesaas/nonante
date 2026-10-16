@@ -95,7 +95,7 @@ export const quiz: typeof fr = {
     title: "¿A qué hora te levantas?",
     hand: "todos los días, fines de semana incluidos",
     other: "Otra hora:",
-    note: "Lo demostrarás con un código que copiar al despertar. Imposible hacer trampa desde la cama.",
+    note: "Lo demostrarás con tres cálculos mentales al despertar, a tu nivel. Imposible hacer trampa con los ojos cerrados.",
   },
   focus: {
     title: "¿Cuánto tiempo aguantas concentrado?",

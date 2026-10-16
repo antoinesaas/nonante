@@ -5,7 +5,7 @@ export const game: typeof fr = {
     label: {
       session: "Temporizador",
       reps: "Cámara",
-      reveil: "Código de despertar",
+      reveil: "Cálculo al despertar",
       photo: "Foto",
       capture: "Captura",
       lien: "Enlace",
@@ -14,7 +14,7 @@ export const game: typeof fr = {
     help: {
       session: "Temporizador que se rompe si sales de la pantalla. Prueba fuerte: 100 % de los puntos.",
       reps: "Flexiones o sentadillas contadas por la cámara, en tu móvil. Prueba fuerte: 100 %.",
-      reveil: "Abre la app antes de tu hora y copia un código. Prueba fuerte: 100 %.",
+      reveil: "Abre la app antes de tu hora y responde a tres cálculos. Prueba fuerte: 100 %, +5 por respuesta correcta.",
       photo: "Foto hecha en la app. Prueba débil: 50 %, controles al azar.",
       capture: "Captura de pantalla (mensajes, ventas, contador de pasos). Prueba débil: 50 %.",
       lien: "Enlace a tu publicación. Prueba débil: 50 %.",
