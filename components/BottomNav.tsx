@@ -54,7 +54,7 @@ const ICONS: Record<Key, React.ReactNode> = {
 };
 
 const MATCH: Record<Key, (p: string) => boolean> = {
-  today: (p) => p === "/app" || p.startsWith("/app/principes") || p.startsWith("/app/quete") || p.startsWith("/app/avant-apres"),
+  today: (p) => p === "/app" || p.startsWith("/app/principes") || p.startsWith("/app/quete") || p.startsWith("/app/avant-apres") || p.startsWith("/app/historique"),
   leaderboard: (p) => p.startsWith("/classement") || p.startsWith("/app/escouades"),
   wallet: (p) => p.startsWith("/app/portefeuille"),
   grades: (p) => p.startsWith("/app/notes"),

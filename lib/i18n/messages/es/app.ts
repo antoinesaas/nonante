@@ -183,6 +183,15 @@ export const app: typeof fr = {
     correctLabel: "Respuestas correctas",
   },
 
+  history: {
+    label: "Tu arco, día a día",
+    title: "Historial",
+    proven: "Principios probados",
+    greenDays: "Días verdes",
+    toHold: "Para cumplir el arco",
+    ringsAria: "Historial: {proven} de {due} principios probados, {green} de {days} días verdes.",
+    open: "Ver el historial",
+  },
   timer: {
     title: "Sesión",
     back: "Volver",

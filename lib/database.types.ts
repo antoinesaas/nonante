@@ -1404,6 +1404,7 @@ export type Database = {
       my_arc_photos: { Args: never; Returns: Json };
       my_dashboard: { Args: never; Returns: Json };
       my_grades: { Args: never; Returns: Json };
+      my_history: { Args: never; Returns: Json };
       my_mental_math: { Args: never; Returns: Json };
       my_plan: { Args: never; Returns: Json };
       my_principles: { Args: never; Returns: Json };

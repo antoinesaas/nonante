@@ -13,7 +13,7 @@ function Portrait({ alt }: { alt: string }) {
     return <Image src={PHOTO} alt={alt} width={112} height={112} className="size-14 shrink-0 rounded-full object-cover grayscale" />;
   }
   return (
-    <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-linear-to-br from-[#ff2d6f] via-[#9b6bff] to-[#5ac8fa] font-display text-2xl text-white">
+    <span aria-hidden="true" className="grid size-14 shrink-0 place-items-center rounded-full bg-linear-to-br from-[#b79bff] to-[#6d43d9] font-display text-2xl text-white">
       A
     </span>
   );

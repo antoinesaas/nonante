@@ -74,7 +74,7 @@ export default async function Home() {
               <br />
               {l.title2}
             </h1>
-            <p className="mt-4 animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[19px] font-semibold text-transparent [animation-delay:160ms]">{l.hand}</p>
+            <p className="mt-4 animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[19px] font-semibold text-transparent [animation-delay:160ms]">{l.hand}</p>
             <p className="mt-4 max-w-md animate-in text-[17px] leading-relaxed text-paper/80 [animation-delay:240ms] lg:text-xl">{l.intro}</p>
             <div className="mt-8 max-w-md animate-in space-y-3 [animation-delay:320ms]">
               <Link href={cta} className={btnPrimary}>
@@ -116,7 +116,7 @@ export default async function Home() {
         <section className={`${wrap} py-14 lg:grid lg:grid-cols-2 lg:gap-16 lg:py-28`}>
           <div data-reveal>
             <h2 className="font-display text-[38px] leading-[1.02] lg:text-6xl">{l.pains.title}</h2>
-            <p className="mt-2 bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[17px] font-semibold text-transparent">{l.pains.hand}</p>
+            <p className="mt-2 bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[17px] font-semibold text-transparent">{l.pains.hand}</p>
             <p className="mt-6 hidden text-lg text-mute lg:block">{l.pains.outro}</p>
           </div>
           <div data-reveal>
@@ -276,7 +276,7 @@ export default async function Home() {
         <section className="relative isolate overflow-hidden">
           <Aura tone="violet" className="top-auto bottom-0 h-[30rem] opacity-50 [mask-image:linear-gradient(to_top,#000_30%,transparent)]" />
           <div data-reveal className={`${wrap} py-20 text-center lg:py-32`}>
-            <p className="bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[17px] font-semibold text-transparent">{l.final.hand}</p>
+            <p className="bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[17px] font-semibold text-transparent">{l.final.hand}</p>
             <h2 className="mx-auto mt-3 max-w-3xl font-display text-[40px] leading-[1.02] lg:text-7xl">{l.final.title}</h2>
             <div className="mx-auto mt-8 max-w-sm">
               <Link href={cta} className={btnPrimary}>

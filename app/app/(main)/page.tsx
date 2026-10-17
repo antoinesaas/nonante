@@ -204,7 +204,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
             )}
             <p className="mt-1 text-[15px] leading-snug text-paper/80">{e.goal_title}</p>
 
-            <div className="card mt-5 overflow-hidden p-5">
+            <Link href="/app/historique" aria-label={m.app.history.open} className="card press mt-5 block overflow-hidden p-5">
               <div className="flex items-center gap-5">
                 <ActivityRings
                   rings={[
@@ -258,7 +258,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
                   </span>
                 ) : null}
               </div>
-            </div>
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-[13px] font-medium text-mute">
+                {m.app.history.open}
+                <svg viewBox="0 0 16 16" className="size-3" aria-hidden="true">
+                  <path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </p>
+            </Link>
           </section>
 
           {params.paid === "1" && plan.plan ? (
@@ -429,7 +435,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
               </div>
             </div>
             <span className="mt-4 block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
-              <span className={`block h-1.5 rounded-full bg-linear-to-r from-rose via-violet to-sky ${WIDTHS[Math.floor(levelPct * 10)]}`} />
+              <span className={`block h-1.5 rounded-full bg-linear-to-r from-[#b79bff] to-[#8358e8] ${WIDTHS[Math.floor(levelPct * 10)]}`} />
             </span>
             <p className="mt-2 flex justify-between text-[12px] text-mute tabular-nums">
               <span>{fmt(m.game.stats.xp, { xp: formatNumber(stats.xp, locale) })}</span>

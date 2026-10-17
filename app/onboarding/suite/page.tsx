@@ -62,7 +62,7 @@ export default async function SuitePage() {
       <Aura tone="violet" className="h-[30rem]" />
       <Logo size="sm" />
       <div className="my-auto py-10">
-        <p className="animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
+        <p className="animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
         <h1 className="mt-2 animate-in font-display text-[40px] leading-[1.02] [animation-delay:80ms]">{t.heading}</h1>
 
         <div className="glow-violet mt-7 animate-in rounded-[1.75rem] p-5 [animation-delay:120ms]">

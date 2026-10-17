@@ -23,26 +23,27 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: m.app.profile.title };
 }
 
+/** Succès en médaille : anneau blanc et étoile quand il est débloqué, pointillés sinon. Sobre, une seule couleur. */
 function Achievement({ a, title, description, percent, locked }: { a: AchievementView; title: string; description: string; percent: string | null; locked: boolean }) {
   return (
-    <li className={`flex items-center justify-between gap-4 px-4 py-3.5 ${locked ? "text-mute" : ""}`}>
-      <div className="flex items-center gap-3">
-        <span aria-hidden="true" className={`grid size-8 shrink-0 place-items-center rounded-full ${locked ? "border border-dashed border-white/15" : "bg-linear-to-br from-[#ff2d6f] via-[#9b6bff] to-[#5ac8fa] text-white"}`}>
-          {locked ? null : (
-            <svg viewBox="0 0 16 16" className="size-3.5">
-              <path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </span>
-        <div>
-          <p className={`text-[15px] ${locked ? "" : "text-paper"}`}>{title}</p>
-          <p className="mt-0.5 text-[12px] text-mute">{description}</p>
-        </div>
-      </div>
-      <div className="shrink-0 text-right text-xs">
-        {a.points ? <p className="tabular-nums">+{a.points}</p> : null}
-        {percent ? <p className="mt-1 text-mute">{percent}</p> : null}
-      </div>
+    <li className={`flex flex-col items-center px-1 text-center ${locked ? "opacity-45" : ""}`}>
+      <span
+        aria-hidden="true"
+        className={`relative grid size-16 place-items-center rounded-full ${
+          locked ? "border border-dashed border-white/25" : "bg-[radial-gradient(circle_at_50%_35%,#2a2140,#121016)] shadow-[inset_0_0_0_1.5px_rgb(255_255_255/0.55),0_0_24px_rgb(155_107_255/0.25)]"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" className={`size-7 ${locked ? "text-mute" : "text-paper"}`} fill={locked ? "none" : "currentColor"} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M12 3.5 L14.6 8.9 L20.5 9.6 L16.1 13.6 L17.3 19.5 L12 16.6 L6.7 19.5 L7.9 13.6 L3.5 9.6 L9.4 8.9 Z" />
+        </svg>
+      </span>
+      <p className="mt-2 text-[13px] leading-tight font-medium">{title}</p>
+      <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-mute">{description}</p>
+      <p className="mt-1 text-[11px] text-mute tabular-nums">
+        {a.points ? `+${a.points}` : ""}
+        {a.points && percent ? " · " : ""}
+        {percent}
+      </p>
     </li>
   );
 }
@@ -126,12 +127,23 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
               </div>
             ))}
           </dl>
-          <dl className="mt-3 grid grid-cols-3 gap-2">
+          <div className="card mt-3 grid grid-cols-3 divide-x divide-white/[0.07] py-4">
             {(
               [
                 [t.numbers.points, formatPoints(profile.points, locale)],
-                [t.numbers.rank, profile.rank ? formatNumber(profile.rank, locale) : "—"],
+                [t.numbers.rank, profile.rank ? `#${formatNumber(profile.rank, locale)}` : "—"],
                 [t.numbers.xp, formatNumber(s.xp, locale)],
+              ] as const
+            ).map(([k, v]) => (
+              <div key={k} className="px-3 text-center">
+                <p className="font-display text-[24px] leading-none tabular-nums">{v}</p>
+                <p className="mt-1.5 text-[12px] text-mute">{k}</p>
+              </div>
+            ))}
+          </div>
+          <dl className="grouped mt-3">
+            {(
+              [
                 [t.numbers.streak, String(s.streak)],
                 [t.numbers.bestStreak, String(s.best_streak)],
                 [t.numbers.greenDays, String(s.green_days)],
@@ -143,9 +155,9 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
                 [t.numbers.refused, String(profile.refused_proofs)],
               ] as const
             ).map(([k, v]) => (
-              <div key={k} className="card p-3">
-                <dt className="truncate text-[11px] text-mute">{k}</dt>
-                <dd className="mt-0.5 font-display text-[19px] tabular-nums">{v}</dd>
+              <div key={k} className="flex items-center justify-between gap-4 px-4 py-3">
+                <dt className="text-[15px] text-paper/85">{k}</dt>
+                <dd className="text-[15px] font-semibold tabular-nums">{v}</dd>
               </div>
             ))}
           </dl>
@@ -157,7 +169,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
             {fmt(t.achievementsCount, { n: unlocked.length, total: profile.achievements.length })} {t.rarity}
           </p>
           {unlocked.length ? (
-            <ul className="grouped mt-3">
+            <ul className="card mt-3 grid grid-cols-3 gap-y-5 p-4">
               {unlocked.map((a) => (
                 <Achievement key={a.code} a={a} {...ach(a)} percent={percent(a)} locked={false} />
               ))}
@@ -168,7 +180,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
           {upcoming.length ? (
             <>
               <p className={`${label} mt-5 px-1`}>{t.nextUp}</p>
-              <ul className="grouped mt-2">
+              <ul className="card mt-2 grid grid-cols-3 gap-y-5 p-4">
                 {upcoming.map((a) => (
                   <Achievement key={a.code} a={a} {...ach(a)} percent={percent(a)} locked />
                 ))}

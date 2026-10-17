@@ -29,7 +29,7 @@ export default async function FaqPage() {
         </header>
       </div>
       <main className="mx-auto w-full max-w-xl px-5 pt-12 pb-20 lg:max-w-3xl">
-        <p className="animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{m.faq.hand}</p>
+        <p className="animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[15px] font-semibold text-transparent">{m.faq.hand}</p>
         <h1 className="mt-2 animate-in font-display text-[44px] leading-[1.0] [animation-delay:80ms]">{m.faq.title}</h1>
         <div className="mt-10 space-y-10">
           {m.faq.groups.map((g, i) => (

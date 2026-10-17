@@ -416,6 +416,8 @@ if (await val("select public.paris_now()::time > '22:59'")) {
   }
   const week = await as(B, () => rpc("my_week"));
   check("la semaine en anneaux : 7 jours, aujourd'hui en dernier", week.length === 7 && week[6].day === today && week[6].done >= 1 && week[6].due >= week[6].done, JSON.stringify(week[6]));
+  const hist = await as(B, () => rpc("my_history"));
+  check("historique de l'arc : du jour 1 à aujourd'hui", hist.days.length >= 1 && hist.days.at(-1).day === today && hist.days[0].day === hist.start, JSON.stringify({ start: hist.start, n: hist.days.length }));
 }
 
 // ---------------------------------------------------------------------------

@@ -46,7 +46,7 @@ export function StatBar({ value }: { value: number }) {
   const width = Math.max(0, Math.min(99, value));
   return (
     <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]" aria-hidden="true">
-      <span className={`block h-1.5 rounded-full bg-linear-to-r from-violet to-sky ${STEPS[Math.round(width / 10)]}`} />
+      <span className={`block h-1.5 rounded-full bg-linear-to-r from-[#b79bff] to-[#8358e8] ${STEPS[Math.round(width / 10)]}`} />
     </span>
   );
 }
@@ -78,7 +78,7 @@ export function XpBar({ stats }: { stats: Stats }) {
   return (
     <div>
       <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]" aria-hidden="true">
-        <span className={`block h-1.5 rounded-full bg-linear-to-r from-rose via-violet to-sky ${STEPS[Math.floor(pct * 10)]}`} />
+        <span className={`block h-1.5 rounded-full bg-linear-to-r from-[#b79bff] to-[#8358e8] ${STEPS[Math.floor(pct * 10)]}`} />
       </span>
       <p className="mt-1.5 flex justify-between text-[11px] text-mute tabular-nums">
         <span>{fmt(m.game.stats.xp, { xp: formatNumber(stats.xp, locale) })}</span>

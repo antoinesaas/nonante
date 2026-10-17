@@ -33,7 +33,7 @@ export default async function LevelPage() {
         <p className="mt-3 font-display text-[56px] leading-none">
           <CelebrationTitle text={fmt(t.level, { n: level })} />
         </p>
-        <p className="mt-3 animate-rise bg-linear-to-r from-rose via-violet to-sky bg-clip-text font-display text-[28px] text-transparent [animation-delay:900ms]">{titleFor(level, m)}</p>
+        <p className="mt-3 animate-rise bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text font-display text-[28px] text-transparent [animation-delay:900ms]">{titleFor(level, m)}</p>
         <p className="mt-6 animate-rise text-lg text-paper/85 [animation-delay:1000ms]">{next ? fmt(t.next, { title: next.title, level: next.level }) : t.top}</p>
         <form action={markLevelSeen} className="mt-12 animate-rise [animation-delay:1100ms]">
           <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.loading}>

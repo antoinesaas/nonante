@@ -26,10 +26,10 @@ function svg(w, h, dpr) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w * s}" height="${h * s}" viewBox="0 0 ${w * s} ${h * s}">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff375f"/><stop offset="55%" stop-color="#9b6bff"/><stop offset="100%" stop-color="#5ac8fa" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#c9b3ff"/><stop offset="60%" stop-color="#9b6bff"/><stop offset="100%" stop-color="#9b6bff" stop-opacity="0"/>
     </linearGradient>
     <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#9b6bff" stop-opacity="0.22"/><stop offset="100%" stop-color="#000" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#9b6bff" stop-opacity="0.18"/><stop offset="100%" stop-color="#000" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="100%" height="100%" fill="#000"/>

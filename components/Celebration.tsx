@@ -57,9 +57,9 @@ export function CelebrationBurst({ kind, className = "" }: { kind: CelebrationKi
           <circle cx="120" cy="120" r="46" />
         </clipPath>
         <linearGradient id={`cel-color-${kind}`} x1="0" x2="1" y1="0" y2="1">
-          <stop offset="0" stopColor="#ff375f" />
+          <stop offset="0" stopColor="#c9b3ff" />
           <stop offset="0.55" stopColor="#9b6bff" />
-          <stop offset="1" stopColor="#5ac8fa" />
+          <stop offset="1" stopColor="#6d43d9" />
         </linearGradient>
         <linearGradient id={`cel-glint-${kind}`} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
@@ -141,7 +141,7 @@ export function CelebrationOverlay({ storageKey, kind, hand, title, text }: { st
   return (
     <div role="dialog" aria-modal="true" aria-label={title} onClick={close} className="cel-overlay fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 px-8 text-center backdrop-blur-xl">
       <CelebrationBurst kind={kind} className="size-64" />
-      <p className="mt-2 animate-rise bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-lg font-semibold text-transparent [animation-delay:500ms]">{hand}</p>
+      <p className="mt-2 animate-rise bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-lg font-semibold text-transparent [animation-delay:500ms]">{hand}</p>
       <h2 className="mt-2 font-display text-[44px] leading-none">
         <CelebrationTitle text={title} />
       </h2>

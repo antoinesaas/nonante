@@ -182,6 +182,15 @@ export const app = {
     correctLabel: "Bonnes réponses",
   },
 
+  history: {
+    label: "Ton arc, jour par jour",
+    title: "Historique",
+    proven: "Principes prouvés",
+    greenDays: "Jours verts",
+    toHold: "Pour tenir l'arc",
+    ringsAria: "Historique : {proven} principes prouvés sur {due}, {green} jours verts sur {days}.",
+    open: "Voir l'historique",
+  },
   timer: {
     title: "Session",
     back: "Retour",

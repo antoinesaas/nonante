@@ -40,7 +40,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             label=""
             className="animate-pop"
           />
-          <p className="mt-8 animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
+          <p className="mt-8 animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
           <h1 className="mt-2 animate-in font-display text-[40px] leading-[1.02] [animation-delay:80ms]">{t.heading}</h1>
           <p className="mt-4 animate-in text-paper/80 [animation-delay:140ms]">{t.text}</p>
           {params.erreur === "lien" ? (

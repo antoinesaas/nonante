@@ -34,7 +34,7 @@ prospection) et c'est **un jeu** (stats de joueur, niveaux, classement, escouade
 
 Modifié le 17 octobre 2026 (v11) : app façon iOS, inspirée de Trade Republic et de deux maquettes données par le
 fondateur (cartes en dégradé lumineux, boutons en verre liquide). Fond noir profond `#000`, cartes `#111113` à grands
-arrondis (`card`, `grouped` façon Réglages), textes `#F5F5F7` / `#8E8E93`. De la couleur, mais en dégradés seulement :
+arrondis (`card`, `grouped` façon Réglages), textes `#F5F5F7` / `#8E8E93`. De la couleur, mais en dégradés seulement, et une seule teinte à la fois (violet pour l'écran d'ouverture, les accents et les succès ; plus d'arc-en-ciel) :
 auras floues derrière les en-têtes (`Aura`, une teinte par écran), cartes lumineuses (`glow-rose|mint|sky|amber|violet`),
 anneaux d'activité façon Apple Forme (`ActivityRings`), pastilles de pilier (`ProofIcon` : focus bleu, corps orange,
 business vert, esprit violet, énergie rose). Vert `#30D158` et rouge `#FF453A` gardent leur rôle d'états.
@@ -76,7 +76,7 @@ une unité facultatifs. Affiché en haut du tableau de bord.
 - Pendant l'arc, un ajout, une modification ou un retrait compte **tout de suite** ; seul un principe déjà prouvé (ou
   dont une session a été lancée) aujourd'hui change **le lendemain** (versions `active_from` / `active_until`, v9).
   Le minuteur peut changer de durée (25/50/90) juste avant d'être lancé : le principe suit (`set_session_minutes`).
-- « Aujourd'hui » liste tous les principes dans une seule liste : ceux du jour, puis ceux prévus un autre jour (en retrait, avec leurs jours). En tête, trois anneaux : principes prouvés aujourd'hui, jours verts de la semaine (/7), jours verts de l'arc (/75), et la semaine en mini-anneaux (`my_week`, v11). Changer de langue traduit l'arc ouvert (v8).
+- « Aujourd'hui » liste tous les principes dans une seule liste : ceux du jour, puis ceux prévus un autre jour (en retrait, avec leurs jours). En tête, trois anneaux : principes prouvés aujourd'hui, jours verts de la semaine (/7), jours verts de l'arc (/75), et la semaine en mini-anneaux (`my_week`, v11). Un toucher sur les anneaux ouvre `/app/historique` : tout l'arc en calendrier mensuel, un mini-anneau par jour, détail du jour en feuille (`my_history`, v12). Changer de langue traduit l'arc ouvert (v8).
 - Nombre max : 6 (Arc 90 jours), 12 (Pro et Fondateur).
 
 ### Preuves

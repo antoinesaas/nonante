@@ -183,6 +183,15 @@ export const app: typeof fr = {
     correctLabel: "Right answers",
   },
 
+  history: {
+    label: "Your arc, day by day",
+    title: "History",
+    proven: "Principles proven",
+    greenDays: "Green days",
+    toHold: "To hold the arc",
+    ringsAria: "History: {proven} of {due} principles proven, {green} of {days} green days.",
+    open: "See history",
+  },
   timer: {
     title: "Session",
     back: "Back",

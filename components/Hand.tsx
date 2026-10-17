@@ -13,7 +13,7 @@ export function Hand({
   className?: string;
 }) {
   return (
-    <span className={`relative inline-block bg-linear-to-r from-rose via-violet to-sky bg-clip-text font-display leading-tight text-transparent ${className}`}>
+    <span className={`relative inline-block bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text font-display leading-tight text-transparent ${className}`}>
       {children}
       {underline ? (
         <svg aria-hidden="true" viewBox="0 0 200 12" preserveAspectRatio="none" className="absolute -bottom-1.5 left-0 h-2 w-full overflow-visible text-violet">

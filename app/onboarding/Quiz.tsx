@@ -200,7 +200,7 @@ function Chip({ selected, onClick, index = 0, title, hint }: { selected: boolean
 function Question({ title, hint }: { title: string; hint?: string }) {
   return (
     <>
-      {hint ? <p className="animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{hint}</p> : null}
+      {hint ? <p className="animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[15px] font-semibold text-transparent">{hint}</p> : null}
       <h1 className="mt-2 animate-in font-display text-[34px] leading-[1.05] [animation-delay:40ms]">{title}</h1>
     </>
   );
@@ -357,7 +357,7 @@ function Building({ ready, steps, onDone }: { ready: boolean; steps: string[]; o
 
   return (
     <div className="flex flex-1 flex-col justify-center py-8">
-      <p className="animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-center text-[15px] font-semibold text-transparent">{m.quiz.building.hand}</p>
+      <p className="animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-center text-[15px] font-semibold text-transparent">{m.quiz.building.hand}</p>
       <div className="relative mx-auto mt-8 grid size-52 animate-pop place-items-center">
         <ActivityRings
           rings={[
@@ -400,7 +400,7 @@ function AccountStep({ answers, plan, interval, price, onBack }: { answers: stri
 
   return (
     <div className="flex flex-1 flex-col justify-center py-10">
-      <p className="animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
+      <p className="animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
       <h1 className="mt-2 animate-in font-display text-[38px] leading-[1.02] [animation-delay:60ms]">{t.title}</h1>
       <p className="mt-4 animate-in text-paper/80 [animation-delay:120ms]">{t.text}</p>
       <div className="glow-violet mt-6 flex animate-in items-center justify-between rounded-[1.5rem] p-5 [animation-delay:180ms]">
@@ -772,7 +772,7 @@ export function Quiz({
           <div className="lg:grid lg:grid-cols-[1fr_1fr] lg:gap-16">
             <div>
               <section className="pt-10">
-                <p className="animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[17px] font-semibold text-transparent">
+                <p className="animate-in bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[17px] font-semibold text-transparent">
                   {name ? fmt(t.hello, { name }) : t.helloAnon}
                 </p>
                 <h1 className="mt-2 animate-in font-display text-[44px] leading-[0.98] [animation-delay:100ms]">
@@ -869,7 +869,7 @@ export function Quiz({
 
           <section ref={plansRef} id="plans" className="mt-12 scroll-mt-6">
             <div className="lg:max-w-2xl">
-              <p className="bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{t.oneStep}</p>
+              <p className="bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[15px] font-semibold text-transparent">{t.oneStep}</p>
               <h2 className="mt-1 font-display text-[38px] leading-[1.02]">{t.launchTitle}</h2>
               <p className="mt-3 text-paper/80">{t.launchText}</p>
               {invitedBy ? (
@@ -961,7 +961,7 @@ export function Quiz({
             </Link>
           )}
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={index + 1} aria-label={q.progress}>
-            <div className={`h-full rounded-full bg-linear-to-r from-rose via-violet to-sky transition-[width] duration-700 ease-[cubic-bezier(0.3,1.1,0.4,1)] ${progress}`} />
+            <div className={`h-full rounded-full bg-linear-to-r from-[#b79bff] to-[#8358e8] transition-[width] duration-700 ease-[cubic-bezier(0.3,1.1,0.4,1)] ${progress}`} />
           </div>
           <span className="w-10 shrink-0 text-right text-[12px] text-mute tabular-nums">
             {index + 1}/{steps.length}

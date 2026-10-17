@@ -11,9 +11,9 @@ export function Splash() {
         <svg viewBox="0 0 112 112" className="splash-ring absolute inset-0 size-28">
           <defs>
             <linearGradient id="splash-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#ff375f" />
-              <stop offset="55%" stopColor="#9b6bff" />
-              <stop offset="100%" stopColor="#5ac8fa" stopOpacity="0" />
+              <stop offset="0%" stopColor="#c9b3ff" />
+              <stop offset="60%" stopColor="#9b6bff" />
+              <stop offset="100%" stopColor="#9b6bff" stopOpacity="0" />
             </linearGradient>
           </defs>
           <circle cx="56" cy="56" r="50" fill="none" stroke="rgb(255 255 255 / 0.06)" strokeWidth="4" />

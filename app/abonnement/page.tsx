@@ -56,7 +56,7 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/abo
         ) : null}
 
         <p className="mt-4 text-[17px] leading-relaxed text-paper/85 lg:max-w-2xl">
-          {t.intro} <span className="bg-linear-to-r from-rose via-violet to-sky bg-clip-text font-semibold text-transparent">{t.introHand}</span> {t.introEnd}
+          {t.intro} <span className="bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text font-semibold text-transparent">{t.introHand}</span> {t.introEnd}
         </p>
 
         {mode.kind === "link" ? (
