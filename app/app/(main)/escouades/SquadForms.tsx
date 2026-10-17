@@ -1,24 +1,65 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import Link from "next/link";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { createSquad, joinPublicSquad, joinSquad, leaveSquad } from "@/app/actions/squads";
 import { useI18n } from "@/components/I18nProvider";
 import { Sheet } from "@/components/Sheet";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { idle } from "@/lib/errors";
-import { btnLink, btnPrimary, btnSecondary, btnSmall, input, label } from "@/lib/ui";
+import { btnPrimary, btnSecondary, btnSmall, input, label } from "@/lib/ui";
 
-export function JoinForm() {
+/** Deux boutons : rejoindre avec un code (pilule blanche) et créer (verre) ; chaque formulaire s'ouvre dans une feuille. */
+export function SquadActions({ canCreate, today, maxDay }: { canCreate: boolean; today: string; maxDay: string }) {
+  const { m } = useI18n();
+  const t = m.app.squads;
+  const [open, setOpen] = useState<"join" | "create" | null>(null);
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2.5">
+        <button type="button" onClick={() => setOpen("join")} className={btnPrimary}>
+          {t.join}
+        </button>
+        <button type="button" onClick={() => setOpen("create")} className={`${btnSecondary} h-14`}>
+          {t.createShort}
+        </button>
+      </div>
+      <Sheet open={open === "join"} onClose={() => setOpen(null)} title={t.joinTitle}>
+        {open === "join" ? <JoinForm onDone={() => setOpen(null)} /> : null}
+        <div className="h-4" />
+      </Sheet>
+      <Sheet open={open === "create"} onClose={() => setOpen(null)} title={t.create}>
+        {open === "create" ? (
+          canCreate ? (
+            <CreateForm today={today} maxDay={maxDay} onDone={() => setOpen(null)} />
+          ) : (
+            <div className="pb-4">
+              <p className="text-sm text-mute">{t.proOnly}</p>
+              <Link href="/abonnement" className={`${btnPrimary} mt-5`}>
+                {t.seePlans}
+              </Link>
+            </div>
+          )
+        ) : null}
+      </Sheet>
+    </>
+  );
+}
+
+export function JoinForm({ onDone }: { onDone?: () => void }) {
   const { m } = useI18n();
   const t = m.app.squads;
   const [state, formAction] = useActionState(joinSquad, idle);
+  useEffect(() => {
+    if (state.ok) onDone?.();
+  }, [state, onDone]);
   return (
     <form action={formAction}>
       <label className="block">
         <span className={label}>{t.joinCode}</span>
         <div className="mt-2 flex gap-2">
-          <input name="code" maxLength={6} autoCapitalize="characters" placeholder="K7M2QX" className={`${input} uppercase`} />
-          <SubmitButton className={`${btnSmall} h-12`} pendingLabel="…">
+          <input name="code" maxLength={6} autoCapitalize="characters" autoFocus placeholder="K7M2QX" className={`${input} font-display text-xl tracking-[0.3em] uppercase`} />
+          <SubmitButton className={`${btnSmall} h-12 px-5`} pendingLabel="…">
             {t.join}
           </SubmitButton>
         </div>
@@ -28,12 +69,15 @@ export function JoinForm() {
   );
 }
 
-export function CreateForm({ today, maxDay }: { today: string; maxDay: string }) {
+export function CreateForm({ today, maxDay, onDone }: { today: string; maxDay: string; onDone?: () => void }) {
   const { m } = useI18n();
   const t = m.app.squads;
   const [state, formAction] = useActionState(createSquad, idle);
+  useEffect(() => {
+    if (state.ok) onDone?.();
+  }, [state, onDone]);
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="space-y-4 pb-4">
       <label className="block">
         <span className={label}>{t.name}</span>
         <input name="name" maxLength={40} placeholder={t.namePlaceholder} required className={`${input} mt-2`} />
@@ -43,7 +87,7 @@ export function CreateForm({ today, maxDay }: { today: string; maxDay: string })
         <input name="description" maxLength={160} placeholder={t.descriptionPlaceholder} className={`${input} mt-2`} />
       </label>
       <label className="flex items-start gap-3 text-sm">
-        <input type="checkbox" name="isPublic" className="mt-0.5 size-5 accent-paper" />
+        <input type="checkbox" name="isPublic" className="mt-0.5 size-5 accent-white" />
         {t.publicCheck}
       </label>
       <div className="grid grid-cols-2 gap-3">
@@ -91,12 +135,12 @@ export function LeaveButton({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" disabled={pending} onClick={() => setOpen(true)} className={btnLink}>
+      <button type="button" disabled={pending} onClick={() => setOpen(true)} className="press text-sm text-ko/90">
         {pending ? "…" : t.leave}
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title={t.leaveTitle}>
-        <p className="mt-2 text-sm text-mute">{t.leaveText}</p>
-        <div className="mt-6 space-y-3">
+        <p className="text-sm text-mute">{t.leaveText}</p>
+        <div className="mt-6 space-y-3 pb-2">
           <button
             type="button"
             onClick={() => {

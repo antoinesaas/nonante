@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { RepCounter } from "@/components/RepCounter";
 import { requireUser } from "@/lib/auth";
+import { bareThen } from "@/lib/i18n/labels";
 import { getI18n } from "@/lib/i18n/server";
 import type { Exercise } from "@/lib/reps";
 
@@ -38,7 +39,7 @@ export default async function RepsPage({ params, searchParams }: PageProps<"/app
     <RepCounter
       mode="principle"
       principleId={id}
-      label={principle.then_text}
+      label={(() => { const x = bareThen(principle.then_text); return x.charAt(0).toUpperCase() + x.slice(1); })()}
       exercise={target.exercise ?? "pushup"}
       target={target.reps ?? 20}
       weakPoints={Math.round(principle.difficulty * 10 * 0.5)}

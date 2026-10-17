@@ -4,7 +4,6 @@ import { type CollectiveStart, Quiz } from "@/app/onboarding/Quiz";
 import { Faq } from "@/components/Faq";
 import { Founder } from "@/components/Founder";
 import { SocialProof } from "@/components/SocialProof";
-import { getArt, IMAGES } from "@/lib/art";
 import { cookies } from "next/headers";
 import { getUser } from "@/lib/auth";
 import { referralPromo } from "@/lib/checkout";
@@ -70,7 +69,6 @@ export default async function OnboardingPage({ searchParams }: PageProps<"/onboa
       plans={plans as PublicPlans}
       currentPlan={currentPlan}
       initialPlan={initialPlan}
-      arts={IMAGES.onboarding.map((slug) => getArt(slug))}
       templates={socialProof?.templates ?? 84}
       invitedBy={friend?.pseudo ?? null}
       founderSlot={<Founder compact />}

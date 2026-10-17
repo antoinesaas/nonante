@@ -47,7 +47,7 @@ export function SuiteForm({
               required
               minLength={3}
               autoCapitalize="none"
-              className={`${input} mt-2 font-serif text-2xl`}
+              className={`${input} mt-2 font-display text-2xl`}
             />
           </label>
           <label className="block">
@@ -65,11 +65,11 @@ export function SuiteForm({
             />
           </label>
           <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" name="adult" checked={adult} onChange={(e) => setAdult(e.target.checked)} required className="mt-0.5 size-5 shrink-0 accent-paper" />
+            <input type="checkbox" name="adult" checked={adult} onChange={(e) => setAdult(e.target.checked)} required className="mt-0.5 size-5 shrink-0 accent-white" />
             {t.adult}
           </label>
           <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" name="isPublic" checked={visible} onChange={(e) => setVisible(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-paper" />
+            <input type="checkbox" name="isPublic" checked={visible} onChange={(e) => setVisible(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-white" />
             {t.public}
           </label>
         </>
@@ -77,7 +77,7 @@ export function SuiteForm({
 
       {needsPayment ? (
         <label className="flex items-start gap-3 text-xs text-mute">
-          <input type="checkbox" name="waiver" checked={waiver} onChange={(e) => setWaiver(e.target.checked)} required className="mt-0.5 size-4 shrink-0 accent-paper" />
+          <input type="checkbox" name="waiver" checked={waiver} onChange={(e) => setWaiver(e.target.checked)} required className="mt-0.5 size-4 shrink-0 accent-white" />
           <span>{m.game.plans.waiver}</span>
         </label>
       ) : null}

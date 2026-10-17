@@ -476,6 +476,7 @@ export type Database = {
           correct: number;
           created_at: string;
           day: string;
+          duration_ms: number | null;
           enrollment_id: string | null;
           id: string;
           level: number;
@@ -489,6 +490,7 @@ export type Database = {
           correct: number;
           created_at?: string;
           day: string;
+          duration_ms?: number | null;
           enrollment_id?: string | null;
           id?: string;
           level: number;
@@ -502,6 +504,7 @@ export type Database = {
           correct?: number;
           created_at?: string;
           day?: string;
+          duration_ms?: number | null;
           enrollment_id?: string | null;
           id?: string;
           level?: number;
@@ -1407,6 +1410,7 @@ export type Database = {
       my_profile: { Args: never; Returns: Json };
       my_squads: { Args: never; Returns: Json };
       my_wallet: { Args: never; Returns: Json };
+      my_week: { Args: never; Returns: Json };
       new_achievements: { Args: never; Returns: Json };
       paris_now: { Args: never; Returns: string };
       paris_today: { Args: never; Returns: string };

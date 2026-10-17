@@ -3,15 +3,16 @@
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { addTemplate, removePrinciple, savePrinciple } from "@/app/actions/principles";
 import { useI18n } from "@/components/I18nProvider";
+import { ProofIcon } from "@/components/ProofIcon";
 import { Sheet } from "@/components/Sheet";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { type ActionResult, idle } from "@/lib/errors";
 import { fmt, formatTime } from "@/lib/i18n/format";
-import { daysLabel, targetHint } from "@/lib/i18n/labels";
+import { bareThen, daysLabel, targetHint } from "@/lib/i18n/labels";
 import { isStrong, LINK_DOMAINS } from "@/lib/proofs";
 import { guarded } from "@/lib/stale";
 import type { EditablePrinciple, Pillar, ProofType, TemplateView } from "@/lib/types";
-import { btnLink, btnPrimary, btnSecondary, btnSmall, input, label } from "@/lib/ui";
+import { btnPrimary, btnSecondary, btnSmall, input, label } from "@/lib/ui";
 
 const PILLARS: Pillar[] = ["focus", "business", "corps", "esprit", "energie"];
 const PROOFS: ProofType[] = ["session", "reps", "reveil", "photo", "capture", "lien", "declaratif"];
@@ -62,7 +63,7 @@ export function PrincipleNotice() {
   }, []);
   if (!message) return null;
   return (
-    <p role="status" className="mt-4 animate-rise rounded-xs border border-paper px-4 py-3 text-sm">
+    <p role="status" className="mt-4 animate-in rounded-2xl bg-ok/12 px-4 py-3 text-sm text-ok">
       {message}
     </p>
   );
@@ -77,11 +78,21 @@ function syncNumber(text: string, words: string, value: number): string {
 }
 
 function chip(on: boolean) {
-  return `h-10 rounded-full border px-3.5 text-sm transition-[background-color,border-color,color,transform] duration-150 active:scale-95 ${on ? "border-paper bg-paper text-ink" : "border-line text-mute hover:text-paper"}`;
+  return `press h-9 rounded-full px-3.5 text-sm font-medium ${on ? "pearl" : "bg-white/[0.06] text-paper/80 hover:bg-white/[0.1]"}`;
 }
 
 /** Formulaire d'un principe, dans une feuille : les champs défilent, la barre Annuler / Enregistrer reste dessous, toujours visible. */
-export function PrincipleForm({ principle, onDone, onCancel }: { principle?: EditablePrinciple; onDone?: (message: string | null) => void; onCancel?: () => void }) {
+export function PrincipleForm({
+  principle,
+  onDone,
+  onCancel,
+  onRemove,
+}: {
+  principle?: EditablePrinciple;
+  onDone?: (message: string | null) => void;
+  onCancel?: () => void;
+  onRemove?: () => void;
+}) {
   const { m, locale } = useI18n();
   const t = m.app.principles;
   const [state, formAction] = useActionState((prev: ActionResult, data: FormData) => guarded(() => savePrinciple(prev, data), m.common.errors.updated), idle);
@@ -239,7 +250,7 @@ export function PrincipleForm({ principle, onDone, onCancel }: { principle?: Edi
             <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               {LINK_DOMAINS.map((d) => (
                 <label key={d} className="flex items-center gap-2">
-                  <input type="checkbox" name="domains" value={d} defaultChecked={principle?.target.domains?.includes(d)} className="size-4 accent-paper" />
+                  <input type="checkbox" name="domains" value={d} defaultChecked={principle?.target.domains?.includes(d)} className="size-4 accent-white" />
                   {d}
                 </label>
               ))}
@@ -286,7 +297,7 @@ export function PrincipleForm({ principle, onDone, onCancel }: { principle?: Edi
                   aria-pressed={on}
                   aria-label={m.game.days.names[i]}
                   onClick={() => setDays((list) => (on ? list.filter((x) => x !== day) : [...list, day].sort()))}
-                  className={`h-10 rounded-full border text-sm transition-[background-color,border-color,color,transform] active:scale-90 ${on ? "border-paper bg-paper text-ink" : "border-line text-mute"}`}
+                  className={`press h-10 rounded-full text-sm font-medium ${on ? "pearl" : "bg-white/[0.06] text-mute"}`}
                 >
                   {d}
                 </button>
@@ -298,8 +309,15 @@ export function PrincipleForm({ principle, onDone, onCancel }: { principle?: Edi
 
       </div>
       {/* Hors de la zone qui défile : toujours visible, même au bas d'un long formulaire. */}
-      <div className="shrink-0 border-t border-line bg-surface px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <p className="mb-3 text-xs text-mute">{fmt(t.estimate, { d: est.difficulty, points: est.points, loss: 10 * est.difficulty })}</p>
+      <div className="shrink-0 border-t border-line bg-raised px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <p className="mb-3 flex items-center justify-between gap-3 text-xs text-mute">
+          <span>{fmt(t.estimate, { d: est.difficulty, points: est.points, loss: 10 * est.difficulty })}</span>
+          {onRemove ? (
+            <button type="button" onClick={onRemove} className="press shrink-0 text-sm font-medium text-ko">
+              {t.remove}
+            </button>
+          ) : null}
+        </p>
         <div className="flex gap-3">
           {onCancel ? (
             <button type="button" onClick={onCancel} className={`${btnSecondary} h-14 flex-1`}>
@@ -324,9 +342,9 @@ export function NewPrinciple() {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
-        <span aria-hidden="true" className="mr-2 text-xl leading-none">
-          +
-        </span>
+        <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
+          <path d="M8 3 V13 M3 8 H13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
         {t.createButton}
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title={t.create} bare>
@@ -355,33 +373,37 @@ export function PrincipleRow({ principle, editable }: { principle: EditablePrinc
   const shown = isStrong(principle.proof_type) ? principle.value : Math.round(principle.value / 2);
 
   return (
-    <li className={`py-5 transition-opacity ${pending ? "opacity-50" : ""}`}>
-      <button type="button" disabled={!editable} onClick={() => setEditing(true)} className="flex w-full items-start justify-between gap-4 text-left disabled:cursor-default">
-        <div className="min-w-0">
-          <p className="text-[10px] tracking-[0.2em] text-mute uppercase">
-            {m.game.pillar[principle.pillar]}
+    <li className={`transition-opacity ${pending ? "opacity-50" : ""}`}>
+      <button
+        type="button"
+        disabled={!editable}
+        onClick={() => setEditing(true)}
+        className="card press flex w-full items-center gap-3.5 p-4 text-left disabled:cursor-default disabled:active:scale-100"
+      >
+        <ProofIcon proof={principle.proof_type} pillar={principle.pillar} />
+        <div className="min-w-0 flex-1">
+          <p className="text-[15.5px] leading-snug font-medium">
+            {bareThen(principle.then_text).charAt(0).toUpperCase() + bareThen(principle.then_text).slice(1)}
+          </p>
+          <p className="mt-0.5 text-[13px] text-mute">
+            {principle.if_text} · {daysLabel(principle.days, m)}
+          </p>
+          <p className="mt-1 text-[12px] text-mute/80">
+            {m.game.pillar[principle.pillar]} · {m.game.proof.label[principle.proof_type]}
+            {hint ? ` · ${hint}` : ""}
             {principle.pending ? t.fromTomorrow : ""}
           </p>
-          <p className="mt-1.5 text-mute">{principle.if_text},</p>
-          <p className="mt-0.5 text-lg leading-snug">{principle.then_text}</p>
-          <p className="mt-2 text-xs text-mute">
-            {m.game.proof.label[principle.proof_type]}
-            {hint ? ` · ${hint}` : ""} · {daysLabel(principle.days, m)}
-          </p>
         </div>
-        <span className="shrink-0 font-serif text-2xl leading-none tabular-nums">+{shown}</span>
+        <span className="shrink-0 text-right">
+          <span className="block text-sm font-semibold tabular-nums">+{shown}</span>
+          {editable ? (
+            <svg viewBox="0 0 16 16" className="mt-1 ml-auto size-3.5 text-mute" aria-hidden="true">
+              <path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : null}
+        </span>
       </button>
-      {editable ? (
-        <div className="mt-3 flex gap-2">
-          <button type="button" onClick={() => setEditing(true)} className={btnSmall}>
-            {t.edit}
-          </button>
-          <button type="button" disabled={pending} onClick={() => setConfirmRemove(true)} className={`${btnLink} px-3`}>
-            {t.remove}
-          </button>
-        </div>
-      ) : null}
-      {message ? <p className="mt-2 animate-rise text-sm">{message}</p> : null}
+      {message ? <p className="mt-2 animate-in px-1 text-sm">{message}</p> : null}
 
       <Sheet open={editing} onClose={() => setEditing(false)} title={t.editTitle} bare>
         {editing ? (
@@ -392,12 +414,16 @@ export function PrincipleRow({ principle, editable }: { principle: EditablePrinc
               notify(msg);
             }}
             onCancel={() => setEditing(false)}
+            onRemove={() => {
+              setEditing(false);
+              setConfirmRemove(true);
+            }}
           />
         ) : null}
       </Sheet>
       <Sheet open={confirmRemove} onClose={() => setConfirmRemove(false)} title={t.removeTitle}>
-        <p className="mt-2 text-sm text-mute">{t.removeText}</p>
-        <div className="mt-6 space-y-3">
+        <p className="text-sm text-mute">{t.removeText}</p>
+        <div className="mt-6 space-y-3 pb-2">
           <button
             type="button"
             onClick={() => {
@@ -471,25 +497,27 @@ export function TemplateLibrary({ templates, full }: { templates: TemplateView[]
           {message}
         </p>
       ) : null}
-      <ul key={words.length ? "recherche" : filter} className="mt-4 animate-fade divide-y divide-line border-y border-line">
+      <ul key={words.length ? "recherche" : filter} className="mt-4 animate-in space-y-2.5">
         {shown.map((x) => (
-          <li key={x.code} className="py-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
+          <li key={x.code} className="card p-4">
+            <div className="flex items-center gap-3.5">
+              <ProofIcon proof={x.proof_type} pillar={x.pillar} className="size-10" />
+              <div className="min-w-0 flex-1">
                 {x.for_business || x.for_school ? (
-                  <p className="mb-1.5 text-[10px] tracking-[0.2em] text-paper uppercase">{x.for_business ? t.forBusiness : t.forSchool}</p>
+                  <p className="mb-0.5 text-[11px] font-semibold text-violet">{x.for_business ? t.forBusiness : t.forSchool}</p>
                 ) : null}
-                <p className="text-mute">{x.if_text.replace("{heure}", "…")},</p>
-                <p className="mt-0.5 leading-snug">{x.then_text.replace("{minutes}", "50").replace("{reps}", "20")}.</p>
-                <p className="mt-2 text-xs text-mute">
-                  {m.game.pillar[x.pillar]} · {m.game.proof.label[x.proof_type]} · {daysLabel(x.days, m)}
+                <p className="text-[15px] leading-snug font-medium">
+                  {(() => {
+                    const text = bareThen(x.then_text.replace("{minutes}", "50").replace("{reps}", "20"));
+                    return text.charAt(0).toUpperCase() + text.slice(1);
+                  })()}
                 </p>
-                <p className="mt-2 text-sm text-mute">
-                  {x.why} <span className="italic">({x.source})</span>
+                <p className="mt-0.5 text-[13px] text-mute">
+                  {x.if_text.replace("{heure}", "…")} · {daysLabel(x.days, m)}
                 </p>
               </div>
               {x.added ? (
-                <span className="shrink-0 pt-2 text-xs text-mute">{t.added}</span>
+                <span className="shrink-0 text-xs text-mute">{t.added}</span>
               ) : (
                 <button
                   type="button"
@@ -509,9 +537,17 @@ export function TemplateLibrary({ templates, full }: { templates: TemplateView[]
                 </button>
               )}
             </div>
+            <details className="group mt-2 pl-[3.375rem]">
+              <summary className="cursor-pointer list-none text-[12px] text-mute [&::-webkit-details-marker]:hidden">
+                {m.game.pillar[x.pillar]} · {m.game.proof.label[x.proof_type]} · <span className="underline underline-offset-2">{t.whyShort}</span>
+              </summary>
+              <p className="mt-2 animate-in text-[13px] leading-relaxed text-mute">
+                {x.why} <span className="italic">({x.source})</span>
+              </p>
+            </details>
           </li>
         ))}
-        {!shown.length ? <li className="py-4 text-sm text-mute">{words.length ? t.noResult : t.nothingHere}</li> : null}
+        {!shown.length ? <li className="card p-4 text-sm text-mute">{words.length ? t.noResult : t.nothingHere}</li> : null}
       </ul>
     </div>
   );

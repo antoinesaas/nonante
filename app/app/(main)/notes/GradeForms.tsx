@@ -1,18 +1,62 @@
 "use client";
 
-import { startTransition, useActionState, useState, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useState, useTransition } from "react";
 import { addGrade, deleteGrade } from "@/app/actions/grades";
 import { FileField } from "@/components/FileField";
 import { useI18n } from "@/components/I18nProvider";
+import { Sheet } from "@/components/Sheet";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { compressField } from "@/lib/compress-image";
 import { idle } from "@/lib/errors";
 import { btnLink, btnPrimary, input, label } from "@/lib/ui";
 
-export function GradeForm({ today, minDay, subjects }: { today: string; minDay: string; subjects: string[] }) {
+/** Bouton blanc « Ajouter une note » : le formulaire s'ouvre dans une feuille. */
+export function AddGrade({ today, minDay, subjects, rule, todayLine }: { today: string; minDay: string; subjects: string[]; rule: string; todayLine: string | null }) {
+  const { m } = useI18n();
+  const t = m.app.grades;
+  const [open, setOpen] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
+        <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
+          <path d="M8 3 V13 M3 8 H13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+        {t.add}
+      </button>
+      {done ? (
+        <p role="status" className="mt-3 animate-in rounded-2xl bg-ok/12 px-4 py-3 text-sm text-ok">
+          {done}
+        </p>
+      ) : null}
+      <Sheet open={open} onClose={() => setOpen(false)} title={t.add}>
+        <p className="text-sm text-mute">{rule}</p>
+        {todayLine ? <p className="mt-1 text-sm">{todayLine}</p> : null}
+        <div className="mt-5">
+          {open ? (
+            <GradeForm
+              today={today}
+              minDay={minDay}
+              subjects={subjects}
+              onDone={(message) => {
+                setOpen(false);
+                setDone(message);
+              }}
+            />
+          ) : null}
+        </div>
+      </Sheet>
+    </>
+  );
+}
+
+export function GradeForm({ today, minDay, subjects, onDone }: { today: string; minDay: string; subjects: string[]; onDone?: (message: string | null) => void }) {
   const { m } = useI18n();
   const t = m.app.grades;
   const [state, formAction] = useActionState(addGrade, idle);
+  useEffect(() => {
+    if (state.ok) onDone?.(state.message);
+  }, [state, onDone]);
 
   return (
     <form
@@ -34,7 +78,7 @@ export function GradeForm({ today, minDay, subjects }: { today: string; minDay: 
       <div className="grid grid-cols-[1fr_1fr_1fr] gap-3">
         <label className="block">
           <span className={label}>{t.score}</span>
-          <input name="score" inputMode="decimal" placeholder="14,5" required className={`${input} mt-2 font-serif text-xl`} />
+          <input name="score" inputMode="decimal" placeholder="14,5" required className={`${input} mt-2 font-display text-xl`} />
         </label>
         <label className="block">
           <span className={label}>{t.outOf}</span>

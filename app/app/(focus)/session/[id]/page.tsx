@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { FocusTimer } from "@/components/FocusTimer";
 import { requireUser } from "@/lib/auth";
+import { bareThen } from "@/lib/i18n/labels";
 import { getI18n } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,5 +41,5 @@ export default async function SessionPage({ params, searchParams }: PageProps<"/
   if (!principle) notFound();
   if (principle.proof_type !== "session") redirect("/app");
   const minutes = Number((principle.target as { minutes?: number }).minutes ?? 50);
-  return <FocusTimer mode="principle" principleId={id} label={principle.then_text} minutes={minutes} orphan={orphan} />;
+  return <FocusTimer mode="principle" principleId={id} label={(() => { const x = bareThen(principle.then_text); return x.charAt(0).toUpperCase() + x.slice(1); })()} minutes={minutes} orphan={orphan} />;
 }

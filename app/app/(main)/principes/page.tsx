@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArtBand } from "@/components/Art";
+import { Aura } from "@/components/Aura";
 import { NewPrinciple, PrincipleNotice, PrincipleRow, TemplateLibrary } from "@/components/PrincipleEditor";
-import { IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { fmt, formatDay } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
 import type { MyPrinciples, PlanId } from "@/lib/types";
-import { btnLink, btnPrimary, label } from "@/lib/ui";
+import { btnPrimary, label, largeTitle, sectionTitle } from "@/lib/ui";
 import { RegenerateButton } from "./RegenerateButton";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,20 +35,21 @@ export default async function PrinciplesPage({ searchParams }: PageProps<"/app/p
 
   return (
     <>
-      <ArtBand slug={IMAGES.onboarding[6]} className="-mx-5 -mt-6 h-52 lg:mx-0 lg:mt-0">
+      <Aura tone="violet" />
+      <header className="relative z-10 animate-in pt-2">
         <p className={label}>{m.game.goals[d.enrollment.goal_type].label}</p>
-        <h1 className="mt-2 font-serif text-4xl leading-none">{fresh ? t.titleFresh : t.title}</h1>
-      </ArtBand>
+        <h1 className={`mt-1 ${largeTitle}`}>{fresh ? t.titleFresh : t.title}</h1>
+        <p className="mt-2 text-[15px] leading-snug text-paper/80">{d.enrollment.goal_title}</p>
+      </header>
 
-      <div className="lg:grid lg:grid-cols-[1.2fr_1fr] lg:gap-12">
+      <div className="relative z-10 lg:grid lg:grid-cols-[1.2fr_1fr] lg:gap-12">
         <div>
-          <p className="mt-6 text-lg">{d.enrollment.goal_title}</p>
-          <p className="mt-2 text-sm text-mute">
+          <p className="mt-3 text-sm text-mute">
             {fresh ? t.introFresh : beforeStart ? fmt(t.introBefore, { date: formatDay(d.enrollment.start_date, locale, { weekday: true }) }) : t.introRunning}
           </p>
 
-          <div className="mt-6 flex items-baseline justify-between gap-4 border-b border-line pb-3 text-sm">
-            <span className="text-mute">
+          <div className="mt-6 flex items-center justify-between gap-4 text-sm">
+            <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-mute tabular-nums">
               {fmt(t.count, { n: principles.length, max: limits.max_principles })}
               {d.plan ? fmt(t.plan, { plan: m.game.plans.name[d.plan as PlanId] }) : ""}
             </span>
@@ -57,16 +57,35 @@ export default async function PrinciplesPage({ searchParams }: PageProps<"/app/p
           </div>
 
           <PrincipleNotice />
-          <ul className="divide-y divide-line border-b border-line">
+          <ul className="mt-4 space-y-2.5">
             {principles.map((p) => (
               <PrincipleRow key={p.id} principle={p} editable={editable} />
             ))}
           </ul>
 
+          {editable ? (
+            <div className="mt-5">
+              {principles.length < limits.max_principles ? (
+                <NewPrinciple />
+              ) : (
+                <p className="card p-4 text-sm">
+                  {fmt(t.limit, { n: limits.max_principles })}{" "}
+                  {limits.max_principles < 12 ? (
+                    <Link href="/abonnement" className="underline underline-offset-4">
+                      {t.goPro}
+                    </Link>
+                  ) : (
+                    t.removeOne
+                  )}
+                </p>
+              )}
+            </div>
+          ) : null}
+
           {draft ? (
-            <div className="mt-8 rounded-xs border border-paper p-5">
-              <p className="font-serif text-2xl leading-tight">{t.readyTitle}</p>
-              <p className="mt-2 text-sm text-mute">
+            <div className="glow-violet mt-8 rounded-[1.75rem] p-5">
+              <p className="font-display text-[22px] leading-tight">{t.readyTitle}</p>
+              <p className="mt-2 text-sm text-paper/85">
                 {t.readyText}
                 {principles.length > 6 ? t.readyKeep : ""}
               </p>
@@ -80,34 +99,11 @@ export default async function PrinciplesPage({ searchParams }: PageProps<"/app/p
             </Link>
           ) : null}
 
-          {editable ? (
-            <section className="mt-12">
-              <h2 className="font-serif text-3xl">{t.create}</h2>
-              <p className="mt-2 text-sm text-mute">{t.createHint}</p>
-              <PrincipleNotice />
-              <div className="mt-6">
-                {principles.length < limits.max_principles ? (
-                  <NewPrinciple />
-                ) : (
-                  <p className="text-sm">
-                    {fmt(t.limit, { n: limits.max_principles })}{" "}
-                    {limits.max_principles < 12 ? (
-                      <Link href="/abonnement" className={btnLink}>
-                        {t.goPro}
-                      </Link>
-                    ) : (
-                      t.removeOne
-                    )}
-                  </p>
-                )}
-              </div>
-            </section>
-          ) : null}
         </div>
 
         {editable ? (
-          <section className="mt-14 lg:mt-6">
-            <h2 className="font-serif text-3xl">{t.library}</h2>
+          <section className="mt-12 lg:mt-6">
+            <h2 className={sectionTitle}>{t.library}</h2>
             <p className="mt-2 text-sm text-mute">{t.libraryHint}</p>
             <div className="mt-6">
               <TemplateLibrary templates={d.templates ?? []} full={principles.length >= limits.max_principles ? fmt(t.full, { n: limits.max_principles }) : null} />

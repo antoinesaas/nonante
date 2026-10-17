@@ -8,13 +8,13 @@ export async function QuoteCard({ date, className = "" }: { date: string; classN
   const open = locale === "fr" ? "« " : locale === "de" ? "„" : "“";
   const close = locale === "fr" ? " »" : locale === "de" ? "“" : "”";
   return (
-    <figure className={className}>
-      <blockquote className="font-serif text-2xl leading-snug italic">
+    <figure className={`border-l-2 border-violet/60 pl-4 ${className}`}>
+      <blockquote className="text-[17px] leading-snug font-medium tracking-tight text-paper/85">
         {open}
         {q.text}
         {close}
       </blockquote>
-      <figcaption className="mt-3 text-xs text-mute">
+      <figcaption className="mt-2 text-xs text-mute">
         {q.author}, <span className="italic">{q.work}</span>
         {q.translated ? m.common.quoteTranslated : ""}
       </figcaption>

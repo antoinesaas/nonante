@@ -4,9 +4,11 @@ import { useState, useTransition } from "react";
 import { getDayDetail } from "@/app/actions/proofs";
 import { calendarGrid, Dot } from "@/components/DotCalendar";
 import { useI18n } from "@/components/I18nProvider";
+import { Sheet } from "@/components/Sheet";
 import { fmt, formatDay, signed } from "@/lib/i18n/format";
 import type { CalendarDay, DayDetail } from "@/lib/types";
 
+/** Calendrier de l'arc : un toucher sur un carré ouvre le détail du jour dans une feuille. */
 export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
   const { m, locale } = useI18n();
   const c = m.game.calendar;
@@ -35,7 +37,7 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
               onClick={() => open(i)}
               aria-label={fmt(c.dayAria, { n: i + 1, date: formatDay(day.day, locale, { year: false }), status: m.game.dayStatus[day.status] })}
               aria-pressed={selected === i}
-              className="-m-1.5 block p-1.5"
+              className="block w-full active:scale-90 transition-transform"
             >
               <Dot state={day.status} />
             </button>
@@ -43,43 +45,40 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
         ))}
       </ol>
 
-      {current ? (
-        <div className="mt-6 border border-line bg-surface p-4 text-sm" aria-live="polite">
-          <div className="flex items-baseline justify-between gap-4">
-            <p>
-              {fmt(c.day, { n: selected! + 1, date: formatDay(current.day, locale, { weekday: true, year: false }) })}
+      <Sheet
+        open={current !== null}
+        onClose={() => setSelected(null)}
+        title={current ? fmt(c.day, { n: selected! + 1, date: formatDay(current.day, locale, { weekday: true, year: false }) }) : ""}
+      >
+        {current ? (
+          <div className="pb-2 text-[15px]" aria-live="polite">
+            <p className="flex items-center gap-2 text-mute">
+              <span className="block size-3 shrink-0">
+                <Dot state={current.status} />
+              </span>
+              {m.game.dayStatus[current.status]}
             </p>
-            <button type="button" onClick={() => setSelected(null)} className="text-mute hover:text-paper">
-              {m.common.actions.close}
-            </button>
+            {pending ? <span className="skeleton mt-5 block h-24 w-full rounded-2xl" /> : null}
+            {detail ? (
+              <>
+                <ul className="grouped mt-5">
+                  {detail.principles.map((p, i) => (
+                    <li key={i} className="flex items-start justify-between gap-4 px-4 py-3">
+                      <span className={p.validation && p.validation.status !== "rejected" ? "" : "text-mute"}>{p.then_text}</span>
+                      <span className={`shrink-0 tabular-nums ${p.validation && p.validation.status !== "rejected" ? "text-ok" : p.miss ? "text-ko" : "text-mute"}`}>
+                        {p.validation ? (p.validation.status === "rejected" ? c.refused : signed(p.validation.points)) : p.miss ? signed(p.miss.points) : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 flex justify-between px-1 font-medium">
+                  {c.total} <span className="tabular-nums">{signed(detail.points)}</span>
+                </p>
+              </>
+            ) : null}
           </div>
-          <p className="mt-1 text-mute">{m.game.dayStatus[current.status]}</p>
-          {pending ? <p className="mt-3 text-mute">{m.common.actions.loading}</p> : null}
-          {detail ? (
-            <>
-              <ul className="mt-4 space-y-2">
-                {detail.principles.map((p, i) => (
-                  <li key={i} className="flex items-start justify-between gap-4">
-                    <span className={p.validation && p.validation.status !== "rejected" ? "" : "text-mute"}>{p.then_text}</span>
-                    <span className="shrink-0 tabular-nums">
-                      {p.validation
-                        ? p.validation.status === "rejected"
-                          ? c.refused
-                          : signed(p.validation.points)
-                        : p.miss
-                          ? signed(p.miss.points)
-                          : "—"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-4 border-t border-line pt-3">
-                {c.total} <span className="tabular-nums">{signed(detail.points)}</span>
-              </p>
-            </>
-          ) : null}
-        </div>
-      ) : null}
+        ) : null}
+      </Sheet>
     </div>
   );
 }

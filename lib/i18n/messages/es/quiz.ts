@@ -12,6 +12,25 @@ export const quiz: typeof fr = {
   understood: "Entendido, seguimos",
   build: "Construir mi arco",
   skip: "Saltar",
+  intro: {
+    slides: [
+      { title: "90 días. Cero excusas.", text: "Un objetivo, principios « si… entonces… » hechos para ti, una prueba cada día. Tus anillos se llenan con cada día cumplido." },
+      { title: "Nada cuenta sin prueba.", text: "Un temporizador que se rompe si sales de la pantalla, flexiones contadas por la cámara, cálculo mental al despertar, foto, enlace. Imposible hacer trampa." },
+      { title: "Tu arco, construido en 2 minutos.", text: "Responde a unas preguntas: Nonante elige tus principios, calcula su dificultad y prepara tu calendario de 90 días." },
+    ],
+    next: "Siguiente",
+    start: "Construir mi arco",
+    login: "Ya tengo una cuenta",
+    skip: "Saltar",
+    cardLabel: "Ejemplo de principio",
+  },
+  vision: {
+    hand: "imagínalo un momento",
+    title: "{date}.",
+    day: "Día 90",
+    text: "Lo lograste. Cada día probado te acerca, cada día abandonado te aleja. Las siguientes preguntas construyen ese camino.",
+    cta: "Es lo que quiero",
+  },
   situation: {
     handFirst: "2 minutos, prometido",
     handNext: "arco n.º {n}, vamos",

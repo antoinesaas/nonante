@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
 import { Board, type Period } from "@/app/classement/Board";
+import { Aura } from "@/components/Aura";
 import { BottomNav } from "@/components/BottomNav";
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -11,7 +12,7 @@ import { squadName } from "@/lib/i18n/labels";
 import { getCountry, getI18n } from "@/lib/i18n/server";
 import { navTabs } from "@/lib/nav";
 import type { Category, LeaderboardRow, SquadView } from "@/lib/types";
-import { label } from "@/lib/ui";
+import { btnPrimary, label, largeTitle } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
@@ -57,20 +58,21 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/clas
 
   return (
     <>
-      <main className={`mx-auto w-full max-w-xl px-5 pt-6 lg:max-w-3xl ${user ? "pb-32 lg:pt-24" : "pb-12"}`}>
+      <main className={`relative isolate mx-auto w-full max-w-xl overflow-x-clip px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-5 lg:max-w-3xl ${user ? "pb-36 lg:pt-24" : "pb-12"}`}>
+        <Aura tone="amber" />
         {user ? null : (
           <Link href="/" aria-label={m.common.homeAria}>
             <Logo size="sm" />
           </Link>
         )}
-        <p className={`${label} ${user ? "mt-4" : "mt-10"}`}>{squad ? fmt(t.squad, { name: squadName(squad, m) }) : t.allPlayers}</p>
-        <h1 className="mt-3 font-serif text-5xl leading-none">{t.title}</h1>
+        <p className={`${label} ${user ? "mt-2" : "mt-8"}`}>{squad ? fmt(t.squad, { name: squadName(squad, m) }) : t.allPlayers}</p>
+        <h1 className={`mt-1 ${largeTitle}`}>{t.title}</h1>
         {stats && !squad ? (
-          <p className="mt-4 text-sm text-mute">
+          <p className="mt-2 text-sm text-mute">
             {fmt(t.stats, { players: stats.joueurs, arcs: stats.arcs_en_cours, green: stats.verts_aujourdhui, quit: stats.ont_lache }, locale)}
           </p>
         ) : squad ? (
-          <p className="mt-4 text-sm text-mute">{fmt(t.members, { n: squad.members }, locale)}</p>
+          <p className="mt-2 text-sm text-mute">{fmt(t.members, { n: squad.members }, locale)}</p>
         ) : null}
 
         {squads.length ? (
@@ -78,7 +80,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/clas
             <Link
               href={href({ periode, categorie })}
               aria-current={!escouade ? "page" : undefined}
-              className={`rounded-full border px-3.5 py-1.5 ${!escouade ? "border-paper bg-paper text-ink" : "border-line text-mute"}`}
+              className={`press rounded-full px-3.5 py-1.5 font-medium ${!escouade ? "pearl" : "liquid text-paper/80"}`}
             >
               {t.all}
             </Link>
@@ -87,7 +89,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/clas
                 key={s.id}
                 href={href({ periode, categorie, escouade: s.id })}
                 aria-current={escouade === s.id ? "page" : undefined}
-                className={`rounded-full border px-3.5 py-1.5 ${escouade === s.id ? "border-paper bg-paper text-ink" : "border-line text-mute"}`}
+                className={`press rounded-full px-3.5 py-1.5 font-medium ${escouade === s.id ? "pearl" : "liquid text-paper/80"}`}
               >
                 {squadName(s, m)}
               </Link>
@@ -106,9 +108,9 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/clas
           initialCategory={categorie}
           initialScope={params.zone === "pays" ? "pays" : "monde"}
         />
-        <p className="mt-4 text-xs text-mute">{t.ties}</p>
+        <p className="mt-4 px-1 text-xs text-mute">{t.ties}</p>
         {!user ? (
-          <Link href="/onboarding" className="mt-8 block rounded-xs border border-paper p-4 text-center transition-colors hover:bg-paper hover:text-ink">
+          <Link href="/onboarding" className={`${btnPrimary} mt-8`}>
             {t.join}
           </Link>
         ) : null}

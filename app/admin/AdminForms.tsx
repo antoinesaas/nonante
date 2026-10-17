@@ -57,7 +57,7 @@ export function SquadForm({
         <input name="startDate" type="date" defaultValue={squad?.start_date ?? ""} className={`${input} mt-2`} />
       </label>
       <label className="flex items-center gap-3 text-sm">
-        <input type="checkbox" name="isPublic" defaultChecked={squad?.is_public ?? true} className="size-5 accent-paper" />
+        <input type="checkbox" name="isPublic" defaultChecked={squad?.is_public ?? true} className="size-5 accent-white" />
         Publique
       </label>
       <SubmitButton className={btnSecondary} pendingLabel="…">

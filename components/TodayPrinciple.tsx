@@ -4,35 +4,39 @@ import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { validateDeclaratif } from "@/app/actions/proofs";
 import { useI18n } from "@/components/I18nProvider";
-import { targetHint } from "@/lib/i18n/labels";
+import { ProofIcon } from "@/components/ProofIcon";
+import { bareThen, targetHint } from "@/lib/i18n/labels";
 import { isStrong, proofHref } from "@/lib/proofs";
 import type { PrincipleView } from "@/lib/types";
 import { btnSmall } from "@/lib/ui";
 
 function Check() {
   return (
-    <svg viewBox="0 0 20 20" className="size-5 text-ok" aria-hidden="true">
-      <path d="M4 10.5l4 4 8-9" pathLength="1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="stroke-draw" />
+    <svg viewBox="0 0 20 20" className="size-4" aria-hidden="true">
+      <path d="M4 10.5l4 4 8-9" pathLength="1" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="stroke-draw" />
     </svg>
   );
 }
 
 /**
- * Un principe du jour : « si… » en gris, « alors… » en blanc, la valeur, un seul bouton selon la preuve.
- * « Fait » répond tout de suite (coche affichée avant la réponse du serveur, retirée en cas de refus).
+ * Un principe du jour, en carte : pastille du pilier, « alors… » en titre, « si… » dessous, la valeur et un seul bouton
+ * selon la preuve. « Fait » répond tout de suite (coche affichée avant la réponse du serveur, retirée en cas de refus).
+ * `offDay` : principe prévu un autre jour de la semaine, affiché en retrait avec ses jours.
  */
-export function TodayPrinciple({ principle, disabled = false }: { principle: PrincipleView; disabled?: boolean }) {
+export function TodayPrinciple({ principle, disabled = false, offDay }: { principle: PrincipleView; disabled?: boolean; offDay?: string }) {
   const { m, locale } = useI18n();
   const t = m.app.today;
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
-  const [showWhy, setShowWhy] = useState(false);
+  const [open, setOpen] = useState(false);
   const shown = isStrong(principle.proof_type) ? principle.value : Math.round(principle.value * 0.5);
   const [v, setOptimistic] = useOptimistic(principle.validation);
   const href = proofHref(principle.proof_type, principle.id);
   const hint = targetHint(principle.proof_type, principle.target, m, locale);
+  const done = Boolean(v && v.status !== "rejected");
+  const title = bareThen(principle.then_text);
 
-  function done() {
+  function declare() {
     setMessage(null);
     startTransition(async () => {
       setOptimistic({ status: "valid", strength: "faible", points: shown, proof_type: principle.proof_type });
@@ -43,56 +47,49 @@ export function TodayPrinciple({ principle, disabled = false }: { principle: Pri
   }
 
   return (
-    <li className="py-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[10px] tracking-[0.2em] text-mute uppercase">{m.game.pillar[principle.pillar]}</p>
-          <p className="mt-1.5 text-mute">{principle.if_text},</p>
-          <p className="mt-0.5 text-lg leading-snug">{principle.then_text}</p>
-          <p className="mt-2 text-xs text-mute">
-            {m.game.proof.label[principle.proof_type]}
-            {hint ? ` · ${hint}` : null}
-            {principle.why ? (
-              <>
-                {" · "}
-                <button type="button" onClick={() => setShowWhy((s) => !s)} aria-expanded={showWhy} className="underline underline-offset-2 hover:text-paper">
-                  {t.why}
-                </button>
-              </>
-            ) : null}
+    <li className={`card p-4 transition-opacity duration-300 ${offDay ? "opacity-55" : ""}`}>
+      <div className="flex items-center gap-3.5">
+        <ProofIcon proof={principle.proof_type} pillar={principle.pillar} muted={Boolean(offDay)} />
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="min-w-0 flex-1 text-left">
+          <p className={`text-[15.5px] leading-snug font-medium ${done ? "text-mute line-through decoration-white/30" : ""}`}>{title.charAt(0).toUpperCase() + title.slice(1)}</p>
+          <p className="mt-0.5 truncate text-[13px] text-mute">
+            {offDay ?? `${m.game.proof.label[principle.proof_type]}${hint ? ` · ${hint}` : ""}`}
+            {!v ? <span className="tabular-nums"> · +{shown}</span> : null}
           </p>
-          {showWhy && principle.why ? <p className="mt-2 animate-rise text-sm text-mute">{principle.why}</p> : null}
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2">
+        </button>
+        <div className="shrink-0">
           {v ? (
-            <span className={`flex animate-pop items-center gap-1.5 tabular-nums ${pending ? "opacity-70" : ""}`}>
+            <span className={`flex animate-pop items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold tabular-nums ${v.status === "rejected" ? "bg-ko/15 text-ko" : "bg-ok/15 text-ok"} ${pending ? "opacity-70" : ""}`}>
               {v.status === "rejected" ? (
-                <span className="text-sm text-ko">{t.refused}</span>
+                t.refused
               ) : (
                 <>
                   <Check />+{v.points}
                 </>
               )}
             </span>
+          ) : offDay || disabled ? null : href ? (
+            <Link href={href} className={btnSmall}>
+              {m.game.proof.action[principle.proof_type]}
+            </Link>
           ) : (
-            <span className="font-serif text-2xl leading-none tabular-nums">+{shown}</span>
+            <button type="button" disabled={pending} onClick={declare} className={btnSmall}>
+              {m.game.proof.action[principle.proof_type]}
+            </button>
           )}
-          {!v && !disabled ? (
-            href ? (
-              <Link href={href} className={btnSmall}>
-                {m.game.proof.action[principle.proof_type]}
-              </Link>
-            ) : (
-              <button type="button" disabled={pending} onClick={done} className={btnSmall}>
-                {m.game.proof.action[principle.proof_type]}
-              </button>
-            )
-          ) : null}
         </div>
       </div>
+      {open ? (
+        <div className="mt-3 animate-in border-t border-line pt-3 text-[13px] leading-relaxed text-mute">
+          <p>
+            <span className="text-paper/80">{principle.if_text},</span> {principle.then_text}
+          </p>
+          {principle.why ? <p className="mt-2">{principle.why}</p> : null}
+        </div>
+      ) : null}
       {v?.status === "audit_pending" ? <p className="mt-2 text-xs text-mute">{t.auditPending}</p> : null}
       {message ? (
-        <p role="status" className="mt-2 animate-rise text-sm">
+        <p role="status" className="mt-2 animate-in text-sm">
           {message}
         </p>
       ) : null}

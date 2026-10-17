@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArtBand } from "@/components/Art";
-import { IMAGES } from "@/lib/art";
+import { Aura } from "@/components/Aura";
 import { addDays } from "@/lib/answers";
 import { requireUser } from "@/lib/auth";
 import { todayParis } from "@/lib/dates";
@@ -9,8 +8,8 @@ import { fmt, formatDay, formatMoney } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
 import { INTL } from "@/lib/i18n/config";
 import type { Wallet } from "@/lib/types";
-import { btnPrimary, label } from "@/lib/ui";
-import { DeleteEntryButton, WalletEntryForm } from "./WalletForms";
+import { btnPrimary, label, largeTitle, sectionTitle } from "@/lib/ui";
+import { AddWalletEntry, DeleteEntryButton } from "./WalletForms";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
@@ -34,46 +33,45 @@ export default async function WalletPage() {
 
   return (
     <>
-      <ArtBand slug={IMAGES.wallet} className="-mx-5 -mt-6 h-60 lg:mx-0 lg:mt-0">
+      <Aura tone="mint" />
+      <header className="relative z-10 animate-in pt-2">
         <p className={label}>{t.title}</p>
-        <p className="mt-2 font-serif text-6xl leading-none tabular-nums">{money(w.proven_cents)}</p>
-        <p className="mt-2 text-sm text-mute">{t.subtitle}</p>
-      </ArtBand>
+        <p className={`mt-1 ${largeTitle} text-[44px] tabular-nums`}>{money(w.proven_cents)}</p>
+        <p className="mt-1 text-sm text-mute">{t.subtitle}</p>
+      </header>
 
       {!w.enabled ? (
-        <section className="mt-8 animate-rise border border-paper p-5">
-          <p className="font-serif text-2xl leading-tight">{t.lockedTitle}</p>
-          <p className="mt-3 text-sm text-mute">{t.lockedText}</p>
+        <section className="glow-mint relative z-10 mt-8 animate-in rounded-[1.75rem] p-5">
+          <p className="font-display text-[22px] leading-tight">{t.lockedTitle}</p>
+          <p className="mt-2 text-sm text-paper/85">{t.lockedText}</p>
           <Link href="/abonnement" className={`${btnPrimary} mt-5`}>
             {t.lockedCta}
           </Link>
         </section>
       ) : (
-        <div className="lg:grid lg:grid-cols-2 lg:gap-12">
+        <div className="relative z-10 lg:grid lg:grid-cols-2 lg:gap-12">
           <div>
-            <dl className="mt-8 grid grid-cols-3 gap-4 border-b border-line pb-6">
-              <div>
-                <dt className="text-xs text-mute">{t.month}</dt>
-                <dd className="mt-1 font-serif text-2xl tabular-nums">{money(w.month_cents)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-mute">{t.arc}</dt>
-                <dd className="mt-1 font-serif text-2xl tabular-nums">{money(w.arc_cents)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-mute">{t.declared}</dt>
-                <dd className="mt-1 font-serif text-2xl text-mute tabular-nums">{money(w.declared_cents)}</dd>
-              </div>
+            <dl className="mt-6 grid grid-cols-3 gap-2">
+              {[
+                { k: t.month, v: money(w.month_cents), muted: false },
+                { k: t.arc, v: money(w.arc_cents), muted: false },
+                { k: t.declared, v: money(w.declared_cents), muted: true },
+              ].map((x) => (
+                <div key={x.k} className="card p-3.5">
+                  <dt className="text-[12px] text-mute">{x.k}</dt>
+                  <dd className={`mt-1 font-display text-[19px] leading-tight tabular-nums ${x.muted ? "text-mute" : ""}`}>{x.v}</dd>
+                </div>
+              ))}
             </dl>
 
             {w.goal ? (
-              <section className="mt-6">
-                <p className={label}>{t.goal}</p>
-                <p className="mt-2">{w.goal.title}</p>
+              <section className="card mt-3 p-4">
+                <p className="text-[13px] text-mute">{t.goal}</p>
+                <p className="mt-0.5 text-[15px]">{w.goal.title}</p>
                 {goalCents ? (
                   <>
-                    <span className="mt-3 block h-1 w-full bg-line">
-                      <span className={`block h-1 bg-paper ${WIDTHS[Math.min(10, Math.floor((w.month_cents / goalCents) * 10))]}`} />
+                    <span className="mt-3 block h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                      <span className={`block h-2 rounded-full bg-linear-to-r from-[#1fbf7a] to-[#9bf5c9] ${WIDTHS[Math.min(10, Math.floor((w.month_cents / goalCents) * 10))]}`} />
                     </span>
                     <p className="mt-1.5 text-xs text-mute">{fmt(t.goalProgress, { done: money(w.month_cents), target: money(goalCents) })}</p>
                   </>
@@ -83,16 +81,16 @@ export default async function WalletPage() {
 
             {/* Graphique seulement quand il y a quelque chose à montrer. */}
             {w.months.some((x) => x.proven_cents + x.declared_cents > 0) ? (
-              <section className="mt-10">
-                <p className={label}>{t.months}</p>
-                <div className="mt-4 flex h-40 items-end gap-3" role="img" aria-label={t.monthsAria}>
+              <section className="card mt-3 p-4">
+                <p className="text-[13px] text-mute">{t.months}</p>
+                <div className="mt-4 flex h-36 items-end gap-2.5" role="img" aria-label={t.monthsAria}>
                   {w.months.map((x) => {
                     const total = x.proven_cents + x.declared_cents;
                     return (
-                      <div key={x.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+                      <div key={x.month} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
                         <span className="text-[10px] text-mute tabular-nums">{total ? money(total) : ""}</span>
-                        <span className={`flex w-full flex-col justify-end ${HEIGHTS[Math.round((total / maxMonth) * 10)]}`}>
-                          <span className="block w-full flex-1 origin-bottom animate-rise bg-paper" />
+                        <span className={`flex w-full flex-col justify-end ${HEIGHTS[Math.max(total ? 1 : 0, Math.round((total / maxMonth) * 10))]}`}>
+                          <span className="block w-full flex-1 origin-bottom animate-rise rounded-lg bg-linear-to-t from-[#1fbf7a] to-[#9bf5c9]" />
                         </span>
                         <span className="text-[11px] text-mute">{monthName(x.month)}</span>
                       </div>
@@ -102,25 +100,25 @@ export default async function WalletPage() {
               </section>
             ) : null}
 
-            <section className="mt-12">
-              <h2 className="font-serif text-3xl">{t.add}</h2>
-              <p className="mt-2 text-sm text-mute">{t.pointsRule}</p>
-              {w.points_today ? <p className="mt-1 text-sm">{fmt(t.pointsToday, { n: w.points_today, max: w.points_cap })}</p> : null}
-              <div className="mt-6 border border-line bg-surface p-4">
-                <WalletEntryForm today={today} minDay={addDays(today, -30)} />
-              </div>
-            </section>
+            <div className="mt-6">
+              <AddWalletEntry
+                today={today}
+                minDay={addDays(today, -30)}
+                rule={t.pointsRule}
+                todayLine={w.points_today ? fmt(t.pointsToday, { n: w.points_today, max: w.points_cap }) : null}
+              />
+            </div>
           </div>
 
-          <section className="mt-12 lg:mt-8">
-            <h2 className="font-serif text-3xl">{t.history}</h2>
+          <section className="mt-10 lg:mt-6">
+            <h2 className={sectionTitle}>{t.history}</h2>
             {w.entries.length ? (
-              <ul className="mt-4 divide-y divide-line border-y border-line">
+              <ul className="grouped mt-3">
                 {w.entries.map((entry) => (
-                  <li key={entry.id} className="flex items-start justify-between gap-4 py-4">
+                  <li key={entry.id} className="flex items-center justify-between gap-4 px-4 py-3.5">
                     <div className="min-w-0">
-                      <p className="truncate">{entry.label}</p>
-                      <p className="mt-1 text-xs text-mute">
+                      <p className="truncate text-[15px]">{entry.label}</p>
+                      <p className="mt-0.5 text-[12px] text-mute">
                         {formatDay(entry.day, locale, { year: false })} · {t.sources[entry.source]} ·{" "}
                         <span className={entry.status === "rejected" ? "text-ko" : entry.status === "proven" ? "text-ok" : ""}>{t.status[entry.status]}</span>
                         {entry.status === "declared" ? (
@@ -131,14 +129,14 @@ export default async function WalletPage() {
                         ) : null}
                       </p>
                     </div>
-                    <span className={`shrink-0 font-serif text-xl tabular-nums ${entry.status === "rejected" ? "text-mute line-through" : ""}`}>{money(entry.amount_cents)}</span>
+                    <span className={`shrink-0 font-display text-[17px] tabular-nums ${entry.status === "rejected" ? "text-mute line-through" : ""}`}>{money(entry.amount_cents)}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-4 text-sm text-mute">{t.empty}</p>
+              <p className="card mt-3 p-4 text-sm text-mute">{t.empty}</p>
             )}
-            <p className="mt-8 text-xs text-mute">{t.disclaimer}</p>
+            <p className="mt-6 px-1 text-xs text-mute">{t.disclaimer}</p>
           </section>
         </div>
       )}

@@ -25,7 +25,7 @@ export default async function AdminSquadsPage() {
   return (
     <div className="space-y-14">
       <section>
-        <h1 className="font-serif text-4xl">Escouades officielles</h1>
+        <h1 className="font-display text-4xl">Escouades officielles</h1>
         <p className="mt-2 text-sm text-mute">Avec une date de départ, elles sont proposées comme départ collectif à l&apos;onboarding.</p>
         <div className="mt-6 space-y-8">
           {official.map((s) => (
@@ -48,7 +48,7 @@ export default async function AdminSquadsPage() {
       </section>
 
       <section>
-        <h2 className="font-serif text-3xl">Escouades des joueurs</h2>
+        <h2 className="font-display text-3xl">Escouades des joueurs</h2>
         <ul className="mt-4 divide-y divide-line border-y border-line text-sm">
           {others.map((s) => (
             <li key={s.id} className="flex justify-between gap-4 py-2">

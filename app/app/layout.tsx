@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Splash } from "@/components/Splash";
 import { requireUser } from "@/lib/auth";
 import { getI18n } from "@/lib/i18n/server";
 
@@ -9,5 +10,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AppLayout({ children }: LayoutProps<"/app">) {
   await requireUser("/app");
-  return children;
+  return (
+    <>
+      <Splash />
+      {children}
+    </>
+  );
 }

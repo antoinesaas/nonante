@@ -80,13 +80,12 @@ export function Board({
     window.history.replaceState(null, "", url);
   }
 
-  const chip = (on: boolean) =>
-    `rounded-full border px-3.5 py-1.5 transition-[background-color,border-color,color,transform] duration-200 active:scale-95 ${on ? "border-paper bg-paper text-ink" : "border-line text-mute hover:text-paper"}`;
+  const chip = (on: boolean) => `press h-9 rounded-full px-3.5 text-sm font-medium ${on ? "pearl" : "liquid text-paper/80"}`;
 
   return (
     <>
-      <div className="relative mt-6 grid grid-cols-3 rounded-full border border-line p-1 text-sm" role="tablist" aria-label={t.periodAria}>
-        <span aria-hidden="true" className={`absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-paper transition-transform duration-300 ease-out ${SHIFT[period]}`} />
+      <div className="liquid relative mt-6 grid grid-cols-3 rounded-full p-1 text-sm" role="tablist" aria-label={t.periodAria}>
+        <span aria-hidden="true" className={`pearl absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full transition-transform duration-500 ease-[cubic-bezier(0.3,1.3,0.4,1)] ${SHIFT[period]}`} />
         {PERIODS.map((p) => (
           <button
             key={p}
@@ -94,13 +93,13 @@ export function Board({
             role="tab"
             aria-selected={period === p}
             onClick={() => update({ period: p })}
-            className={`relative z-10 flex h-10 items-center justify-center rounded-full transition-colors duration-300 ${period === p ? "text-ink" : "text-mute hover:text-paper"}`}
+            className={`relative z-10 flex h-10 items-center justify-center rounded-full font-medium transition-colors duration-300 ${period === p ? "text-black" : "text-paper/75"}`}
           >
             {t.periods[p]}
           </button>
         ))}
       </div>
-      <p className="mt-2 min-h-8 text-xs text-mute">{t.periodHint[period]}</p>
+      <p className="mt-2 min-h-8 px-1 text-xs text-mute">{t.periodHint[period]}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
         {country ? (
@@ -112,7 +111,7 @@ export function Board({
             ))}
           </div>
         ) : null}
-        {country ? <span aria-hidden="true" className="mx-1 h-5 w-px bg-line" /> : null}
+        {country ? <span aria-hidden="true" className="mx-0.5 h-5 w-px bg-white/15" /> : null}
         <div className="flex flex-wrap gap-2" role="tablist" aria-label={t.categoryAria}>
           {CATEGORIES.map((c) => (
             <button key={c} type="button" role="tab" aria-selected={category === c} onClick={() => update({ category: c })} className={chip(category === c)}>
@@ -122,12 +121,18 @@ export function Board({
         </div>
       </div>
 
-      {me && me.rank > 10 ? <p className="mt-6 rounded-xs border border-paper p-3 text-sm">{fmt(t.you, { rank: me.rank, points: formatPoints(me.points, locale) })}</p> : null}
+      {me && me.rank > 10 ? <p className="glow-violet mt-6 rounded-2xl p-4 text-sm">{fmt(t.you, { rank: me.rank, points: formatPoints(me.points, locale) })}</p> : null}
 
-      <ol key={`${period}-${category}-${scope}`} className="mt-6 divide-y divide-line border-y border-line">
+      <ol key={`${period}-${category}-${scope}`} className="grouped mt-5 animate-in overflow-hidden">
         {rows.slice(0, SHOWN).map((r, i) => (
-          <li key={`${r.rank}-${r.pseudo}-${i}`} className={`flex animate-fade items-center gap-3 py-3 ${r.is_me ? "-mx-3 bg-surface px-3" : ""}`}>
-            <span className={`w-8 shrink-0 font-serif text-xl tabular-nums ${r.rank <= 3 ? "text-paper" : "text-mute"}`}>{r.rank}</span>
+          <li key={`${r.rank}-${r.pseudo}-${i}`} className={`flex items-center gap-3 px-3.5 py-3 ${r.is_me ? "bg-white/[0.05]" : ""}`}>
+            <span
+              className={`grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold tabular-nums ${
+                r.rank === 1 ? "bg-linear-to-br from-[#ffd35c] to-[#ff8a1f] text-black" : r.rank === 2 ? "bg-linear-to-br from-[#f5f5f7] to-[#9a9aa2] text-black" : r.rank === 3 ? "bg-linear-to-br from-[#ffb48c] to-[#b0552a] text-black" : "text-mute"
+              }`}
+            >
+              {r.rank}
+            </span>
             <Avatar path={r.avatar_path} pseudo={r.pseudo} size={36} className="size-9" />
             <div className="min-w-0 flex-1">
               {r.is_public ? (
@@ -152,10 +157,10 @@ export function Board({
               </span>
               {business(r) ? <span className="block truncate text-xs text-paper/80">{business(r)}</span> : null}
             </div>
-            <span className="shrink-0 font-serif text-xl tabular-nums">{formatPoints(r.points, locale)}</span>
+            <span className={`shrink-0 font-display text-[17px] tabular-nums ${r.points < 0 ? "text-ko" : ""}`}>{formatPoints(r.points, locale)}</span>
           </li>
         ))}
-        {!rows.length ? <li className="py-6 text-sm text-mute">{t.empty}</li> : null}
+        {!rows.length ? <li className="px-4 py-6 text-sm text-mute">{t.empty}</li> : null}
       </ol>
       {me && me.rank > SHOWN ? (
         <p className="mt-3 text-sm text-mute">{fmt(t.you, { rank: me.rank, points: formatPoints(me.points, locale) })}</p>

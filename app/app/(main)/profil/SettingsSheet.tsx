@@ -24,7 +24,7 @@ export function SettingsSheet({ isPublic, walletPublic, bio, email, isAdmin, pse
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t.settings}
-        className="-mr-2 grid size-11 place-items-center rounded-full text-mute transition-[color,transform] duration-150 hover:text-paper active:scale-90"
+        className="liquid press grid size-10 place-items-center rounded-full"
       >
         <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="3.1" />
@@ -35,7 +35,7 @@ export function SettingsSheet({ isPublic, walletPublic, bio, email, isAdmin, pse
         {open ? (
           <>
             <SettingsForm isPublic={isPublic} walletPublic={walletPublic} bio={bio} />
-            <section className="mt-10 border-t border-line pt-6">
+            <section className="mt-8 border-t border-line pt-6 pb-4">
               <p className={label}>{t.data}</p>
               <p className="mt-3 text-sm text-mute">{fmt(t.connectedAs, { email })}</p>
               <div className="mt-4 flex flex-wrap gap-3">

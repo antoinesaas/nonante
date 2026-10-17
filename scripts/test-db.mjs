@@ -385,26 +385,37 @@ if (await val("select public.paris_now()::time > '22:59'")) {
 } else {
   await q("update public.principles set target = jsonb_build_object('before', to_char(public.paris_now() + interval '1 hour', 'HH24:MI')) where id = $1", [reveilB.id]);
   const w = await as(B, () => rpc("start_proof_session", { p_principle_id: reveilB.id }));
-  check("trois questions de calcul, sans les réponses", w.code === null && w.questions.length === 3 && w.questions.every((x) => !("answer" in x)), JSON.stringify(w.questions));
+  check("cinq questions de calcul, sans les réponses", w.code === null && w.questions.length === 5 && w.questions.every((x) => !("answer" in x)), JSON.stringify(w.questions));
   const answers = (await val("select data -> 'questions' from public.proof_sessions where id = $1", [w.id])).map((x) => x.answer);
-  check("niveau Pro business : niveau 2 (×, ÷, %)", w.questions.map((x) => x.op).sort().join("") === "%/x".split("").sort().join(""), JSON.stringify(w.questions));
-  await rejects("il faut répondre aux trois", () => as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: [answers[0]] })), "trois questions");
+  check("niveau 2 : ×, ÷, %, + et carré", w.questions.map((x) => x.op).sort().join() === ["x", "/", "%", "+", "sq"].sort().join(), JSON.stringify(w.questions));
+  await rejects("il faut répondre à toutes", () => as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: [answers[0]] })), "toutes les questions");
   const xpBefore = Number(await val("select xp from public.player_stats where user_id = $1", [B]));
-  const ok = await as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: [answers[0], answers[1], answers[2] + 1] }));
+  const given = answers.map((a, i) => (i === 2 ? a + 1 : a));
+  const ok = await as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: given }));
   check("une erreur ne bloque pas le réveil : preuve forte", ok.status === "completed" && ok.validation.points === 10 * reveilB.difficulty, JSON.stringify(ok));
-  check("2 bonnes réponses sur 3 : +10 de bonus", ok.correct === 2 && ok.bonus === 10 && ok.questions[2].correct === false && ok.questions[2].given === answers[2] + 1);
-  check("bonus inscrit au registre", Number(await val("select sum(delta) from public.points_ledger where user_id = $1 and reason = 'mental_math'", [B])) === 10);
-  check("XP : réveil + bonus", Number(await val("select xp from public.player_stats where user_id = $1", [B])) === xpBefore + 10 * reveilB.difficulty + 10);
+  check("4 bonnes réponses sur 5 : +20 de bonus", ok.correct === 4 && ok.total === 5 && ok.bonus === 20 && ok.questions[2].correct === false && ok.questions[2].given === answers[2] + 1);
+  check("temps de réponse mesuré par le serveur", Number.isInteger(ok.duration_ms) && ok.duration_ms >= 0, String(ok.duration_ms));
+  check("bonus inscrit au registre", Number(await val("select sum(delta) from public.points_ledger where user_id = $1 and reason = 'mental_math'", [B])) === 20);
+  check("XP : réveil + bonus", Number(await val("select xp from public.player_stats where user_id = $1", [B])) === xpBefore + 10 * reveilB.difficulty + 20);
   const mm = await as(B, () => rpc("my_mental_math"));
-  check("suivi du calcul mental", mm.quizzes === 1 && mm.correct === 2 && mm.total === 3 && mm.points === 10 && mm.entries[0].questions.length === 3, JSON.stringify(mm));
+  check("suivi du calcul mental (temps compris)", mm.quizzes === 1 && mm.correct === 4 && mm.total === 5 && mm.points === 20 && mm.entries[0].questions.length === 5
+    && Number.isInteger(mm.avg_ms) && mm.best_ms === null && Number.isInteger(mm.entries[0].duration_ms), JSON.stringify(mm));
   check("rien à rejouer ensuite", (await as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: answers }))).status === "completed"
     && Number(await val("select count(*) from public.mental_math where user_id = $1", [B])) === 1);
   check("niveaux : lycée 1, prépa 3, sinon 2", (await val("select array[public._math_level('lycee'), public._math_level('prepa'), public._math_level('ingenieur'), public._math_level(null)]")).join() === "1,3,3,2");
   for (const level of [1, 2, 3]) {
-    const qs = await val("select public._math_questions($1)", [level]);
-    const good = qs.every((x) => Number.isInteger(x.answer) && x.answer === ({ "+": x.a + x.b, "-": x.a - x.b, x: x.a * x.b, "/": x.a / x.b, "%": (x.a * x.b) / 100, sq: x.a * x.a })[x.op]);
-    check(`niveau ${level} : réponses entières et justes`, good && new Set(qs.map((x) => x.op)).size === 3, JSON.stringify(qs));
+    for (let round = 0; round < 20; round++) {
+      const qs = await val("select public._math_questions($1)", [level]);
+      const good = qs.every((x) => Number.isInteger(x.answer) && x.answer > 0 && x.answer === ({ "+": x.a + x.b, "-": x.a - x.b, x: x.a * x.b, "/": x.a / x.b, "%": (x.a * x.b) / 100, sq: x.a * x.a })[x.op]);
+      if (!good || new Set(qs.map((x) => x.op)).size !== 5) {
+        check(`niveau ${level} : réponses entières et justes`, false, JSON.stringify(qs));
+        break;
+      }
+      if (round === 19) check(`niveau ${level} : 5 sortes de calculs, réponses entières et justes (20 tirages)`, true);
+    }
   }
+  const week = await as(B, () => rpc("my_week"));
+  check("la semaine en anneaux : 7 jours, aujourd'hui en dernier", week.length === 7 && week[6].day === today && week[6].done >= 1 && week[6].due >= week[6].done, JSON.stringify(week[6]));
 }
 
 // ---------------------------------------------------------------------------

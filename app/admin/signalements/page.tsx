@@ -19,7 +19,7 @@ export default async function ReportsPage() {
   const reports = (data as Report[]) ?? [];
   return (
     <section>
-      <h1 className="font-serif text-4xl">Signalements</h1>
+      <h1 className="font-display text-4xl">Signalements</h1>
       {reports.length === 0 ? <p className="mt-8 text-mute">Aucun signalement.</p> : null}
       <ul className="mt-8 divide-y divide-line border-y border-line">
         {reports.map((r) => (

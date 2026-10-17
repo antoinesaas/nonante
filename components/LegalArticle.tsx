@@ -39,7 +39,7 @@ export function LegalArticle({ doc, notice, frenchHref }: { doc: LegalDoc; notic
       <h1>{doc.title}</h1>
       {doc.updated ? <p className="text-sm text-mute">{doc.updated}</p> : null}
       {notice ? (
-        <p className="rounded-xs border border-line p-3 text-sm text-mute">
+        <p className="card p-4 text-sm text-mute">
           {notice}{" "}
           <Link href={`${frenchHref}?lang=fr`} className="underline underline-offset-4" hrefLang="fr">
             Version française
@@ -62,7 +62,7 @@ export function LegalArticle({ doc, notice, frenchHref }: { doc: LegalDoc; notic
             ))}
           </ul>
         ) : (
-          <blockquote key={i} className="border-l border-line pl-4 text-sm text-mute">
+          <blockquote key={i} className="border-l-2 border-violet/50 pl-4 text-sm text-mute">
             <Rich text={b.quote} />
           </blockquote>
         ),

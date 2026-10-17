@@ -25,14 +25,14 @@ export async function SocialProof({ proof, compact = false }: { proof: Proof | n
             <span aria-hidden="true" className="mr-2 inline-block size-1.5 animate-breathe rounded-full bg-ok align-middle" />
             {s.live}
           </p>
-          <dl className="mt-5 grid grid-cols-3 gap-4">
+          <dl className="mt-4 grid grid-cols-3 gap-2">
             {[
               [proof.joueurs, s.players],
               [proof.preuves_7j, s.proofsWeek],
               [proof.arcs_en_cours, s.arcsRunning],
             ].map(([n, text]) => (
-              <div key={String(text)}>
-                <dd className="font-serif text-4xl leading-none">
+              <div key={String(text)} className="card p-3.5">
+                <dd className="font-display text-[34px] leading-none">
                   <CountUp value={Number(n)} locale={locale} />
                 </dd>
                 <dt className="mt-1.5 text-xs text-mute">{text}</dt>
@@ -45,13 +45,13 @@ export async function SocialProof({ proof, compact = false }: { proof: Proof | n
       {active.length ? (
         <div>
           <p className={label}>{s.streaks}</p>
-          <ul className="mt-4 space-y-3">
+          <ul className="grouped mt-3">
             {active.map((p, i) => (
-              <li key={p.pseudo} className={`flex animate-slide items-center gap-3 ${DELAYS[i] ?? ""}`}>
+              <li key={p.pseudo} className={`flex animate-in items-center gap-3 px-4 py-3 ${DELAYS[i] ?? ""}`}>
                 <Avatar path={p.avatar_path} pseudo={p.pseudo} size={36} className="size-9" />
                 <span className="min-w-0 flex-1 truncate text-sm">{p.pseudo}</span>
                 <span className="text-xs text-mute tabular-nums">{fmt(s.level, { n: p.level })}</span>
-                <span className="font-serif text-xl leading-none tabular-nums">
+                <span className="font-display text-[19px] leading-none tabular-nums">
                   {p.streak}
                   <span className="ml-1 font-sans text-xs text-mute">{s.days}</span>
                 </span>
@@ -63,12 +63,12 @@ export async function SocialProof({ proof, compact = false }: { proof: Proof | n
 
       <div>
         <p className={label}>{s.research}</p>
-        <ul className={`mt-5 grid ${compact ? "gap-5" : "gap-7 lg:grid-cols-3 lg:gap-10"}`}>
+        <ul className={`mt-4 grid ${compact ? "gap-2.5" : "gap-3 lg:grid-cols-3"}`}>
           {m.game.research.map((r) => (
-            <li key={r.source} className={`grid grid-cols-[5.5rem_1fr] gap-4 ${compact ? "" : "lg:grid-cols-1"}`}>
-              <p className="font-serif text-5xl leading-none">
+            <li key={r.source} className={`card grid grid-cols-[5rem_1fr] items-center gap-4 p-4 ${compact ? "" : "lg:grid-cols-1 lg:items-start"}`}>
+              <p className="font-dot text-[40px] leading-none">
                 {r.figure}
-                <span className="mt-0.5 block -rotate-2 font-hand text-xl leading-none text-mute">{r.unit}</span>
+                <span className="mt-1 block font-sans text-[12px] font-medium tracking-normal text-mute">{r.unit}</span>
               </p>
               <div>
                 <p className="text-sm leading-relaxed text-paper/90">{r.text}</p>

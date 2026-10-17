@@ -260,22 +260,32 @@ export async function completeWakeQuiz(
   sessionId: string,
   nonce: string,
   answers: number[],
-): Promise<SessionStatus & { points?: number; correct?: number; total?: number; bonus?: number; questions?: MathChecked[] }> {
+): Promise<SessionStatus & { points?: number; correct?: number; total?: number; bonus?: number; questions?: MathChecked[]; duration_ms?: number }> {
   if (!Id.safeParse(sessionId).success || !Nonce.safeParse(nonce).success) return { status: "error", message: await invalid() };
-  const parsed = z.array(z.number().int().min(-1_000_000).max(1_000_000)).min(1).max(3).safeParse(answers);
+  const parsed = z.array(z.number().int().min(-1_000_000).max(1_000_000)).min(1).max(5).safeParse(answers);
   if (!parsed.success) return { status: "error", message: await invalid() };
   const ctx = await context("wake", 20);
   if ("error" in ctx) return { status: "error", message: ctx.error!.message ?? undefined };
   const { data, error } = await ctx.supabase.rpc("complete_wake_quiz", { p_session_id: sessionId, p_nonce: nonce, p_answers: parsed.data });
   if (error) return { status: "error", message: userMessage(error, ctx.i18n) };
   revalidatePath("/app");
-  const r = data as { status: string; reason?: string; validation?: ValidationResult | null; correct?: number; total?: number; bonus?: number; questions?: MathChecked[] };
+  const r = data as {
+    status: string;
+    reason?: string;
+    validation?: ValidationResult | null;
+    correct?: number;
+    total?: number;
+    bonus?: number;
+    questions?: MathChecked[];
+    duration_ms?: number;
+  };
   return {
     ...localized({ status: r.status, reason: r.reason, points: r.validation?.points }, ctx.i18n),
     correct: r.correct,
     total: r.total,
     bonus: r.bonus,
     questions: r.questions,
+    duration_ms: r.duration_ms,
   };
 }
 

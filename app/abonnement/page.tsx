@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArtBand } from "@/components/Art";
+import { Aura } from "@/components/Aura";
 import { Faq } from "@/components/Faq";
-import { Hand } from "@/components/Hand";
 import { Logo } from "@/components/Logo";
 import { PlanPicker } from "@/components/PlanPicker";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SocialProof } from "@/components/SocialProof";
-import { IMAGES } from "@/lib/art";
 import { getUser } from "@/lib/auth";
 import { pricingFaq } from "@/lib/faq";
 import { getI18n } from "@/lib/i18n/server";
@@ -43,23 +41,22 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/abo
 
   return (
     <>
-      <main className="mx-auto min-h-dvh w-full max-w-xl px-5 pt-6 pb-16 lg:max-w-5xl">
+      <main className="relative isolate mx-auto min-h-dvh w-full max-w-xl overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-16 lg:max-w-5xl">
+        <Aura tone="violet" className="h-[30rem]" />
         <Link href={user ? "/app" : "/"} aria-label={m.common.homeAria}>
           <Logo size="sm" />
         </Link>
-        <ArtBand slug={IMAGES.paywall} className="-mx-5 mt-6 h-64 lg:mx-0 lg:h-80">
-          <p className={label}>{t.label}</p>
-          <h1 className="mt-2 font-serif text-5xl leading-[0.95] lg:text-7xl">{t.title}</h1>
-        </ArtBand>
+        <p className={`${label} mt-10`}>{t.label}</p>
+        <h1 className="mt-1 animate-in font-display text-[40px] leading-[1.02] lg:text-6xl">{t.title}</h1>
 
         {params.annule === "1" ? (
-          <p role="status" className="mt-6 animate-rise border border-line p-4 text-sm">
+          <p role="status" className="card mt-6 animate-in p-4 text-sm">
             {t.cancelled}
           </p>
         ) : null}
 
-        <p className="mt-6 text-lg leading-relaxed text-paper/85 lg:max-w-2xl">
-          {t.intro} <Hand className="text-2xl">{t.introHand}</Hand> {t.introEnd}
+        <p className="mt-4 text-[17px] leading-relaxed text-paper/85 lg:max-w-2xl">
+          {t.intro} <span className="bg-linear-to-r from-rose via-violet to-sky bg-clip-text font-semibold text-transparent">{t.introHand}</span> {t.introEnd}
         </p>
 
         {mode.kind === "link" ? (
@@ -72,7 +69,7 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/abo
           </p>
         ) : null}
 
-        <div className="mt-10">
+        <div className="mt-8">
           {plans ? <PlanPicker plans={plans as PublicPlans} current={current} mode={mode} /> : <p className="text-mute">{t.unavailable}</p>}
         </div>
 
@@ -85,13 +82,13 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/abo
         </p>
 
         <div className="lg:mx-auto lg:max-w-3xl">
-          <section className="mt-16">
+          <section className="mt-14">
             <SocialProof proof={proof as Proof | null} compact />
           </section>
 
-          <section className="mt-16">
-            <h2 className="font-serif text-3xl">{t.questions}</h2>
-            <div className="mt-6">
+          <section className="mt-14">
+            <h2 className="font-display text-[26px]">{t.questions}</h2>
+            <div className="mt-4">
               <Faq items={pricingFaq(m)} />
             </div>
             <Link href="/faq" className={`${btnLink} mt-6 inline-block`}>

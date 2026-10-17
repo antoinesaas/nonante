@@ -1,9 +1,10 @@
 "use client";
 
-import { startTransition, useActionState, useState, useTransition } from "react";
+import { startTransition, useActionState, useEffect, useState, useTransition } from "react";
 import { addWalletEntry, deleteWalletEntry } from "@/app/actions/wallet";
 import { FileField } from "@/components/FileField";
 import { useI18n } from "@/components/I18nProvider";
+import { Sheet } from "@/components/Sheet";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { compressField } from "@/lib/compress-image";
 import { idle } from "@/lib/errors";
@@ -11,10 +12,52 @@ import { btnLink, btnPrimary, input, label } from "@/lib/ui";
 
 const SOURCES = ["vente", "client", "freelance", "contenu", "autre"] as const;
 
-export function WalletEntryForm({ today, minDay }: { today: string; minDay: string }) {
+/** Bouton blanc « Ajouter un revenu » : le formulaire s'ouvre dans une feuille, l'écran reste léger. */
+export function AddWalletEntry({ today, minDay, rule, todayLine }: { today: string; minDay: string; rule: string; todayLine: string | null }) {
+  const { m } = useI18n();
+  const t = m.app.wallet;
+  const [open, setOpen] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
+        <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
+          <path d="M8 3 V13 M3 8 H13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+        {t.add}
+      </button>
+      {done ? (
+        <p role="status" className="mt-3 animate-in rounded-2xl bg-ok/12 px-4 py-3 text-sm text-ok">
+          {done}
+        </p>
+      ) : null}
+      <Sheet open={open} onClose={() => setOpen(false)} title={t.add}>
+        <p className="text-sm text-mute">{rule}</p>
+        {todayLine ? <p className="mt-1 text-sm">{todayLine}</p> : null}
+        <div className="mt-5">
+          {open ? (
+            <WalletEntryForm
+              today={today}
+              minDay={minDay}
+              onDone={(message) => {
+                setOpen(false);
+                setDone(message);
+              }}
+            />
+          ) : null}
+        </div>
+      </Sheet>
+    </>
+  );
+}
+
+export function WalletEntryForm({ today, minDay, onDone }: { today: string; minDay: string; onDone?: (message: string | null) => void }) {
   const { m } = useI18n();
   const t = m.app.wallet;
   const [state, formAction] = useActionState(addWalletEntry, idle);
+  useEffect(() => {
+    if (state.ok) onDone?.(state.message);
+  }, [state, onDone]);
 
   return (
     <form

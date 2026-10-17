@@ -75,21 +75,23 @@ const HREF: Record<Key, string> = {
  * Navigation de l'app, façon iPhone : une capsule de verre qui flotte en bas de l'écran, avec une bulle de verre
  * liquide qu'on peut faire glisser d'un onglet à l'autre (LiquidTabBar).
  * Sur ordinateur : barre en haut. Les onglets Portefeuille et Notes suivent le profil de l'arc.
- * Aide ouvre un email à l'adresse de contact (pas de page : une question, une réponse humaine).
  */
 export function BottomNav({ wallet, grades }: { wallet: boolean; grades: boolean }) {
   const { m } = useI18n();
   const pathname = usePathname();
-  const keys: Key[] = ["today", "leaderboard", ...(wallet ? (["wallet"] as const) : []), ...(grades ? (["grades"] as const) : []), "profile", "help"];
+  // Cinq onglets au plus, comme sur iOS : l'aide est dans le profil.
+  const keys: Key[] = ["today", "leaderboard", ...(wallet ? (["wallet"] as const) : []), ...(grades ? (["grades"] as const) : []), "profile"];
   const label = (k: Key) => (k === "grades" ? m.app.grades.nav : m.common.nav[k]);
   const href = (k: Key) => (k === "help" ? `${HREF.help}?subject=${encodeURIComponent(m.common.nav.helpSubject)}` : HREF[k]);
-  // Six onglets (profil mixte) : libellés un peu plus petits pour tenir sur un iPhone de 375 px.
-  const crowded = keys.length > 5;
+  const crowded = keys.length > 4;
 
   return (
     <>
       {/* Téléphone */}
-      <nav aria-label={m.common.nav.aria} className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+      <nav
+        aria-label={m.common.nav.aria}
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-4 pb-[max(0.6rem,env(safe-area-inset-bottom))] [view-transition-name:tab-bar] lg:hidden"
+      >
         <LiquidTabBar
           crowded={crowded}
           tabs={keys.map((k) => ({ key: k, href: href(k), label: label(k), icon: ICONS[k], active: MATCH[k](pathname) }))}

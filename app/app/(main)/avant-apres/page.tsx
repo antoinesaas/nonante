@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Aura } from "@/components/Aura";
 import { BackLink } from "@/components/BackLink";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { requireUser } from "@/lib/auth";
 import { fmt } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { btnLink, label } from "@/lib/ui";
+import { btnSmall, label, largeTitle } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
@@ -44,9 +45,10 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
   if (!p || !enrollment) {
     return (
       <>
+        <Aura tone="amber" />
         <BackLink />
-        <p className={`${label} mt-4`}>{t.title}</p>
-        <h1 className="mt-4 font-serif text-4xl leading-tight">{t.startFirst}</h1>
+        <p className={`${label} mt-5`}>{t.title}</p>
+        <h1 className={`mt-1 ${largeTitle}`}>{t.startFirst}</h1>
       </>
     );
   }
@@ -57,10 +59,11 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
 
   return (
     <>
+      <Aura tone="amber" />
       <BackLink />
-      <p className={`${label} mt-4`}>{t.title}</p>
-      <h1 className="mt-4 font-serif text-4xl leading-tight">{t.heading}</h1>
-      <p className="mt-3 text-sm text-mute">{t.intro}</p>
+      <p className={`${label} mt-5`}>{t.title}</p>
+      <h1 className={`mt-1 ${largeTitle}`}>{t.heading}</h1>
+      <p className="mt-2 text-sm text-mute">{t.intro}</p>
 
       {unlocked ? (
         <div className="mt-8 grid grid-cols-2 gap-3">
@@ -71,18 +74,18 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
             <figure key={title}>
               {url ? (
                 // eslint-disable-next-line @next/next/no-img-element -- URL signée de 5 minutes, bucket privé
-                <img src={url} alt={fmt(t.photoAlt, { day: title ?? "" })} className="aspect-[3/4] w-full object-cover" />
+                <img src={url} alt={fmt(t.photoAlt, { day: title ?? "" })} className="aspect-[3/4] w-full rounded-3xl object-cover" />
               ) : (
-                <div className="aspect-[3/4] w-full bg-surface" />
+                <div className="aspect-[3/4] w-full rounded-3xl bg-surface" />
               )}
               <figcaption className="mt-2 text-sm text-mute">{title}</figcaption>
             </figure>
           ))}
         </div>
       ) : (
-        <div className="mt-8 rounded-xs border border-line p-5">
-          <p>{p.before_path ? t.beforeTaken : t.beforeMissing}</p>
-          <p className="mt-1 text-sm text-mute">
+        <div className="glow-amber mt-6 rounded-[1.75rem] p-5">
+          <p className="font-display text-[20px] leading-snug">{p.before_path ? t.beforeTaken : t.beforeMissing}</p>
+          <p className="mt-1 text-sm text-paper/80">
             {p.can_take_after ? t.canAfter : p.day_number ? fmt(t.dayOf, { n: p.day_number }) : ""}
           </p>
         </div>
@@ -100,7 +103,7 @@ export default async function BeforeAfterPage({ searchParams }: PageProps<"/app/
           />
         </div>
       ) : p.can_take_before && p.before_path ? (
-        <Link href="/app/avant-apres?refaire=1" className={`${btnLink} mt-6 inline-block`}>
+        <Link href="/app/avant-apres?refaire=1" className={`${btnSmall} mt-5`}>
           {t.retake}
         </Link>
       ) : null}

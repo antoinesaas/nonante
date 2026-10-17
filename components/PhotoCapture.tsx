@@ -102,7 +102,7 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
   if (state.ok) {
     return (
       <div className="space-y-4 text-center">
-        <p className="font-serif text-4xl">{t.sent}</p>
+        <p className="animate-pop font-display text-[34px]">{t.sent}</p>
         <p className="text-mute">{state.message}</p>
         <Link href={backHref} replace className={btnPrimary}>
           {m.app.timer.finish}
@@ -113,17 +113,17 @@ export function PhotoCapture({ kind, targetId, title, detail, mode = "camera", f
 
   return (
     <div className="space-y-5">
-      <h1 className="font-serif text-4xl leading-tight text-balance">{title}</h1>
+      <h1 className="font-display text-[30px] leading-tight text-balance">{title}</h1>
       <p className="text-sm leading-relaxed text-mute">{detail}</p>
 
       {phase === "camera" ? (
-        <div className="aspect-[3/4] w-full animate-fade overflow-hidden rounded-xs bg-surface">
+        <div className="aspect-[3/4] w-full animate-in overflow-hidden rounded-[2rem] bg-surface shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)]">
           <video ref={attachVideo} playsInline muted autoPlay className="h-full w-full object-cover" />
         </div>
       ) : null}
       {phase === "preview" && preview ? (
         // eslint-disable-next-line @next/next/no-img-element -- aperçu local (blob:), jamais envoyé ailleurs qu'au serveur
-        <img src={preview} alt={t.preview} className="w-full animate-fade rounded-xs" />
+        <img src={preview} alt={t.preview} className="w-full animate-in rounded-[2rem]" />
       ) : null}
 
       {phase === "intro" && mode === "camera" ? (

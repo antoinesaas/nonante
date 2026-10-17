@@ -4,18 +4,19 @@ import { redirect } from "next/navigation";
 import { openBillingPortal } from "@/app/actions/checkout";
 import { ProfileCard } from "@/app/app/(main)/profil/ProfileCard";
 import { SettingsSheet } from "@/app/app/(main)/profil/SettingsSheet";
-import { CopyButton } from "@/components/CopyButton";
-import { ShareProfileButton } from "@/components/ShareProfileButton";
+import { ReferralRow } from "@/app/app/(main)/ReferralRow";
+import { Aura } from "@/components/Aura";
 import { getArt } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
+import { EDITOR } from "@/lib/legal";
 import { fmt, formatDay, formatMoney, formatNumber, formatPoints } from "@/lib/i18n/format";
 import { nextTitle } from "@/lib/i18n/labels";
 import { getI18n } from "@/lib/i18n/server";
 import { STAT_KEYS } from "@/lib/stats";
 import { ensureReferralCode } from "@/lib/stripe-codes";
 import type { AchievementView, MyProfile } from "@/lib/types";
-import { btnLink, btnPrimary, btnSecondary, label } from "@/lib/ui";
+import { btnPrimary, btnSecondary, btnSmall, label, largeTitle, sectionTitle } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
@@ -24,9 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 function Achievement({ a, title, description, percent, locked }: { a: AchievementView; title: string; description: string; percent: string | null; locked: boolean }) {
   return (
-    <li className={`flex items-start justify-between gap-4 py-4 ${locked ? "text-mute" : ""}`}>
-      <div className="flex items-start gap-3">
-        <span aria-hidden="true" className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border ${locked ? "border-line border-dashed" : "border-paper bg-paper text-ink"}`}>
+    <li className={`flex items-center justify-between gap-4 px-4 py-3.5 ${locked ? "text-mute" : ""}`}>
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className={`grid size-8 shrink-0 place-items-center rounded-full ${locked ? "border border-dashed border-white/15" : "bg-linear-to-br from-[#ff2d6f] via-[#9b6bff] to-[#5ac8fa] text-white"}`}>
           {locked ? null : (
             <svg viewBox="0 0 16 16" className="size-3.5">
               <path d="M3 8.5 L6.5 12 L13 4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -34,8 +35,8 @@ function Achievement({ a, title, description, percent, locked }: { a: Achievemen
           )}
         </span>
         <div>
-          <p className={locked ? "" : "text-paper"}>{title}</p>
-          <p className="mt-1 text-xs text-mute">{description}</p>
+          <p className={`text-[15px] ${locked ? "" : "text-paper"}`}>{title}</p>
+          <p className="mt-0.5 text-[12px] text-mute">{description}</p>
         </div>
       </div>
       <div className="shrink-0 text-right text-xs">
@@ -74,45 +75,58 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
   const weakest = [...STAT_KEYS].sort((a, b) => Number(s[a]) - Number(s[b]))[0];
   const percent = (a: AchievementView) => (a.percent !== null ? fmt(t.percent, { n: a.percent }) : null);
 
+  const row = "flex items-center justify-between gap-3 px-4 py-3.5 text-[15px] transition-colors active:bg-white/[0.04]";
+  const links: [string, string][] = [
+    ["/app/principes", t.principles],
+    ["/faq", m.common.footer.faq],
+    ["/art", m.common.footer.credits],
+    ["/legal/cgu", m.common.footer.terms],
+    ["/legal/cgv", m.common.footer.sales],
+    ["/legal/confidentialite", m.common.footer.privacy],
+  ];
+
   return (
     <>
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h1 className="font-serif text-4xl leading-none">{t.title}</h1>
+      <Aura tone="violet" />
+      <div className="mb-5 flex items-center justify-between gap-4 pt-2">
+        <h1 className={largeTitle}>{t.title}</h1>
         <SettingsSheet isPublic={profile.is_public} walletPublic={profile.wallet_public} bio={profile.bio} email={profile.email} isAdmin={profile.is_admin} pseudo={profile.pseudo} />
       </div>
-      <ProfileCard
-        pseudo={profile.pseudo}
-        avatarPath={profile.avatar_path}
-        stats={s}
-        art={profile.profile_art_slug}
-        founder={plan.plan === "fondateur"}
-        arts={arts.map((a) => ({ slug: a.slug, title: a.title, artist: a.artist, width: a.width, height: a.height }))}
-      />
+      <div className="animate-in">
+        <ProfileCard
+          pseudo={profile.pseudo}
+          avatarPath={profile.avatar_path}
+          stats={s}
+          art={profile.profile_art_slug}
+          founder={plan.plan === "fondateur"}
+          arts={arts.map((a) => ({ slug: a.slug, title: a.title, artist: a.artist, width: a.width, height: a.height }))}
+        />
+      </div>
       {profile.is_public ? (
-        <Link href={`/u/${profile.pseudo}`} className={`${btnLink} mt-2 inline-block`}>
+        <Link href={`/u/${profile.pseudo}`} className={`${btnSmall} mt-3`}>
           {t.publicProfile}
         </Link>
       ) : null}
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-12">
-        <section className="mt-10">
-          <h2 className="font-serif text-3xl">{t.stats}</h2>
-          <p className="mt-2 text-sm text-mute">
+        <section className="mt-8">
+          <h2 className={sectionTitle}>{t.stats}</h2>
+          <p className="mt-1 text-sm text-mute">
             {next ? fmt(t.nextTitle, { title: next.title, level: next.level }) : t.topTitle}
             {fmt(t.weakest, { stat: m.game.stats[weakest].label.toLowerCase() })}
           </p>
-          <dl className="mt-6 divide-y divide-line border-y border-line">
+          <dl className="grouped mt-3">
             {STAT_KEYS.map((key) => (
-              <div key={key} className="flex items-baseline justify-between gap-4 py-3">
-                <dt>
-                  {m.game.stats[key].label}
-                  <span className="block text-xs text-mute">{m.game.stats[key].help}</span>
+              <div key={key} className="flex items-center justify-between gap-4 px-4 py-3">
+                <dt className="min-w-0">
+                  <span className="text-[15px]">{m.game.stats[key].label}</span>
+                  <span className="block text-[12px] text-mute">{m.game.stats[key].help}</span>
                 </dt>
-                <dd className="font-serif text-3xl tabular-nums">{s[key]}</dd>
+                <dd className="font-display text-[22px] tabular-nums">{s[key]}</dd>
               </div>
             ))}
           </dl>
-          <dl className="mt-8 grid grid-cols-3 gap-y-6">
+          <dl className="mt-3 grid grid-cols-3 gap-2">
             {(
               [
                 [t.numbers.points, formatPoints(profile.points, locale)],
@@ -129,32 +143,32 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
                 [t.numbers.refused, String(profile.refused_proofs)],
               ] as const
             ).map(([k, v]) => (
-              <div key={k}>
-                <dt className="text-xs text-mute">{k}</dt>
-                <dd className="mt-1 font-serif text-2xl tabular-nums">{v}</dd>
+              <div key={k} className="card p-3">
+                <dt className="truncate text-[11px] text-mute">{k}</dt>
+                <dd className="mt-0.5 font-display text-[19px] tabular-nums">{v}</dd>
               </div>
             ))}
           </dl>
         </section>
 
-        <section className="mt-12 lg:mt-10">
-          <h2 className="font-serif text-3xl">{t.achievements}</h2>
-          <p className="mt-2 text-sm text-mute">
+        <section className="mt-8">
+          <h2 className={sectionTitle}>{t.achievements}</h2>
+          <p className="mt-1 text-sm text-mute">
             {fmt(t.achievementsCount, { n: unlocked.length, total: profile.achievements.length })} {t.rarity}
           </p>
           {unlocked.length ? (
-            <ul className="mt-6 divide-y divide-line border-y border-line">
+            <ul className="grouped mt-3">
               {unlocked.map((a) => (
                 <Achievement key={a.code} a={a} {...ach(a)} percent={percent(a)} locked={false} />
               ))}
             </ul>
           ) : (
-            <p className="mt-6 border-y border-line py-4 text-sm text-mute">{t.noneYet}</p>
+            <p className="card mt-3 p-4 text-sm text-mute">{t.noneYet}</p>
           )}
           {upcoming.length ? (
             <>
-              <p className={`${label} mt-8`}>{t.nextUp}</p>
-              <ul className="mt-3 divide-y divide-line border-y border-line">
+              <p className={`${label} mt-5 px-1`}>{t.nextUp}</p>
+              <ul className="grouped mt-2">
                 {upcoming.map((a) => (
                   <Achievement key={a.code} a={a} {...ach(a)} percent={percent(a)} locked />
                 ))}
@@ -165,17 +179,17 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
       </div>
 
       {profile.arcs.length ? (
-        <section className="mt-12">
-          <h2 className="font-serif text-3xl">{t.arcs}</h2>
-          <ul className="mt-6 divide-y divide-line border-y border-line">
+        <section className="mt-8">
+          <h2 className={sectionTitle}>{t.arcs}</h2>
+          <ul className="grouped mt-3">
             {profile.arcs.map((a) => (
-              <li key={a.number} className="py-4">
-                <p className="flex justify-between gap-4">
+              <li key={a.number} className="px-4 py-3.5">
+                <p className="flex justify-between gap-4 text-[15px]">
                   <span>{fmt(t.arcNumber, { n: a.number })}</span>
                   <span className="text-sm text-mute">{t.arcStatus[a.status]}</span>
                 </p>
-                <p className="mt-1 text-sm text-mute">{a.goal_title}</p>
-                <p className="mt-1 text-xs text-mute">
+                <p className="mt-0.5 text-sm text-mute">{a.goal_title}</p>
+                <p className="mt-0.5 text-[12px] text-mute">
                   {fmt(t.arcLine, { start: day(a.start_date, false), end: day(a.end_date), green: a.green, points: formatPoints(a.points, locale) }, locale)}
                   {a.loyalty_applied ? t.loyaltyApplied : ""}
                 </p>
@@ -186,19 +200,21 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
       ) : null}
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-12">
-        <section className="mt-12">
-          <h2 className="font-serif text-3xl">{t.plan}</h2>
-          <p className="mt-3">
+        <section className="card mt-8 p-5">
+          <p className="text-[13px] text-mute">{t.plan}</p>
+          <p className="mt-0.5 font-display text-[22px]">
             {plan.plan ? m.game.plans.name[plan.plan] : t.noPlan}
-            {plan.plan === "arc"
-              ? t.planArc
-              : plan.interval === "month"
-                ? t.planMonth
-                : plan.interval === "year"
-                  ? t.planYear
-                  : plan.interval === "lifetime"
-                    ? t.planLifetime
-                    : ""}
+            <span className="text-[15px] font-normal text-mute">
+              {plan.plan === "arc"
+                ? t.planArc
+                : plan.interval === "month"
+                  ? t.planMonth
+                  : plan.interval === "year"
+                    ? t.planYear
+                    : plan.interval === "lifetime"
+                      ? t.planLifetime
+                      : ""}
+            </span>
           </p>
           <p className="mt-1 text-sm text-mute">
             {plan.comp_until
@@ -215,7 +231,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
             {plan.loyalty_pending ? t.loyalty : ""}
           </p>
           {params.portail === "indisponible" ? <p className="mt-3 text-sm">{t.portalDown}</p> : null}
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-2.5">
             {profile.has_billing ? (
               <form action={openBillingPortal}>
                 <button type="submit" className={btnSecondary}>
@@ -231,56 +247,45 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
           </div>
         </section>
 
-        {profile.referral_code ? (
-          <section className="mt-12">
-            <h2 className="font-serif text-3xl">{t.referral}</h2>
-            <p className="mt-2 text-sm text-mute">
-              {t.referralText} {fmt(t.referralSales, { n: profile.referral_sales }, locale)}
+        <div className="mt-8 space-y-3">
+          {profile.referral_code ? (
+            <div className="grouped overflow-hidden">
+              <ReferralRow
+                code={profile.referral_code}
+                link={`${siteUrl()}/?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`}
+                shareUrl={
+                  profile.is_public
+                    ? `${siteUrl()}/u/${encodeURIComponent(profile.pseudo)}?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`
+                    : null
+                }
+              />
+            </div>
+          ) : null}
+          {profile.referral_code ? (
+            <p className="px-1 text-[12px] text-mute">
+              {fmt(t.referralSales, { n: profile.referral_sales }, locale)}
               {profile.referral_rewards ? fmt(t.referralRewards, { n: profile.referral_rewards }, locale) : ""}.
             </p>
-            <div className="mt-4 flex items-center justify-between gap-4">
-              <span className="font-serif text-2xl">{profile.referral_code}</span>
-              <CopyButton value={`${profile.referral_code} · ${siteUrl()}/?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`} />
-            </div>
-            {profile.is_public ? (
-              <ShareProfileButton
-                url={`${siteUrl()}/u/${encodeURIComponent(profile.pseudo)}?utm_source=parrainage&utm_campaign=${encodeURIComponent(profile.referral_code)}`}
-                code={profile.referral_code}
-                className="mt-5"
-              />
-            ) : (
-              <p className="mt-5 text-xs text-mute">{m.common.share.private}</p>
-            )}
-          </section>
-        ) : null}
-      </div>
+          ) : null}
 
-      <p className="mt-12 text-xs text-mute">
-        <span className={label}>{t.links}</span>{" "}
-        <Link href="/app/principes" className="underline underline-offset-4">
-          {t.principles}
-        </Link>{" "}
-        ·{" "}
-        <Link href="/art" className="underline underline-offset-4">
-          {m.common.footer.credits}
-        </Link>{" "}
-        ·{" "}
-        <Link href="/faq" className="underline underline-offset-4">
-          {m.common.footer.faq}
-        </Link>{" "}
-        ·{" "}
-        <Link href="/legal/cgu" className="underline underline-offset-4">
-          {m.common.footer.terms}
-        </Link>{" "}
-        ·{" "}
-        <Link href="/legal/cgv" className="underline underline-offset-4">
-          {m.common.footer.sales}
-        </Link>{" "}
-        ·{" "}
-        <Link href="/legal/confidentialite" className="underline underline-offset-4">
-          {m.common.footer.privacy}
-        </Link>
-      </p>
+          <nav className="grouped overflow-hidden" aria-label={t.links}>
+            <a href={`mailto:${EDITOR.email}?subject=${encodeURIComponent(m.common.nav.helpSubject)}`} className={row}>
+              <span>{m.common.nav.help}</span>
+              <svg viewBox="0 0 16 16" className="size-3.5 shrink-0 text-mute" aria-hidden="true">
+                  <path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+            </a>
+            {links.map(([href, text]) => (
+              <Link key={href} href={href} className={row}>
+                <span>{text}</span>
+                <svg viewBox="0 0 16 16" className="size-3.5 shrink-0 text-mute" aria-hidden="true">
+                  <path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </div>
     </>
   );
 }

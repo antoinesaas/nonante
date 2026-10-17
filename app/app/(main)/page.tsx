@@ -1,30 +1,30 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { JokerButton, StartTodayButton } from "@/app/app/(main)/DayActions";
-import { ArtBand } from "@/components/Art";
+import { ReferralRow } from "@/app/app/(main)/ReferralRow";
+import { ActivityRings, RING_TEXT } from "@/components/ActivityRings";
+import { Aura } from "@/components/Aura";
 import { CalendarInteractive } from "@/components/CalendarInteractive";
 import { CelebrationOverlay } from "@/components/Celebration";
-import { CopyButton } from "@/components/CopyButton";
-import { ShareProfileButton } from "@/components/ShareProfileButton";
 import { Countdown } from "@/components/Countdown";
 import { CalendarLegend } from "@/components/DotCalendar";
-import { Hand } from "@/components/Hand";
-import { Avatar, StatGrid, XpBar } from "@/components/Player";
+import { Avatar } from "@/components/Player";
 import { QuoteCard } from "@/components/QuoteCard";
 import { TodayPrinciple } from "@/components/TodayPrinciple";
-import { IMAGES } from "@/lib/art";
+import { WeekRings } from "@/components/WeekRings";
 import { requireUser } from "@/lib/auth";
 import { parisMidnight } from "@/lib/dates";
 import { siteUrl } from "@/lib/env";
 import { INTL } from "@/lib/i18n/config";
-import { fmt, formatDay, formatMoney, formatPoints, signed } from "@/lib/i18n/format";
+import { fmt, formatDay, formatMoney, formatNumber, formatPoints, signed } from "@/lib/i18n/format";
 import { bareThen, daysLabel, titleFor } from "@/lib/i18n/labels";
 import type { Messages } from "@/lib/i18n/messages";
 import { getI18n } from "@/lib/i18n/server";
 import { fulfillCheckout } from "@/lib/payments";
+import { ARC_COMPLETION } from "@/lib/rules";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
-import type { ChallengeView, Dashboard } from "@/lib/types";
-import { btnLink, btnPrimary, btnSmall, label } from "@/lib/ui";
+import type { ChallengeView, Dashboard, PrincipleView, Target, WeekDay } from "@/lib/types";
+import { btnPrimary, btnSmall, label, sectionTitle } from "@/lib/ui";
 
 const WIDTHS = ["w-0", "w-[10%]", "w-[20%]", "w-[30%]", "w-[40%]", "w-[50%]", "w-[60%]", "w-[70%]", "w-[80%]", "w-[90%]", "w-full"];
 
@@ -47,6 +47,20 @@ function challengeProgress(c: ChallengeView, t: Messages["app"]["today"]): strin
   }
 }
 
+/** Salutation selon l'heure de Paris. */
+function greeting(t: Messages["app"]["today"]): string {
+  const hour = Number(new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "numeric", hour12: false }).format(new Date()));
+  return hour < 5 || hour >= 18 ? t.evening : hour < 12 ? t.morning : t.afternoon;
+}
+
+function Chevron() {
+  return (
+    <svg viewBox="0 0 16 16" className="size-3.5 shrink-0 text-mute" aria-hidden="true">
+      <path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default async function DashboardPage({ searchParams }: PageProps<"/app">) {
   const [{ supabase, user }, { m, locale }, params] = await Promise.all([requireUser("/app"), getI18n(), searchParams]);
   const t = m.app.today;
@@ -62,7 +76,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
     }
   }
 
-  const { data, error } = await supabase.rpc("my_dashboard");
+  const [{ data, error }, { data: weekData }] = await Promise.all([supabase.rpc("my_dashboard"), supabase.rpc("my_week")]);
   if (error) throw new Error(`Tableau de bord indisponible (${error.code})`);
   const d = data as Dashboard;
 
@@ -74,6 +88,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
   const stats = d.stats!;
   const plan = d.plan!;
   const principles = d.principles ?? [];
+  const week = (weekData as WeekDay[] | null) ?? [];
   const remaining = principles.filter((p) => !p.validation);
   const atStake = remaining.reduce((sum, p) => sum + (["session", "reps", "reveil"].includes(p.proof_type) ? p.value : Math.round(p.value / 2)), 0);
   const running = d.state === "running";
@@ -85,19 +100,56 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
   const photoDaysLeft = running && !e.has_before_photo && d.day_number && d.day_number <= 7 ? 8 - d.day_number : 0;
   const rs = d.running_session;
 
-  // Les principes prévus un autre jour de la semaine : listés sous ceux du jour, pour tout voir d'un coup d'œil.
+  // Tous les principes, dans une seule liste : ceux du jour d'abord, puis ceux prévus un autre jour de la semaine.
   const refDay = running ? d.today! : e.start_date;
   const shown = new Set(principles.map((p) => p.id));
   const { data: allPrinciples } = await supabase
     .from("principles")
-    .select("id, position, pillar, if_text, then_text, proof_type, days, active_from, active_until")
+    .select("id, position, pillar, if_text, then_text, proof_type, difficulty, days, target, why, active_from, active_until")
     .eq("enrollment_id", e.id)
-    .lte("active_from", refDay)
     .order("position");
-  const otherDays = (allPrinciples ?? []).filter((p) => !shown.has(p.id) && (!p.active_until || p.active_until >= refDay));
+  const otherDays: PrincipleView[] = (allPrinciples ?? [])
+    .filter((p) => !shown.has(p.id) && p.active_from <= refDay && (!p.active_until || p.active_until >= refDay))
+    .map((p) => ({
+      id: p.id,
+      position: p.position,
+      pillar: p.pillar as PrincipleView["pillar"],
+      if_text: p.if_text,
+      then_text: p.then_text,
+      proof_type: p.proof_type as PrincipleView["proof_type"],
+      difficulty: p.difficulty,
+      value: 10 * p.difficulty,
+      days: p.days,
+      target: (p.target ?? {}) as Target,
+      why: p.why,
+      validation: null,
+    }));
+
+  // Anneaux : principes prouvés aujourd'hui, jours verts de la semaine, jours verts de l'arc (75 pour le tenir).
+  const doneToday = principles.filter((p) => p.validation && p.validation.status !== "rejected").length;
+  const ringToday = d.joker_today ? { value: 1, max: 1 } : principles.length ? { value: doneToday, max: principles.length } : { value: running ? 1 : 0, max: 1 };
+  const greenWeek = week.filter((w) => w.in_arc && (w.status === "green" || w.joker || (w.day === d.today && w.due > 0 && w.done >= w.due))).length;
+  const greenArc = (d.calendar ?? []).filter((c) => c.status === "green" || c.status === "joker").length;
+  const letters = week.map((w) => new Intl.DateTimeFormat(INTL[locale], { weekday: "narrow", timeZone: "UTC" }).format(new Date(`${w.day}T12:00:00Z`)));
 
   const r = m.app.rewards;
   const month = d.today!.slice(0, 7);
+  const levelSpan = Math.max(1, stats.level_next - stats.level_floor);
+  const levelPct = Math.max(0, Math.min(1, (stats.xp - stats.level_floor) / levelSpan));
+
+  const headline = d.day_number
+    ? null
+    : d.state === "draft"
+      ? t.ready
+      : d.state === "before"
+        ? t.before
+        : d.state === "ended"
+          ? e.status === "completed"
+            ? t.held
+            : e.status === "abandoned"
+              ? t.quit
+              : t.ended
+          : t.closing;
 
   return (
     <>
@@ -119,163 +171,170 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
           text={fmt(r.goalText, { amount: formatMoney(d.wallet_month_cents ?? 0, locale), target: formatMoney(revenueGoal, locale) })}
         />
       ) : null}
-      {/* Joueur */}
-      <header className="flex items-center gap-4">
-        <Link href="/app/profil" aria-label={t.profileAria} className="transition-transform active:scale-95">
-          <Avatar path={d.profile.avatar_path} pseudo={d.profile.pseudo} size={52} className="size-13" />
+
+      <Aura tone="rose" />
+
+      {/* En-tête : photo, salutation, points de la semaine */}
+      <header className="relative z-10 flex animate-in items-center gap-3">
+        <Link href="/app/profil" aria-label={t.profileAria} className="press rounded-full">
+          <Avatar path={d.profile.avatar_path} pseudo={d.profile.pseudo} size={44} className="size-11" />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-serif text-2xl leading-none">{d.profile.pseudo}</p>
-          <p className="mt-1 text-xs text-mute">{fmt(t.line, { level: stats.level, title: titleFor(stats.level, m), ovr: stats.ovr })}</p>
+          <p className="text-[13px] text-mute">{greeting(t)}</p>
+          <p className="truncate font-display text-[19px] leading-tight">{d.profile.pseudo}</p>
         </div>
-        <Link href="/classement" className="text-right">
-          <p className="font-serif text-3xl leading-none tabular-nums">{formatPoints(d.week_points ?? 0, locale)}</p>
-          <p className="mt-1 text-[11px] text-mute">{d.rank ? fmt(d.rank === 1 ? t.rankFirst : t.rank, { rank: d.rank, total: d.total ?? 0 }) : t.weekPoints}</p>
+        <Link href="/classement" className="liquid press flex h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold tabular-nums">
+          {formatPoints(d.week_points ?? 0, locale)}
+          <span className="text-[11px] font-medium text-mute">{d.rank ? `#${d.rank}` : t.pts}</span>
         </Link>
       </header>
-      <div className="mt-4">
-        <XpBar stats={stats} />
-      </div>
 
-      {params.paid === "1" && plan.plan ? (
-        <div role="status" className="mt-6 animate-rise rounded-xs border border-paper p-5">
-          <p className="font-hand text-3xl leading-none">{t.paidHand}</p>
-          <p className="mt-2 text-sm">{d.state === "running" ? t.paidRunning : fmt(t.paidBefore, { date: day(e.start_date, true) })}</p>
-          <Link href="/app/principes" className={`${btnLink} mt-3 inline-block`}>
-            {t.adjust}
-          </Link>
-        </div>
-      ) : params.paid === "1" ? (
-        <div className="mt-6 rounded-xs border border-line p-4 text-sm">
-          {t.paidPending}{" "}
-          <Link href="/app?paid=1" className={btnLink}>
-            {t.refresh}
-          </Link>
-        </div>
-      ) : null}
-
-      {d.state === "locked" ? (
-        <div className="mt-6 rounded-xs border border-paper p-4">
-          <p className="text-sm">{t.locked}</p>
-          <Link href="/abonnement" className={`${btnSmall} mt-3`}>
-            {t.reactivate}
-          </Link>
-        </div>
-      ) : null}
-
-      {(d.audits ?? []).map((a) => (
-        <Link key={a.id} href={`/app/controle/${a.id}`} className="mt-6 block rounded-xs border border-paper p-4 transition-colors hover:bg-surface">
-          <p className="text-sm">
-            {fmt(t.audit, {
-              label: a.label ? ` (${bareThen(a.label)})` : "",
-              due: new Intl.DateTimeFormat(INTL[locale], { timeZone: "Europe/Paris", weekday: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(a.due_at)),
-              penalty: signed(-a.penalty),
-            })}
-          </p>
-        </Link>
-      ))}
-
-      {rs ? (
-        <Link
-          href={rs.principle_id ? `/app/${rs.kind}/${rs.principle_id}` : `/app/${rs.kind}/${rs.assignment_id}?epreuve=1`}
-          className="mt-6 block rounded-xs border border-paper p-4 text-sm"
-        >
-          {rs.kind === "session" ? t.running : t.runningReps}
-        </Link>
-      ) : null}
-
-      <div className="lg:mt-4 lg:grid lg:grid-cols-[1.1fr_1fr] lg:gap-12">
+      <div className="relative z-10 lg:mt-6 lg:grid lg:grid-cols-[1.05fr_1fr] lg:gap-10">
         <div>
-          {/* L'arc */}
-          <section className="mt-10 animate-rise">
+          {/* Le jour de l'arc et les anneaux */}
+          <section className="mt-6 animate-in [animation-delay:60ms]">
             <p className={label}>{fmt(t.arc, { n: e.arc_number, goal: m.game.goals[e.goal_type].label })}</p>
-            <h1 className="mt-3 font-serif text-6xl leading-none">
-              {d.day_number ? (
-                <>
-                  {fmt(t.day, { n: d.day_number })} <span className="text-mute">/ 90</span>
-                </>
-              ) : d.state === "draft" ? (
-                t.ready
-              ) : d.state === "before" ? (
-                t.before
-              ) : d.state === "ended" ? (
-                e.status === "completed" ? t.held : e.status === "abandoned" ? t.quit : t.ended
-              ) : (
-                t.closing
-              )}
-            </h1>
-            <p className="mt-4 text-lg leading-snug">{e.goal_title}</p>
-            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-mute">
-              <span>
-                {t.streak} <span className="text-paper tabular-nums">{fmt(t.streakDays, { n: stats.streak }, locale)}</span>
-              </span>
-              <span>
-                {t.arcPoints} <span className="text-paper tabular-nums">{formatPoints(d.points ?? 0, locale)}</span>
-              </span>
-              {e.jokers_total ? (
-                <span>
-                  {t.jokers} <span className="text-paper tabular-nums">{jokersLeft}</span> / {e.jokers_total}
-                </span>
+            {d.day_number ? (
+              <h1 className="mt-1 flex items-baseline gap-2">
+                <span className="font-dot text-[58px] leading-none">{d.day_number}</span>
+                <span className="font-display text-[22px] text-mute">{t.dayOf}</span>
+              </h1>
+            ) : (
+              <h1 className="mt-1 font-display text-[34px] leading-tight">{headline}</h1>
+            )}
+            <p className="mt-1 text-[15px] leading-snug text-paper/80">{e.goal_title}</p>
+
+            <div className="card mt-5 overflow-hidden p-5">
+              <div className="flex items-center gap-5">
+                <ActivityRings
+                  rings={[
+                    { ...ringToday, tone: "rose" },
+                    { value: greenWeek, max: 7, tone: "mint" },
+                    { value: greenArc, max: ARC_COMPLETION.minGreenDays, tone: "sky" },
+                  ]}
+                  size={136}
+                  stroke={15}
+                  gap={3}
+                  label={fmt(t.ringsAria, { done: ringToday.value, due: ringToday.max, green: greenWeek, arc: greenArc })}
+                  className="shrink-0"
+                />
+                <dl className="min-w-0 flex-1 space-y-3">
+                  <div>
+                    <dt className="text-[13px] text-mute">{t.ringToday}</dt>
+                    <dd className={`font-display text-[22px] leading-tight tabular-nums ${RING_TEXT.rose}`}>
+                      {d.joker_today ? t.jokerShort : `${ringToday.value}/${ringToday.max}`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[13px] text-mute">{t.ringWeek}</dt>
+                    <dd className={`font-display text-[22px] leading-tight tabular-nums ${RING_TEXT.mint}`}>{fmt(t.ringWeekValue, { n: greenWeek })}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[13px] text-mute">{t.ringArc}</dt>
+                    <dd className={`font-display text-[22px] leading-tight tabular-nums ${RING_TEXT.sky}`}>{fmt(t.ringArcValue, { n: greenArc, max: ARC_COMPLETION.minGreenDays })}</dd>
+                  </div>
+                </dl>
+              </div>
+              {week.length ? (
+                <div className="mt-5 border-t border-line pt-4">
+                  <WeekRings
+                    days={week}
+                    letters={letters}
+                    today={d.today!}
+                    aria={(w) => fmt(t.weekDayAria, { date: day(w.day, true, false), done: w.done, due: w.due })}
+                  />
+                </div>
               ) : null}
-            </div>
-            {revenueGoal && plan.limits.wallet ? (
-              <Link href="/app/portefeuille" className="mt-5 block">
-                <p className="flex justify-between text-xs text-mute">
-                  <span>{fmt(t.monthIncome, { amount: formatMoney(d.wallet_month_cents ?? 0, locale) })}</span>
-                  <span>{fmt(t.incomeGoal, { amount: formatMoney(revenueGoal, locale) })}</span>
-                </p>
-                <span className="mt-1.5 block h-1 w-full bg-line">
-                  <span className={`block h-1 bg-paper ${WIDTHS[Math.min(10, Math.floor(((d.wallet_month_cents ?? 0) / revenueGoal) * 10))]}`} />
+              <div className="mt-4 flex flex-wrap gap-2 text-[13px]">
+                <span className="rounded-full bg-white/[0.06] px-3 py-1.5">
+                  {t.streak} <span className="font-semibold tabular-nums">{fmt(t.streakDays, { n: stats.streak }, locale)}</span>
                 </span>
-              </Link>
-            ) : null}
+                <span className="rounded-full bg-white/[0.06] px-3 py-1.5">
+                  {t.arcPoints} <span className="font-semibold tabular-nums">{formatPoints(d.points ?? 0, locale)}</span>
+                </span>
+                {e.jokers_total ? (
+                  <span className="rounded-full bg-white/[0.06] px-3 py-1.5">
+                    {t.jokers} <span className="font-semibold tabular-nums">{jokersLeft}</span>/{e.jokers_total}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           </section>
 
-          {photoDaysLeft ? (
-            <section className="mt-8 animate-rise overflow-hidden rounded-xs border border-paper [animation-delay:120ms]">
-              <ArtBand slug={IMAGES.road} className="h-32" />
-              <div className="p-5">
-                <Hand className="text-2xl text-mute">{t.photoHand}</Hand>
-                <p className="mt-1 font-serif text-3xl leading-tight">{t.photoTitle}</p>
-                <p className="mt-2 text-sm text-mute">{t.photoText}</p>
-                <Link href="/app/avant-apres" className={`${btnPrimary} mt-5`}>
-                  {t.photoCta}
-                </Link>
-                <p className="mt-3 text-xs text-mute">{fmt(t.photoLeft, { n: photoDaysLeft }, locale)}</p>
-              </div>
-            </section>
+          {params.paid === "1" && plan.plan ? (
+            <div role="status" className="glow-violet mt-4 animate-in rounded-[1.75rem] p-5">
+              <p className="font-display text-[22px]">{t.paidHand}</p>
+              <p className="mt-1 text-sm text-paper/85">{d.state === "running" ? t.paidRunning : fmt(t.paidBefore, { date: day(e.start_date, true) })}</p>
+              <Link href="/app/principes" className={`${btnSmall} mt-4`}>
+                {t.adjust}
+              </Link>
+            </div>
+          ) : params.paid === "1" ? (
+            <div className="card mt-4 p-4 text-sm">
+              {t.paidPending}{" "}
+              <Link href="/app?paid=1" className="underline underline-offset-4">
+                {t.refresh}
+              </Link>
+            </div>
+          ) : null}
+
+          {d.state === "locked" ? (
+            <div className="card mt-4 p-4">
+              <p className="text-sm">{t.locked}</p>
+              <Link href="/abonnement" className={`${btnSmall} mt-3`}>
+                {t.reactivate}
+              </Link>
+            </div>
+          ) : null}
+
+          {(d.audits ?? []).map((a) => (
+            <Link key={a.id} href={`/app/controle/${a.id}`} className="glow-amber press mt-4 block rounded-[1.5rem] p-4">
+              <p className="text-sm">
+                {fmt(t.audit, {
+                  label: a.label ? ` (${bareThen(a.label)})` : "",
+                  due: new Intl.DateTimeFormat(INTL[locale], { timeZone: "Europe/Paris", weekday: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(a.due_at)),
+                  penalty: signed(-a.penalty),
+                })}
+              </p>
+            </Link>
+          ))}
+
+          {rs ? (
+            <Link
+              href={rs.principle_id ? `/app/${rs.kind}/${rs.principle_id}` : `/app/${rs.kind}/${rs.assignment_id}?epreuve=1`}
+              className="glow-rose press mt-4 block rounded-[1.5rem] p-4 text-sm"
+            >
+              {rs.kind === "session" ? t.running : t.runningReps}
+            </Link>
           ) : null}
 
           {d.state === "draft" ? (
-            <section className="mt-8 rounded-xs border border-paper p-5">
-              <p className="font-serif text-2xl leading-tight">{t.draftTitle}</p>
-              <p className="mt-2 text-sm text-mute">{fmt(t.draftText, { date: day(e.start_date, true), price: formatMoney(1999, locale) })}</p>
+            <section className="glow-violet mt-4 rounded-[1.75rem] p-5">
+              <p className="font-display text-[22px] leading-tight">{t.draftTitle}</p>
+              <p className="mt-2 text-sm text-paper/85">{fmt(t.draftText, { date: day(e.start_date, true), price: formatMoney(1999, locale) })}</p>
               <Link href="/abonnement" className={`${btnPrimary} mt-5`}>
                 {t.launch}
-              </Link>
-              <Link href="/app/principes" className={`${btnLink} mt-4 inline-block`}>
-                {t.review}
               </Link>
             </section>
           ) : null}
 
           {d.state === "before" ? (
-            <section className="mt-8">
-              <p className="text-mute">{fmt(t.beforeText, { date: day(e.start_date, true) })}</p>
-              <div className="mt-6">
+            <section className="card mt-4 p-5">
+              <p className="text-sm text-mute">{fmt(t.beforeText, { date: day(e.start_date, true) })}</p>
+              <div className="mt-4">
                 <Countdown target={parisMidnight(e.start_date).getTime()} serverNow={serverNow()} />
               </div>
-              <div className="mt-8">
+              <div className="mt-6">
                 <StartTodayButton today={d.today!} />
               </div>
             </section>
           ) : null}
 
-          {/* Aujourd'hui */}
-          <section className="mt-12">
-            <div className="flex items-baseline justify-between gap-4">
-              <h2 className="font-serif text-3xl">{running || d.state === "locked" ? t.today : t.principles}</h2>
-              <Link href="/app/principes" className={btnLink}>
+          {/* Principes : tous, ceux du jour d'abord */}
+          <section className="mt-8">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className={sectionTitle}>{running || d.state === "locked" ? t.today : t.principles}</h2>
+              <Link href="/app/principes" className={btnSmall}>
                 {t.edit}
               </Link>
             </div>
@@ -290,79 +349,98 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
                       : t.nothing}
               </p>
             ) : null}
-            <ul className="mt-4 divide-y divide-line border-y border-line">
+            <ul className="mt-4 space-y-2.5">
               {principles.map((p) => (
                 <TodayPrinciple key={p.id} principle={p} disabled={!running} />
               ))}
-              {!principles.length ? <li className="py-5 text-sm text-mute">{t.nothingDay}</li> : null}
+              {otherDays.map((p) => (
+                <TodayPrinciple key={p.id} principle={p} disabled offDay={fmt(t.notToday, { days: daysLabel(p.days, m) })} />
+              ))}
+              {!principles.length && !otherDays.length ? <li className="card p-5 text-sm text-mute">{t.nothingDay}</li> : null}
             </ul>
             {running && !d.joker_today && jokersLeft > 0 && remaining.length ? (
-              <div className="mt-4">
+              <div className="mt-3 flex justify-center">
                 <JokerButton left={jokersLeft} />
               </div>
             ) : null}
           </section>
-
-          {otherDays.length ? (
-            <section className="mt-10">
-              <h2 className="font-serif text-2xl">{t.otherDays}</h2>
-              <p className="mt-1 text-sm text-mute">{t.otherDaysHint}</p>
-              <ul className="mt-4 divide-y divide-line border-y border-line">
-                {otherDays.map((p) => (
-                  <li key={p.id} className="py-4">
-                    <p className="text-[10px] tracking-[0.2em] text-mute uppercase">{m.game.pillar[p.pillar as keyof Messages["game"]["pillar"]]}</p>
-                    <p className="mt-1 text-sm text-mute">{p.if_text},</p>
-                    <p className="mt-0.5 leading-snug">{p.then_text}</p>
-                    <p className="mt-1.5 text-xs text-mute">
-                      {m.game.proof.label[p.proof_type as keyof Messages["game"]["proof"]["label"]]} · {daysLabel(p.days, m)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
         </div>
 
         <div>
+          {revenueGoal && plan.limits.wallet ? (
+            <Link href="/app/portefeuille" className="card press mt-8 block p-5 lg:mt-6">
+              <p className="flex items-baseline justify-between text-[13px] text-mute">
+                <span>{t.monthIncomeLabel}</span>
+                <span>{fmt(t.incomeGoal, { amount: formatMoney(revenueGoal, locale) })}</span>
+              </p>
+              <p className="mt-1 font-display text-[28px] leading-none tabular-nums">{formatMoney(d.wallet_month_cents ?? 0, locale)}</p>
+              <span className="mt-3 block h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                <span className={`block h-2 rounded-full bg-linear-to-r from-[#1fbf7a] to-[#9bf5c9] ${WIDTHS[Math.min(10, Math.floor(((d.wallet_month_cents ?? 0) / revenueGoal) * 10))]}`} />
+              </span>
+            </Link>
+          ) : null}
+
+          {photoDaysLeft ? (
+            <section className="glow-amber mt-4 rounded-[1.75rem] p-5">
+              <p className="font-display text-[22px] leading-tight">{t.photoTitle}</p>
+              <p className="mt-2 text-sm text-paper/85">{t.photoText}</p>
+              <Link href="/app/avant-apres" className={`${btnPrimary} mt-5`}>
+                {t.photoCta}
+              </Link>
+              <p className="mt-3 text-center text-xs text-paper/70">{fmt(t.photoLeft, { n: photoDaysLeft }, locale)}</p>
+            </section>
+          ) : null}
+
+          {running && d.challenge ? (
+            <Link href="/app/quete" className="glow-violet press mt-4 block rounded-[1.75rem] p-5">
+              <p className="text-[13px] font-medium text-paper/75">{d.challenge.kind === "piege" ? t.trap : fmt(t.quest, { n: d.challenge.week })}</p>
+              <p className="mt-1 font-display text-[20px] leading-snug">{m.content.challenges[d.challenge.code ?? ""]?.title ?? d.challenge.title}</p>
+              <p className="mt-3 flex items-center justify-between gap-4 text-sm">
+                <span className="rounded-full bg-black/30 px-3 py-1 tabular-nums">
+                  {d.challenge.status === "done" ? t.questDone : d.challenge.status === "failed" ? t.questFailed : challengeProgress(d.challenge, t)}
+                </span>
+                <span className="text-xs text-paper/75">{fmt(t.questPoints, { done: signed(d.challenge.points_done), failed: signed(d.challenge.points_failed) })}</span>
+              </p>
+            </Link>
+          ) : null}
+
           {/* Calendrier */}
           {d.calendar?.length ? (
-            <section className="mt-10">
+            <section className="card mt-4 p-5">
+              <div className="mb-4 flex items-baseline justify-between">
+                <h2 className="font-display text-[17px]">{t.calendar}</h2>
+                <span className="text-[13px] text-mute tabular-nums">{fmt(t.calendarCount, { n: greenArc })}</span>
+              </div>
               <CalendarInteractive days={d.calendar} />
               <CalendarLegend />
             </section>
           ) : null}
 
-          {running && d.challenge ? (
-            <Link href="/app/quete" className="mt-10 block rounded-xs border border-line p-4 transition-colors hover:border-mute">
-              <p className={label}>{d.challenge.kind === "piege" ? t.trap : fmt(t.quest, { n: d.challenge.week })}</p>
-              <p className="mt-2 flex items-baseline justify-between gap-4">
-                <span>{m.content.challenges[d.challenge.code ?? ""]?.title ?? d.challenge.title}</span>
-                <span className="shrink-0 text-sm text-mute tabular-nums">
-                  {d.challenge.status === "done" ? t.questDone : d.challenge.status === "failed" ? t.questFailed : challengeProgress(d.challenge, t)}
-                </span>
-              </p>
-              <p className="mt-1 text-xs text-mute">{fmt(t.questPoints, { done: signed(d.challenge.points_done), failed: signed(d.challenge.points_failed) })}</p>
-            </Link>
-          ) : null}
-
-          <ArtBand slug={IMAGES.quote} className="-mx-5 mt-10 h-auto min-h-56 lg:mx-0" dark>
-            <QuoteCard date={d.today!} />
-          </ArtBand>
-
-          {/* Stats */}
-          <Link href="/app/profil" className="mt-10 block rounded-xs border border-line p-4 transition-colors hover:border-mute">
-            <div className="flex items-baseline justify-between">
-              <p className={label}>{t.stats}</p>
-              <p className="font-serif text-3xl leading-none tabular-nums">{stats.ovr}</p>
+          {/* Niveau */}
+          <Link href="/app/profil" className="card press mt-4 block p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[13px] text-mute">{t.levelLabel}</p>
+                <p className="font-display text-[20px] leading-tight">{fmt(t.levelRow, { level: stats.level, title: titleFor(stats.level, m) })}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-display text-[28px] leading-none tabular-nums">{stats.ovr}</p>
+                <p className="text-[11px] text-mute">{m.game.stats.overall}</p>
+              </div>
             </div>
-            <div className="mt-4">
-              <StatGrid stats={stats} compact />
-            </div>
-            <p className="mt-4 text-xs text-mute">{t.statsHint}</p>
+            <span className="mt-4 block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
+              <span className={`block h-1.5 rounded-full bg-linear-to-r from-rose via-violet to-sky ${WIDTHS[Math.floor(levelPct * 10)]}`} />
+            </span>
+            <p className="mt-2 flex justify-between text-[12px] text-mute tabular-nums">
+              <span>{fmt(m.game.stats.xp, { xp: formatNumber(stats.xp, locale) })}</span>
+              <span>{fmt(m.game.stats.nextLevel, { level: stats.level + 1, xp: formatNumber(stats.level_next, locale) })}</span>
+            </p>
           </Link>
 
+          <QuoteCard date={d.today!} className="mt-4 px-1" />
+
           {d.state === "ended" ? (
-            <section className="mt-10 border-t border-line pt-8">
+            <section className="card mt-4 p-5">
               <p className="text-mute">
                 {e.status === "completed" ? (plan.paid_plan === "pro" ? t.endedHeldPro : t.endedHeld) : e.status === "abandoned" ? t.endedQuit : t.endedFailed}
               </p>
@@ -372,34 +450,33 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
             </section>
           ) : null}
 
-          <nav className="mt-10 grid grid-cols-2 gap-3 text-sm" aria-label={t.shortcuts}>
-            <Link href="/app/escouades" className="rounded-xs border border-line p-4 transition-[border-color,transform] hover:border-mute active:scale-[0.98]">
-              {t.squads}
-              <span className="mt-1 block text-xs text-mute">{t.squadsHint}</span>
+          <nav className="grouped mt-6 overflow-hidden" aria-label={t.shortcuts}>
+            <Link href="/app/escouades" className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-white/[0.04]">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px]">{t.squads}</span>
+                <span className="block text-[13px] text-mute">{t.squadsHint}</span>
+              </span>
+              <Chevron />
             </Link>
-            <Link href="/app/avant-apres" className="rounded-xs border border-line p-4 transition-[border-color,transform] hover:border-mute active:scale-[0.98]">
-              {t.beforeAfter}
-              <span className="mt-1 block text-xs text-mute">{t.beforeAfterHint}</span>
+            <Link href="/app/avant-apres" className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-white/[0.04]">
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px]">{t.beforeAfter}</span>
+                <span className="block text-[13px] text-mute">{t.beforeAfterHint}</span>
+              </span>
+              <Chevron />
             </Link>
+            {referralLink && d.profile.referral_code ? (
+              <ReferralRow
+                code={d.profile.referral_code}
+                link={referralLink}
+                shareUrl={
+                  d.profile.is_public
+                    ? `${siteUrl()}/u/${encodeURIComponent(d.profile.pseudo)}?utm_source=parrainage&utm_campaign=${encodeURIComponent(d.profile.referral_code)}`
+                    : null
+                }
+              />
+            ) : null}
           </nav>
-
-          {referralLink && d.profile.referral_code ? (
-            <section className="mt-10 border-t border-line pt-6">
-              <p className={label}>{t.referral}</p>
-              <p className="mt-3 text-sm text-mute">{t.referralText}</p>
-              <div className="mt-4 flex items-center justify-between gap-4">
-                <span className="font-serif text-2xl">{d.profile.referral_code}</span>
-                <CopyButton value={`${d.profile.referral_code} · ${referralLink}`} label={t.copy} />
-              </div>
-              {d.profile.is_public ? (
-                <ShareProfileButton
-                  url={`${siteUrl()}/u/${encodeURIComponent(d.profile.pseudo)}?utm_source=parrainage&utm_campaign=${encodeURIComponent(d.profile.referral_code)}`}
-                  code={d.profile.referral_code}
-                  className="mt-4"
-                />
-              ) : null}
-            </section>
-          ) : null}
         </div>
       </div>
     </>

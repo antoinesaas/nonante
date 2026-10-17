@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
+import { Aura } from "@/components/Aura";
 import { BackLink } from "@/components/BackLink";
 import { PhotoCapture } from "@/components/PhotoCapture";
 import { requireUser } from "@/lib/auth";
@@ -25,7 +26,8 @@ export default async function PhotoPage({ params, searchParams }: PageProps<"/ap
     if (challenge?.proof_type !== "photo") redirect("/app/quete");
     const c = m.content.challenges[challenge.code] ?? { title: challenge.title, description: challenge.description };
     return (
-      <main className="mx-auto min-h-dvh w-full max-w-xl px-5 pt-4 pb-12">
+      <main className="relative isolate mx-auto min-h-dvh w-full max-w-xl overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <Aura tone="violet" />
         <BackLink href="/app/quete" />
         <div className="mt-4">
           <PhotoCapture kind="challenge" targetId={id} title={c.title} detail={c.description} backHref="/app/quete" />
@@ -39,7 +41,8 @@ export default async function PhotoPage({ params, searchParams }: PageProps<"/ap
   if (principle.proof_type !== "photo" && principle.proof_type !== "capture") redirect("/app");
   const capture = principle.proof_type === "capture";
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-xl px-5 pt-4 pb-12">
+    <main className="relative isolate mx-auto min-h-dvh w-full max-w-xl overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <Aura tone="violet" />
       <BackLink />
       <div className="mt-4">
         <PhotoCapture kind="principle" targetId={id} title={principle.then_text} mode={capture ? "file" : "camera"} detail={capture ? t.captureDetail : t.photoDetail} />

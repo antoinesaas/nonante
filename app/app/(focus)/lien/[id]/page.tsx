@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
+import { Aura } from "@/components/Aura";
 import { BackLink } from "@/components/BackLink";
 import { LinkForm } from "@/components/LinkForm";
 import { requireUser } from "@/lib/auth";
@@ -20,9 +21,10 @@ export default async function LinkPage({ params }: PageProps<"/app/lien/[id]">) 
   if (principle.proof_type !== "lien") redirect("/app");
   const domains = (principle.target as { domains?: string[] }).domains ?? [];
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-xl px-5 pt-4 pb-12">
+    <main className="relative isolate mx-auto min-h-dvh w-full max-w-xl overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <Aura tone="sky" />
       <BackLink />
-      <h1 className="mt-4 font-serif text-4xl leading-tight text-balance">{principle.then_text}</h1>
+      <h1 className="mt-5 font-display text-[30px] leading-tight text-balance">{principle.then_text}</h1>
       <p className="mt-3 text-sm text-mute">{m.app.proofs.linkDetail}</p>
       <div className="mt-8">
         <LinkForm mode="principle" targetId={id} domains={domains} />

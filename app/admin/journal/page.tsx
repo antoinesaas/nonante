@@ -9,7 +9,7 @@ export default async function AuditLogPage() {
   const entries = (data as Entry[]) ?? [];
   return (
     <section>
-      <h1 className="font-serif text-4xl">Journal</h1>
+      <h1 className="font-display text-4xl">Journal</h1>
       <p className="mt-2 text-sm text-mute">Les 50 dernières actions admin.</p>
       <ul className="mt-8 divide-y divide-line border-y border-line text-sm">
         {entries.map((e, i) => (

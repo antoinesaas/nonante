@@ -32,15 +32,23 @@ prospection) et c'est **un jeu** (stats de joueur, niveaux, classement, escouade
 
 ## 3. Esprit de la marque
 
-Discipline sobre et exigeante. Noir et blanc, grain photo, Instrument Serif pour les titres et grands
-chiffres, Inter pour le texte, Caveat (manuscrite) pour quelques mots seulement. Animations courtes et sobres
-(apparition, trait dessiné, coche), coupées si l'utilisateur réduit les animations. Pas d'emojis, pas de confettis. Couleurs : fond `#0A0A0A`, surfaces `#141414`,
-traits `#2A2A2A`, texte `#F2F2F2`, secondaire `#8A8A8A`. Vert `#34C759` et rouge `#FF453A` réservés aux états
-(jour, principe, gain, perte). Tutoiement, phrases courtes : « Prouve-le. », « Jour 23 sur 90. ».
+Modifié le 17 octobre 2026 (v11) : app façon iOS, inspirée de Trade Republic et de deux maquettes données par le
+fondateur (cartes en dégradé lumineux, boutons en verre liquide). Fond noir profond `#000`, cartes `#111113` à grands
+arrondis (`card`, `grouped` façon Réglages), textes `#F5F5F7` / `#8E8E93`. De la couleur, mais en dégradés seulement :
+auras floues derrière les en-têtes (`Aura`, une teinte par écran), cartes lumineuses (`glow-rose|mint|sky|amber|violet`),
+anneaux d'activité façon Apple Forme (`ActivityRings`), pastilles de pilier (`ProofIcon` : focus bleu, corps orange,
+business vert, esprit violet, énergie rose). Vert `#30D158` et rouge `#FF453A` gardent leur rôle d'états.
+Boutons : pilule blanche nacrée (`pearl`) pour l'action principale, verre liquide (`liquid`) pour le reste, retour
+haptique et enfoncement au toucher (`press`). Polices : Inter (texte), Inter Tight (`font-display`, titres serrés comme
+iOS), Doto (`font-dot`, grands chiffres en matrice de points : jour de l'arc, minuteur, calculs). Plus de photos dans
+l'app (seulement les fonds de carte débloqués et la page /art) ; formulaires repliés derrière un bouton qui ouvre une
+feuille (`Sheet`). Écran d'ouverture (`Splash`) et images de démarrage iOS (`scripts/gen-splash.mjs`), squelettes
+animés pendant les chargements, transitions entre onglets (React `ViewTransition`, `app/app/(main)/template.tsx`).
+Pas d'emojis, pas de confettis. Tutoiement, phrases courtes : « Prouve-le. », « Jour 23 sur 90. ».
 
 Images : photos CC0 ou domaine public (script `scripts/fetch-photos.mjs`, API Openverse) et œuvres du domaine
-public (`scripts/fetch-art.ts`), en noir et blanc granulé, crédit sur `/art`. **Jamais d'images Pinterest ou
-Google Images, jamais le visage d'une personne connue, jamais de marque.**
+public (`scripts/fetch-art.ts`), crédit sur `/art`. **Jamais d'images Pinterest ou Google Images, jamais le visage
+d'une personne connue, jamais de marque.**
 
 ## 4. Le jeu
 
@@ -68,15 +76,15 @@ une unité facultatifs. Affiché en haut du tableau de bord.
 - Pendant l'arc, un ajout, une modification ou un retrait compte **tout de suite** ; seul un principe déjà prouvé (ou
   dont une session a été lancée) aujourd'hui change **le lendemain** (versions `active_from` / `active_until`, v9).
   Le minuteur peut changer de durée (25/50/90) juste avant d'être lancé : le principe suit (`set_session_minutes`).
-- « Aujourd'hui » liste les principes du jour, puis « Les autres jours ». Changer de langue traduit l'arc ouvert (v8).
+- « Aujourd'hui » liste tous les principes dans une seule liste : ceux du jour, puis ceux prévus un autre jour (en retrait, avec leurs jours). En tête, trois anneaux : principes prouvés aujourd'hui, jours verts de la semaine (/7), jours verts de l'arc (/75), et la semaine en mini-anneaux (`my_week`, v11). Changer de langue traduit l'arc ouvert (v8).
 - Nombre max : 6 (Arc 90 jours), 12 (Pro et Fondateur).
 
 ### Preuves
 | Type | Force | Comment |
 |---|---|---|
-| `session` | forte | Minuteur 25/50/90 min, deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée |
+| `session` | forte | Minuteur 25/50/90 min, deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée. Ambiances sonores synthétisées dans le navigateur (`lib/ambience.ts` : pluie, forêt, route, océan, feu, bruit brun) |
 | `reps` | forte | Pompes ou squats comptés à la caméra (MediaPipe, sur l'appareil, aucune image envoyée) |
-| `reveil` | forte | Ouvrir l'app dans les 2 h 30 avant l'heure et répondre à 3 calculs de tête selon le niveau d'études (lycée 1, prépa et ingénieur 3, sinon 2) ; +5 par bonne réponse, une erreur ne coûte rien (v10, `complete_wake_quiz`, table `mental_math`) |
+| `reveil` | forte | Ouvrir l'app dans les 2 h 30 avant l'heure et répondre à 5 calculs de tête (un par écran, clavier numérique, chrono) selon le niveau d'études (lycée 1, prépa et ingénieur 3, sinon 2) ; +5 par bonne réponse, une erreur ne coûte rien, temps mesuré par le serveur (v10-v11, `complete_wake_quiz`, table `mental_math.duration_ms`) |
 | `photo` | faible | Photo prise dans l'app (pas la galerie) |
 | `capture` | faible | Capture d'écran (galerie autorisée) : messages de prospection, ventes, statistiques |
 | `lien` | faible | Lien d'une publication, domaine autorisé, jamais réutilisé, jamais téléchargé par le serveur |
@@ -87,7 +95,7 @@ envoyer sous 24 h, jugé dans `/admin`). Validation le jour même avant minuit (
 
 ### Points (registre en ajout seul, calculés par Postgres)
 Valeur = 10 × difficulté. Raté (jour blanc compris) : − valeur, rien de plus (v10). Total à −500 ou moins : il repart à 0
-(ligne `reset`, jamais comptée en XP ni dans les points de la semaine, du mois ou du jour). Calcul mental du réveil : + 5 par
+(ligne `reset`, jamais comptée en XP ni dans les points de la semaine, du mois ou du jour). Calcul mental du réveil (5 questions) : + 5 par
 bonne réponse.
 Session cassée − 5. Contrôle refusé − 3× valeur et +1 preuve refusée. Semaine d'arc parfaite + 50. Quête
 réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu : 10 + 1 par 10 € (50 max), note : 5 à 20 selon la note
@@ -113,7 +121,7 @@ Modifié le 8 octobre 2026 : le portefeuille est inclus dans l'Arc 90 jours quan
 le carnet de notes (notes sur 20 pondérées, moyenne par matière, « Ta progression » en forme de radar, une matière par
 sommet, capture en preuve) dans
 les arcs études (ou les deux). Le carnet porte aussi le suivi du calcul mental (réussite, graphique sur 14 jours,
-récapitulatif jour par jour), visible par tous. On note chaque argent gagné grâce à son projet (montant, source, libellé), avec une capture en preuve.
+récapitulatif jour par jour, temps moyen et record sans faute), visible par tous. On note chaque argent gagné grâce à son projet (montant, source, libellé), avec une capture en preuve.
 Revenus prouvés = comptés dans la stat Business, les succès (1 €, 100 €, 1 000 €, 10 000 €) et l'objectif de
 revenu. Sans capture : « non prouvé », la moitié des points, pas de succès. Visible sur le profil public seulement si l'utilisateur le
 choisit. C'est un suivi personnel, jamais un gain distribué par Nonante.
@@ -131,7 +139,7 @@ choisit. C'est un suivi personnel, jamais un gain distribué par Nonante.
 - **Fêtes** : motion design noir et blanc (`components/Celebration.tsx`) pour un succès, un niveau, une journée
   prouvée (une fois par jour) et l'objectif de revenu du mois atteint.
 - **Barre d'onglets** : verre liquide (bulle qui glisse avec rebond, qu'on peut faire glisser du doigt d'un onglet à
-  l'autre), `components/LiquidTabBar.tsx`.
+  l'autre), `components/LiquidTabBar.tsx`. Cinq onglets au plus (Aide est dans le profil).
 - **Bibliothèque de principes** : triée par pertinence (même note que le choix des 6 principes), « Pour toi » = les 3
   meilleurs, chaque pilier = ses 3 meilleurs, barre de recherche sur toute la bibliothèque.
 
@@ -166,9 +174,9 @@ lancer. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jour
 
 ### Parcours du visiteur
 
-Landing → `/onboarding` (sans compte) : questions une par écran (profil, activité si business, école si études,
-objectif, phrase, points faibles, écran « si… alors… », réveil, concentration, sport facultatif, jour 1, engagement,
-pseudo) → écran de construction (vrai calcul
+Landing → `/onboarding` (sans compte) : trois écrans d'accueil qu'on fait défiler, puis questions une par écran (profil,
+activité si business, école si études, objectif, phrase, « Jour 90 » imaginé avec l'objectif, points faibles, écran
+« si… alors… », réveil, concentration, sport facultatif, jour 1, engagement, pseudo) → écran de construction (vrai calcul
 `preview_principles`) → résultat personnalisé (arc, 6 principes, stats, preuve sociale, plans, objections) → « Continuer
 avec Google » (les réponses suivent dans un cookie d'une heure, puis `pending_arcs`, 3 jours max) → `/onboarding/suite` (âge, accès immédiat) →
 Stripe → `/app?paid=1`. Preuve sociale : seulement des chiffres réels (seuils) et des études publiées, jamais de faux
@@ -176,7 +184,7 @@ avis.
 
 ### Connexion et aide
 Connexion **uniquement avec Google** (Supabase OAuth, flux PKCE, retour par `/auth/callback`) : pas d'email, pas de
-code, pas de mot de passe. Onglet **Aide** dans la barre de navigation : ouvre un email vers l'adresse de contact
+code, pas de mot de passe. **Aide** dans le profil (liste groupée) : ouvre un email vers l'adresse de contact
 (`EDITOR.email`). Parrainage : bouton « Partager mon profil » (feuille de partage du téléphone, sinon copie) avec le
 lien du profil public et le code de parrainage ; visible seulement si le profil est public.
 

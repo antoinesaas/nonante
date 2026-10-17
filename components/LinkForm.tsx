@@ -27,7 +27,7 @@ export function LinkForm({
   if (state.ok) {
     return (
       <div className="space-y-4">
-        <p className="font-serif text-4xl">{t.validated}</p>
+        <p className="font-display text-4xl">{t.validated}</p>
         <p className="text-mute">{state.message}</p>
         <Link href="/app" replace className={btnPrimary}>
           {m.app.timer.finish}

@@ -12,6 +12,25 @@ export const quiz: typeof fr = {
   understood: "Got it, let's go on",
   build: "Build my arc",
   skip: "Skip",
+  intro: {
+    slides: [
+      { title: "90 days. Zero excuses.", text: "One goal, “if… then…” principles built for you, a proof every day. Your rings fill up with every day you hold." },
+      { title: "Nothing counts without proof.", text: "A timer that breaks if you leave the screen, push-ups counted by the camera, mental maths when you wake up, photo, link. No cheating." },
+      { title: "Your arc, built in 2 minutes.", text: "Answer a few questions: Nonante picks your principles, works out their difficulty and sets your 90-day calendar." },
+    ],
+    next: "Next",
+    start: "Build my arc",
+    login: "I already have an account",
+    skip: "Skip",
+    cardLabel: "Example principle",
+  },
+  vision: {
+    hand: "picture it for a second",
+    title: "{date}.",
+    day: "Day 90",
+    text: "You made it. Every proven day brings you closer, every dropped day pushes you back. The next questions build that path.",
+    cta: "That's what I want",
+  },
   situation: {
     handFirst: "2 minutes, promise",
     handNext: "arc #{n}, here we go",

@@ -16,7 +16,7 @@ function GoogleMark() {
 
 /** Bouton « Continuer avec Google », version neutre de Google (#F2F2F2) : le seul moyen de connexion, il doit sauter aux yeux. */
 export const googleButtonClass =
-  "inline-flex h-14 w-full items-center justify-center gap-3 rounded-xs bg-paper px-6 text-base font-medium text-ink transition-[opacity,transform] duration-150 hover:opacity-90 active:scale-[0.98] disabled:opacity-50";
+  "pearl press inline-flex h-14 w-full items-center justify-center gap-3 rounded-full px-6 text-[17px] font-semibold tracking-tight disabled:opacity-50";
 
 export function GoogleLabel() {
   const { m } = useI18n();

@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { markAchievementsSeen } from "@/app/actions/seen";
-import { ArtBackdrop } from "@/components/Art";
+import { Aura } from "@/components/Aura";
 import { CelebrationBurst, CelebrationTitle } from "@/components/Celebration";
-import { IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { fmt } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
@@ -29,18 +28,18 @@ export default async function AchievementsPage() {
   const withArt = items.find((a) => a.art_slug);
 
   return (
-    <ArtBackdrop slug={withArt?.art_slug ?? IMAGES.arcDone}>
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-end px-5 pb-16">
+    <main className="relative isolate mx-auto flex min-h-dvh w-full max-w-xl flex-col justify-end overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+      <Aura tone="amber" className="h-[40rem] opacity-60" />
         <div className="grid flex-1 place-items-center pt-10">
           <CelebrationBurst kind="achievement" className="size-60" />
         </div>
-        <p className="animate-rise text-xs tracking-[0.2em] text-mute uppercase [animation-delay:500ms]">{items.length > 1 ? t.unlockedMany : t.unlockedOne}</p>
+        <p className="animate-rise text-[13px] font-medium text-mute [animation-delay:500ms]">{items.length > 1 ? t.unlockedMany : t.unlockedOne}</p>
         <ul className="mt-6 space-y-6">
           {items.map((a, i) => {
             const text = m.content.achievements[a.code] ?? a;
             return (
               <li key={a.code} className={i ? `animate-rise ${DELAYS[i] ?? ""}` : ""}>
-                <p className="font-serif text-5xl leading-none">{i ? text.title : <CelebrationTitle text={text.title} />}</p>
+                <p className="font-display text-[40px] leading-none">{i ? text.title : <CelebrationTitle text={text.title} />}</p>
                 <p className={`mt-3 text-paper/80 ${i ? "" : "animate-rise [animation-delay:900ms]"}`}>
                   {text.description}
                   {a.points ? fmt(t.points, { n: a.points }) : ""}
@@ -55,7 +54,6 @@ export default async function AchievementsPage() {
             {m.common.actions.continue}
           </SubmitButton>
         </form>
-      </main>
-    </ArtBackdrop>
+    </main>
   );
 }

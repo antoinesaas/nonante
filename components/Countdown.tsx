@@ -49,7 +49,7 @@ export function Countdown({ target, serverNow }: Props) {
       <div aria-hidden="true" className="flex items-baseline gap-4 sm:gap-6">
         {cells.map((cell) => (
           <div key={cell.label} className="flex items-baseline gap-1.5">
-            <span className="font-serif text-5xl leading-none tabular-nums sm:text-6xl">{cell.value}</span>
+            <span className="font-display text-5xl leading-none tabular-nums sm:text-6xl">{cell.value}</span>
             <span className="text-sm text-mute">{cell.label}</span>
           </div>
         ))}

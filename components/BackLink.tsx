@@ -10,10 +10,10 @@ export function BackLink({ href = "/app", label }: { href?: string; label?: stri
     <Link
       href={href}
       aria-label={label ?? m.common.actions.back}
-      className="-ml-2 grid size-11 place-items-center rounded-full text-mute transition-[color,transform] hover:text-paper active:scale-90"
+      className="liquid press relative z-10 grid size-10 place-items-center rounded-full"
     >
       <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
-        <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </Link>
   );

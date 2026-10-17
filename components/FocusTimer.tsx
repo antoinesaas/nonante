@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { abandonSession, completeSession, heartbeat, leaveSession, startChallengeSession, startSession } from "@/app/actions/proofs";
+import { Aura } from "@/components/Aura";
 import { useI18n } from "@/components/I18nProvider";
 import { Ring } from "@/components/Ring";
+import { AMBIENCES, Ambience, type AmbienceKind } from "@/lib/ambience";
 import { Sheet } from "@/components/Sheet";
 import type { Messages } from "@/lib/i18n/messages";
 import { fmt } from "@/lib/i18n/format";
@@ -42,10 +44,10 @@ function reasonText(reason: string | undefined, t: Messages["app"]["timer"]): st
 function BackArrow({ label, onClick, href }: { label: string; onClick?: () => void; href?: string }) {
   const icon = (
     <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
-      <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-  const cls = "-ml-2 grid size-11 place-items-center rounded-full text-mute transition-[color,transform] hover:text-paper active:scale-90";
+  const cls = "liquid press grid size-10 place-items-center rounded-full";
   return href ? (
     <Link href={href} aria-label={label} className={cls}>
       {icon}
@@ -55,6 +57,30 @@ function BackArrow({ label, onClick, href }: { label: string; onClick?: () => vo
       {icon}
     </button>
   );
+}
+
+const AMBIENCE_ICON: Record<AmbienceKind, React.ReactNode> = {
+  none: <path d="M5 9 V15 H8.5 L13 19 V5 L8.5 9 Z M17 9.5 L21 14.5 M21 9.5 L17 14.5" />,
+  rain: <path d="M7 14 A4.5 4.5 0 0 1 8 5.2 A5.5 5.5 0 0 1 18.5 7.5 A3.5 3.5 0 0 1 18 14 M8 17 L7 20 M12 17 L11 20 M16 17 L15 20" />,
+  forest: <path d="M12 3 L6 12 H9.5 L5.5 18 H18.5 L14.5 12 H18 Z M12 18 V21" />,
+  road: <path d="M8 3 L5 21 M16 3 L19 21 M12 4 V7 M12 10 V13 M12 16 V19" />,
+  ocean: <path d="M3 9 C5.5 7 7.5 11 10 9 S14.5 7 17 9 S19.5 11 21 9 M3 14 C5.5 12 7.5 16 10 14 S14.5 12 17 14 S19.5 16 21 14" />,
+  fire: <path d="M12 3 C12 7 7.5 8.5 7.5 13.5 A4.5 4.5 0 0 0 16.5 13.5 C16.5 10.5 14.5 9.5 14.5 7.5 C13.5 9 12.5 9.5 11.8 9.8 C12.3 7.5 12.5 5 12 3 Z" />,
+  brown: <path d="M3 12 H5 L6.5 8 L8.5 16 L10.5 6 L12.5 18 L14.5 9 L16.5 14 L18 11 H21" />,
+};
+
+const AMBIENCE_KEY = "nonante:ambiance";
+const noSubscribe = () => () => {};
+
+/** Ambiance choisie la dernière fois (préférence de ce téléphone seulement). */
+function savedAmbience(): AmbienceKind {
+  try {
+    const saved = window.localStorage.getItem(AMBIENCE_KEY) as AmbienceKind | null;
+    return saved && AMBIENCES.includes(saved) ? saved : "none";
+  } catch {
+    // Stockage indisponible (navigation privée) : « silence ».
+    return "none";
+  }
 }
 
 /**
@@ -72,6 +98,12 @@ export function FocusTimer(props: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
   const [points, setPoints] = useState<number | null>(null);
+  const saved = useSyncExternalStore(noSubscribe, savedAmbience, () => "none" as AmbienceKind);
+  const [chosen, setSound] = useState<AmbienceKind | null>(null);
+  const sound = chosen ?? saved;
+  const [volume, setVolume] = useState(0.7);
+  const [soundSheet, setSoundSheet] = useState(false);
+  const ambience = useRef<Ambience | null>(null);
 
   const session = useRef<StartedSession | null>(null);
   const principleId = useRef(props.mode === "principle" ? props.principleId : "");
@@ -83,6 +115,27 @@ export function FocusTimer(props: Props) {
 
   useEffect(() => {
     phaseRef.current = phase;
+  }, [phase]);
+
+  // Page quittée : le son s'arrête.
+  useEffect(() => () => ambience.current?.dispose(), []);
+
+  /** Choisir une ambiance la fait entendre tout de suite (geste de l'utilisateur : le son est autorisé sur iPhone). */
+  function chooseSound(kind: AmbienceKind) {
+    setSound(kind);
+    try {
+      window.localStorage.setItem(AMBIENCE_KEY, kind);
+    } catch {
+      // Préférence non gardée : sans conséquence.
+    }
+    ambience.current ??= new Ambience();
+    ambience.current.setVolume(volume);
+    ambience.current.play(kind);
+  }
+
+  // Fin de la session : le son s'efface.
+  useEffect(() => {
+    if (phase === "completed" || phase === "broken" || phase === "abandoned") ambience.current?.stop();
   }, [phase]);
 
   const total = minutes * 60;
@@ -153,6 +206,11 @@ export function FocusTimer(props: Props) {
   async function start() {
     setPhase("starting");
     setMessage(null);
+    if (sound !== "none") {
+      ambience.current ??= new Ambience();
+      ambience.current.setVolume(volume);
+      ambience.current.play(sound);
+    }
     const r =
       props.mode === "principle"
         ? await startSession(principleId.current, minutes === props.minutes ? undefined : minutes)
@@ -166,6 +224,7 @@ export function FocusTimer(props: Props) {
     if (!r.session) {
       setPhase("ready");
       setMessage(r.message ?? t.startFailed);
+      ambience.current?.stop();
       return;
     }
     session.current = r.session;
@@ -255,26 +314,54 @@ export function FocusTimer(props: Props) {
   const ended = phase === "completed" || phase === "broken" || phase === "abandoned";
   const progress = phase === "ready" || phase === "starting" ? 0 : 1 - Math.max(0, remaining) / total;
 
+  const soundChips = (
+    <div className="-mx-5 flex snap-x gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {AMBIENCES.map((k) => (
+        <button
+          key={k}
+          type="button"
+          onClick={() => chooseSound(k)}
+          aria-pressed={sound === k}
+          className={`press flex h-10 shrink-0 snap-start items-center gap-2 rounded-full px-3.5 text-sm font-medium ${sound === k ? "pearl" : "liquid text-paper/85"}`}
+        >
+          <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            {AMBIENCE_ICON[k]}
+          </svg>
+          {t.sounds[k]}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
-      <div className="flex h-11 items-center">
+    <main className="relative isolate mx-auto flex min-h-dvh w-full max-w-xl flex-col overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.75rem,env(safe-area-inset-bottom))]">
+      <Aura tone="rose" className={running ? "opacity-70" : ""} />
+      <div className="relative z-10 flex h-11 items-center justify-between">
         {running ? <BackArrow label={t.back} onClick={() => setConfirmStop(true)} /> : <BackArrow label={t.back} href="/app" />}
+        {running ? (
+          <button type="button" onClick={() => setSoundSheet(true)} className="liquid press flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium">
+            <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              {AMBIENCE_ICON[sound]}
+            </svg>
+            {t.sounds[sound]}
+          </button>
+        ) : null}
       </div>
-      <p className="mt-2 text-center text-sm text-mute">
+      <p className="relative z-10 mt-3 text-center text-sm text-mute">
         {props.mode === "principle" ? props.label.replace(/\b\d+(?=\s?(minutes|minute|min|Minuten|minutos)\b)/, String(minutes)) : props.label}
       </p>
 
-      <div className="relative my-auto flex items-center justify-center py-8">
-        <div className={`transition-transform duration-700 ease-out ${running ? "scale-100" : "scale-[0.97]"}`}>
+      <div className="relative z-10 my-auto flex items-center justify-center py-6">
+        <div className={`transition-transform duration-700 ease-out ${running ? "scale-100" : "scale-[0.96]"}`}>
           <Ring progress={phase === "completed" ? 1 : progress} broken={phase === "broken"} />
         </div>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="font-serif text-7xl leading-none tabular-nums">{phase === "completed" ? "00:00" : mmss(phase === "ready" || phase === "starting" ? minutes * 60 : remaining)}</p>
-          {running ? <p className="mt-3 animate-breathe text-xs tracking-[0.2em] text-mute uppercase">{t.running}</p> : null}
+          <p className="font-dot text-[64px] leading-none">{phase === "completed" ? "00:00" : mmss(phase === "ready" || phase === "starting" ? minutes * 60 : remaining)}</p>
+          {running ? <p className="mt-3 animate-breathe text-[13px] font-medium text-[#ff7aa8]">{t.running}</p> : null}
         </div>
       </div>
 
-      <div className="w-full space-y-4 text-center">
+      <div className="relative z-10 w-full space-y-4 text-center">
         {phase === "ready" || phase === "starting" ? (
           <>
             <div className="space-y-2">
@@ -288,13 +375,17 @@ export function FocusTimer(props: Props) {
                       setRemaining(n * 60);
                     }}
                     aria-pressed={minutes === n}
-                    className={`h-10 rounded-full border px-4 text-sm transition-colors ${minutes === n ? "border-paper bg-paper text-ink" : "border-line"}`}
+                    className={`press h-10 rounded-full px-4 text-sm font-medium ${minutes === n ? "pearl" : "liquid text-paper/85"}`}
                   >
                     {fmt(t.minutes, { n })}
                   </button>
                 ))}
               </div>
               {props.mode === "principle" ? <p className="text-xs text-mute">{t.durationHint}</p> : null}
+            </div>
+            <div className="text-left">
+              <p className="mb-2 text-[13px] font-medium text-mute">{t.soundTitle}</p>
+              {soundChips}
             </div>
             <button type="button" onClick={start} disabled={phase === "starting"} className={btnPrimary}>
               {phase === "starting" ? t.starting : t.start}
@@ -310,8 +401,8 @@ export function FocusTimer(props: Props) {
         ) : null}
 
         {ended ? (
-          <div className="animate-rise">
-            <p className="font-serif text-4xl">{phase === "completed" ? t.done : phase === "broken" ? t.broken : t.abandoned}</p>
+          <div className="animate-in">
+            <p className="font-display text-[34px]">{phase === "completed" ? t.done : phase === "broken" ? t.broken : t.abandoned}</p>
             <p className="mt-2 text-mute">
               {phase === "completed" ? (points !== null ? fmt(t.donePoints, { n: points }) : null) : `${phase === "broken" && message ? `${message} ` : ""}${t.penalty}`}
             </p>
@@ -328,10 +419,30 @@ export function FocusTimer(props: Props) {
         ) : null}
       </div>
 
+      <Sheet open={soundSheet && running} onClose={() => setSoundSheet(false)} title={t.soundTitle}>
+        {soundChips}
+        <label className="mt-5 block pb-4">
+          <span className="text-[13px] font-medium text-mute">{t.volume}</span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={volume}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setVolume(v);
+              ambience.current?.setVolume(v);
+            }}
+            className="mt-3 w-full accent-[#ff4f86]"
+          />
+        </label>
+      </Sheet>
+
       <Sheet open={confirmStop && running} onClose={() => setConfirmStop(false)} title={t.stopTitle}>
-        <p className="mt-2 text-sm text-mute">{t.stopText}</p>
-        <div className="mt-6 space-y-3">
-          <button type="button" onClick={stop} className="inline-flex h-14 w-full items-center justify-center rounded-xs bg-ko px-6 font-medium text-paper transition-transform active:scale-[0.98]">
+        <p className="text-sm text-mute">{t.stopText}</p>
+        <div className="mt-6 space-y-3 pb-2">
+          <button type="button" onClick={stop} className="press inline-flex h-14 w-full items-center justify-center rounded-full bg-ko px-6 font-semibold text-white">
             {t.stopConfirm}
           </button>
           <button type="button" onClick={() => setConfirmStop(false)} className={`${btnSecondary} w-full`}>

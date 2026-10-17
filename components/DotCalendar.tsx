@@ -7,25 +7,26 @@ import type { DayStatus } from "@/lib/types";
 
 export type DayState = DayStatus;
 
-const DOT: Record<DayStatus, string> = {
+// Petits carrés arrondis : couleur pleine pour un jour clos, gris pour la suite, aujourd'hui cerclé.
+const CELL: Record<DayStatus, string> = {
   green: "bg-ok",
   red: "bg-ko",
-  white: "bg-paper",
-  joker: "border border-paper bg-[radial-gradient(circle,var(--color-paper)_30%,transparent_32%)]",
-  future: "border border-mute/50",
-  today: "animate-breathe border border-mute/50 ring-1 ring-paper ring-offset-[3px] ring-offset-ink",
-  pending: "border border-mute",
-  none: "border border-line",
+  white: "bg-paper/85",
+  joker: "bg-violet",
+  future: "bg-white/[0.06]",
+  today: "bg-white/[0.12] ring-2 ring-paper ring-offset-2 ring-offset-ink animate-breathe",
+  pending: "bg-white/[0.1]",
+  none: "bg-white/[0.04]",
 };
 
-export function Dot({ state, today = false }: { state: DayStatus; today?: boolean }) {
-  const ring = today && state !== "today" ? " ring-1 ring-paper ring-offset-[3px] ring-offset-ink" : "";
-  return <span className={`block size-3.5 rounded-full sm:size-4 ${DOT[state]}${ring}`} />;
+export function Dot({ state, today = false, className = "" }: { state: DayStatus; today?: boolean; className?: string }) {
+  const ring = today && state !== "today" ? " ring-2 ring-paper ring-offset-2 ring-offset-ink" : "";
+  return <span className={`block aspect-square w-full rounded-[0.3rem] transition-transform duration-200 ${CELL[state]}${ring} ${className}`} />;
 }
 
-export const calendarGrid = "grid w-full grid-cols-[repeat(10,auto)] justify-between gap-y-3.5 sm:gap-y-5";
+export const calendarGrid = "grid w-full grid-cols-10 gap-[0.4rem] sm:gap-2";
 
-/** Le calendrier de l'arc : 90 points, 10 colonnes × 9 lignes. */
+/** Le calendrier de l'arc : 90 carrés, 10 colonnes × 9 lignes. */
 export function DotCalendar({ days, today }: { days: DayStatus[]; today?: number }) {
   const { m } = useI18n();
   const cells = Array.from({ length: ARC_DAYS }, (_, i) => days[i] ?? "future");
@@ -40,18 +41,15 @@ export function DotCalendar({ days, today }: { days: DayStatus[]; today?: number
   );
 }
 
+/** Légende minimale : quatre couleurs, une ligne. */
 export function CalendarLegend() {
   const { m } = useI18n();
-  const items: { state: DayStatus; label: string }[] = (["green", "red", "white", "joker", "future"] as const).map((state) => ({
-    state,
-    label: m.game.dayStatus[state],
-  }));
   return (
-    <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs text-mute">
-      {items.map((item) => (
-        <li key={item.state} className="flex items-center gap-2">
-          <Dot state={item.state} />
-          {item.label}
+    <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[12px] text-mute">
+      {(["green", "red", "white", "joker"] as const).map((state) => (
+        <li key={state} className="flex items-center gap-1.5">
+          <span className={`block size-2.5 rounded-[3px] ${CELL[state]}`} />
+          {m.game.dayStatus[state]}
         </li>
       ))}
     </ul>

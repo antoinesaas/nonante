@@ -15,8 +15,8 @@ export const MISS_MULTIPLIER = 1;
 /** Total à −500 ou moins : il repart à 0 (ligne « reset », hors XP et hors points de la semaine, du mois ou du jour). */
 export const POINTS_FLOOR = -500;
 
-/** Réveil : trois calculs de tête selon le niveau d'études ; +5 par bonne réponse, une erreur ne coûte rien. */
-export const MENTAL_MATH = { questions: 3, pointsPerRight: 5 } as const;
+/** Réveil : cinq calculs de tête selon le niveau d'études, chronométrés ; +5 par bonne réponse, une erreur ne coûte rien. */
+export const MENTAL_MATH = { questions: 5, pointsPerRight: 5 } as const;
 export const BROKEN_SESSION_PENALTY = -5;
 /** Contrôle refusé ou non envoyé : − 3 × valeur ; revenu refusé : − 30. */
 export const FAILED_AUDIT_MULTIPLIER = 3;

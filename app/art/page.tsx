@@ -51,10 +51,10 @@ export default async function ArtPage() {
         <Link href="/" aria-label={m.common.homeAria}>
           <Logo size="sm" />
         </Link>
-        <h1 className="mt-14 font-serif text-5xl leading-none">{t.heading}</h1>
+        <h1 className="mt-14 font-display text-5xl leading-none">{t.heading}</h1>
         <p className="mt-5 leading-relaxed text-mute lg:max-w-2xl">{t.intro}</p>
 
-        <h2 className="mt-14 font-serif text-3xl">{t.photos}</h2>
+        <h2 className="mt-14 font-display text-3xl">{t.photos}</h2>
         <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
           {photos.map((w) => (
             <li key={w.slug}>
@@ -65,7 +65,7 @@ export default async function ArtPage() {
 
         {provided.length ? (
           <>
-            <h2 className="mt-14 font-serif text-3xl">{t.provided}</h2>
+            <h2 className="mt-14 font-display text-3xl">{t.provided}</h2>
             <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
               {provided.map((w) => (
                 <li key={w.slug}>
@@ -76,7 +76,7 @@ export default async function ArtPage() {
           </>
         ) : null}
 
-        <h2 className="mt-14 font-serif text-3xl">{t.works}</h2>
+        <h2 className="mt-14 font-display text-3xl">{t.works}</h2>
         <ul className="mt-6 space-y-14 lg:grid lg:grid-cols-2 lg:gap-x-10 lg:gap-y-14 lg:space-y-0">
           {works.map((w) => (
             <li key={w.slug}>

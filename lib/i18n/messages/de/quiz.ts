@@ -12,6 +12,25 @@ export const quiz: typeof fr = {
   understood: "Verstanden, weiter geht's",
   build: "Meinen Arc bauen",
   skip: "Überspringen",
+  intro: {
+    slides: [
+      { title: "90 Tage. Keine Ausreden.", text: "Ein Ziel, „Wenn… dann…“-Prinzipien für dich gebaut, jeden Tag ein Nachweis. Deine Ringe füllen sich mit jedem gehaltenen Tag." },
+      { title: "Nichts zählt ohne Nachweis.", text: "Ein Timer, der abbricht, wenn du den Bildschirm verlässt, Liegestütze von der Kamera gezählt, Kopfrechnen beim Aufstehen, Foto, Link. Schummeln unmöglich." },
+      { title: "Dein Arc, in 2 Minuten gebaut.", text: "Beantworte ein paar Fragen: Nonante wählt deine Prinzipien, berechnet ihre Schwierigkeit und legt deinen 90-Tage-Kalender an." },
+    ],
+    next: "Weiter",
+    start: "Meinen Arc bauen",
+    login: "Ich habe schon ein Konto",
+    skip: "Überspringen",
+    cardLabel: "Beispiel-Prinzip",
+  },
+  vision: {
+    hand: "stell es dir kurz vor",
+    title: "{date}.",
+    day: "Tag 90",
+    text: "Du hast es geschafft. Jeder bewiesene Tag bringt dich näher, jeder verpasste wirft dich zurück. Die nächsten Fragen bauen genau diesen Weg.",
+    cta: "Genau das will ich",
+  },
   situation: {
     handFirst: "2 Minuten, versprochen",
     handNext: "Arc Nr. {n}, los geht's",

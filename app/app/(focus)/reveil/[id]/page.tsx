@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
+import { Aura } from "@/components/Aura";
 import { BackLink } from "@/components/BackLink";
 import { WakeCheck } from "@/components/WakeCheck";
 import { requireUser } from "@/lib/auth";
@@ -34,9 +35,10 @@ export default async function WakePage({ params, searchParams }: PageProps<"/app
     if (challenge?.proof_type !== "reveil") redirect("/app/quete");
     const before = (challenge.rule as { before?: string }).before ?? "08:00";
     return (
-      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-4 pb-12">
+      <main className="relative isolate mx-auto flex min-h-dvh w-full max-w-xl flex-col overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <Aura tone="mint" />
         <BackLink href="/app/quete" />
-        <div className="my-auto">
+        <div className="relative z-10 mt-4 flex flex-1 flex-col">
           <WakeCheck mode="challenge" assignmentId={id} label={m.content.challenges[challenge.code]?.title ?? challenge.title} window={wakeWindow(before, locale)} />
         </div>
       </main>
@@ -48,9 +50,10 @@ export default async function WakePage({ params, searchParams }: PageProps<"/app
   if (principle.proof_type !== "reveil") redirect("/app");
   const before = (principle.target as { before?: string }).before ?? "07:00";
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-4 pb-12">
+    <main className="relative isolate mx-auto flex min-h-dvh w-full max-w-xl flex-col overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <Aura tone="mint" />
       <BackLink />
-      <div className="my-auto">
+      <div className="relative z-10 mt-4 flex flex-1 flex-col">
         <WakeCheck mode="principle" principleId={id} label={`${principle.if_text}, ${principle.then_text}`} window={wakeWindow(before, locale)} />
       </div>
     </main>

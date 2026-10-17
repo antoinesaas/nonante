@@ -29,14 +29,14 @@ export function SettingsForm({ isPublic, walletPublic, bio }: { isPublic: boolea
             {t.public}
             <span className="block text-xs text-mute">{t.publicHint}</span>
           </span>
-          <input type="checkbox" name="isPublic" defaultChecked={isPublic} className="size-5 shrink-0 accent-paper" />
+          <input type="checkbox" name="isPublic" defaultChecked={isPublic} className="size-5 shrink-0 accent-white" />
         </label>
         <label className="flex items-center justify-between gap-4">
           <span>
             {t.walletPublic}
             <span className="block text-xs text-mute">{t.walletPublicHint}</span>
           </span>
-          <input type="checkbox" name="walletPublic" defaultChecked={walletPublic} className="size-5 shrink-0 accent-paper" />
+          <input type="checkbox" name="walletPublic" defaultChecked={walletPublic} className="size-5 shrink-0 accent-white" />
         </label>
         <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.saving}>
           {m.common.actions.save}

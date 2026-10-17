@@ -14,7 +14,7 @@ export function Logo({ size = "md" }: { size?: "sm" | "md" }) {
   return (
     <span className="inline-flex items-end gap-2 text-paper">
       <ArcMark className={mark} />
-      <span className={`font-serif leading-[0.8] tracking-tight ${word}`}>nonante</span>
+      <span className={`font-display leading-[0.8] tracking-tight ${word}`}>nonante</span>
     </span>
   );
 }

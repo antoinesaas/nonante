@@ -25,7 +25,7 @@ const SPARKS = [
 
 /** Pictogramme dessiné au trait au centre du disque. */
 function Glyph({ kind }: { kind: CelebrationKind }) {
-  const props = { pathLength: 1, className: "cel-draw", fill: "none", stroke: "var(--color-ink)", strokeWidth: 6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  const props = { pathLength: 1, className: "cel-draw", fill: "none", stroke: "#ffffff", strokeWidth: 6, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   if (kind === "achievement") return <path {...props} d="M120 92 L128.5 109.5 L147.5 112 L133.5 125 L137 144 L120 135 L103 144 L106.5 125 L92.5 112 L111.5 109.5 Z" />;
   if (kind === "level")
     return (
@@ -45,7 +45,7 @@ function Glyph({ kind }: { kind: CelebrationKind }) {
 }
 
 /**
- * Emblème en motion design, noir et blanc : ondes de choc, rayons de lumière qui jaillissent, orbite qui tourne,
+ * Emblème en motion design, en dégradé rose, violet et bleu : ondes de choc, rayons de lumière qui jaillissent, orbite qui tourne,
  * disque qui éclot avec un rebond, pictogramme dessiné au trait, reflet qui balaie, étincelles. CSS seulement
  * (CSP stricte), figé sur son état final si l'utilisateur réduit les animations.
  */
@@ -56,6 +56,11 @@ export function CelebrationBurst({ kind, className = "" }: { kind: CelebrationKi
         <clipPath id={`cel-disc-${kind}`}>
           <circle cx="120" cy="120" r="46" />
         </clipPath>
+        <linearGradient id={`cel-color-${kind}`} x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stopColor="#ff375f" />
+          <stop offset="0.55" stopColor="#9b6bff" />
+          <stop offset="1" stopColor="#5ac8fa" />
+        </linearGradient>
         <linearGradient id={`cel-glint-${kind}`} x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor="#ffffff" stopOpacity="0" />
           <stop offset="0.5" stopColor="#ffffff" stopOpacity="0.85" />
@@ -64,13 +69,13 @@ export function CelebrationBurst({ kind, className = "" }: { kind: CelebrationKi
       </defs>
       <g className="cel-rings">
         {[0, 1, 2].map((i) => (
-          <circle key={i} cx="120" cy="120" r="50" fill="none" stroke="var(--color-paper)" strokeWidth="1.5" />
+          <circle key={i} cx="120" cy="120" r="50" fill="none" stroke={`url(#cel-color-${kind})`} strokeWidth="2" />
         ))}
       </g>
       <circle className="cel-orbit" cx="120" cy="120" r="78" fill="none" stroke="var(--color-paper)" strokeOpacity="0.45" strokeWidth="1.5" strokeDasharray="2 9" />
       <g className="cel-rays">
         {RAYS.map((r, i) => (
-          <line key={i} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke="var(--color-paper)" strokeWidth={r.thin ? 1.5 : 2.5} strokeLinecap="round" />
+          <line key={i} x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2} stroke={r.thin ? "var(--color-paper)" : `url(#cel-color-${kind})`} strokeWidth={r.thin ? 1.5 : 3} strokeLinecap="round" />
         ))}
       </g>
       <g className="cel-sparks">
@@ -79,7 +84,7 @@ export function CelebrationBurst({ kind, className = "" }: { kind: CelebrationKi
         ))}
       </g>
       <g className="cel-disc">
-        <circle cx="120" cy="120" r="46" fill="var(--color-paper)" />
+        <circle cx="120" cy="120" r="46" fill={`url(#cel-color-${kind})`} />
         <g clipPath={`url(#cel-disc-${kind})`}>
           <g transform="rotate(20 120 120)">
             <rect className="cel-glint" x="40" y="60" width="44" height="120" fill={`url(#cel-glint-${kind})`} />
@@ -134,10 +139,10 @@ export function CelebrationOverlay({ storageKey, kind, hand, title, text }: { st
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={title} onClick={close} className="cel-overlay fixed inset-0 z-50 flex flex-col items-center justify-center bg-ink/90 px-8 text-center backdrop-blur-md">
+    <div role="dialog" aria-modal="true" aria-label={title} onClick={close} className="cel-overlay fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 px-8 text-center backdrop-blur-xl">
       <CelebrationBurst kind={kind} className="size-64" />
-      <p className="mt-2 animate-rise font-hand text-3xl text-mute [animation-delay:500ms]">{hand}</p>
-      <h2 className="mt-2 font-serif text-5xl leading-none">
+      <p className="mt-2 animate-rise bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-lg font-semibold text-transparent [animation-delay:500ms]">{hand}</p>
+      <h2 className="mt-2 font-display text-[44px] leading-none">
         <CelebrationTitle text={title} />
       </h2>
       <p className="mt-5 max-w-sm animate-rise text-paper/80 [animation-delay:900ms]">{text}</p>

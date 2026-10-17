@@ -11,6 +11,25 @@ export const quiz = {
   understood: "Compris, on continue",
   build: "Construire mon arc",
   skip: "Passer",
+  intro: {
+    slides: [
+      { title: "90 jours. Zéro excuse.", text: "Un objectif, des principes « si… alors… » construits pour toi, une preuve chaque jour. Tes anneaux se remplissent à chaque jour tenu." },
+      { title: "Rien ne se valide sans preuve.", text: "Minuteur qui casse si tu quittes l'écran, pompes comptées à la caméra, calcul mental au réveil, photo, lien. Impossible de tricher." },
+      { title: "Ton arc, construit en 2 minutes.", text: "Réponds à quelques questions : Nonante choisit tes principes, calcule leur difficulté et cale ton calendrier de 90 jours." },
+    ],
+    next: "Suivant",
+    start: "Construire mon arc",
+    login: "J'ai déjà un compte",
+    skip: "Passer",
+    cardLabel: "Exemple de principe",
+  },
+  vision: {
+    hand: "imagine un instant",
+    title: "{date}.",
+    day: "Jour 90",
+    text: "Tu y es. Chaque jour prouvé t'en rapproche, chaque jour lâché t'en éloigne. Les questions suivantes servent à construire ce chemin-là.",
+    cta: "C'est ce que je veux",
+  },
   situation: {
     handFirst: "2 minutes, promis",
     handNext: "arc n° {n}, on y va",

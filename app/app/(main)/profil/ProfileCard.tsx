@@ -131,7 +131,7 @@ export function ProfileCard({
               onClick={() => pickArt(a.slug)}
               aria-pressed={shownArt === a.slug}
               aria-label={`${a.title}, ${a.artist}`}
-              className={`relative aspect-square overflow-hidden rounded-xs border-2 transition-[border-color,transform] active:scale-95 ${shownArt === a.slug ? "border-paper" : "border-transparent"}`}
+              className={`relative aspect-square overflow-hidden rounded-2xl border-2 transition-[border-color,transform] active:scale-95 ${shownArt === a.slug ? "border-paper" : "border-transparent"}`}
             >
               <Image src={`/art/${a.slug}-nb.jpg`} alt="" width={a.width} height={a.height} sizes="140px" className="h-full w-full object-cover" />
             </button>

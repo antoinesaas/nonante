@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ActivityRings, type RingTone } from "@/components/ActivityRings";
 import { useI18n } from "@/components/I18nProvider";
 import { artSrc, getArt } from "@/lib/art";
 import { avatarUrl } from "@/lib/avatar";
@@ -12,7 +13,7 @@ import type { Stats } from "@/lib/types";
 
 export function Avatar({ path, pseudo, size = 48, className = "" }: { path: string | null | undefined; pseudo: string; size?: number; className?: string }) {
   const url = avatarUrl(path);
-  const style = `rounded-full border border-line bg-surface object-cover ${className}`;
+  const style = `rounded-full bg-raised object-cover shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] ${className}`;
   if (url) {
     // Image distante déjà ré-encodée en 512 px par le serveur : pas besoin de l'optimiseur.
     // eslint-disable-next-line @next/next/no-img-element
@@ -21,35 +22,48 @@ export function Avatar({ path, pseudo, size = 48, className = "" }: { path: stri
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center font-serif leading-none text-paper ${style} ${size >= 64 ? "text-3xl" : size >= 40 ? "text-lg" : "text-sm"}`}
+      className={`inline-flex shrink-0 items-center justify-center font-display leading-none text-paper ${style} ${size >= 64 ? "text-3xl" : size >= 40 ? "text-lg" : "text-sm"}`}
     >
       {pseudo.slice(0, 1).toUpperCase()}
     </span>
   );
 }
 
-/** Barre de stat 0-99, blanche. */
+/** Couleur de chaque stat (la même que son pilier). */
+export const STAT_TONE: Record<(typeof STAT_KEYS)[number], RingTone> = {
+  discipline: "sky",
+  focus: "blue",
+  corps: "amber",
+  business: "mint",
+  esprit: "violet",
+  energie: "rose",
+};
+
+const STEPS = ["w-0", "w-[10%]", "w-[20%]", "w-[30%]", "w-[40%]", "w-[50%]", "w-[60%]", "w-[70%]", "w-[80%]", "w-[90%]", "w-full"];
+
+/** Barre de stat 0-99, en dégradé. */
 export function StatBar({ value }: { value: number }) {
   const width = Math.max(0, Math.min(99, value));
-  const steps = ["w-0", "w-[10%]", "w-[20%]", "w-[30%]", "w-[40%]", "w-[50%]", "w-[60%]", "w-[70%]", "w-[80%]", "w-[90%]", "w-full"];
   return (
-    <span className="block h-1 w-full bg-line" aria-hidden="true">
-      <span className={`block h-1 bg-paper ${steps[Math.round(width / 10)]}`} />
+    <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]" aria-hidden="true">
+      <span className={`block h-1.5 rounded-full bg-linear-to-r from-violet to-sky ${STEPS[Math.round(width / 10)]}`} />
     </span>
   );
 }
 
+/** Les 6 stats en anneaux (façon Apple Forme) : chaque anneau se remplit jusqu'à sa note sur 99. */
 export function StatGrid({ stats, compact = false }: { stats: Stats; compact?: boolean }) {
   const { m } = useI18n();
+  const size = compact ? 46 : 58;
   return (
-    <dl className={`grid grid-cols-3 ${compact ? "gap-x-4 gap-y-3" : "gap-x-5 gap-y-4"}`}>
+    <dl className="grid grid-cols-3 gap-2">
       {STAT_KEYS.map((key) => (
-        <div key={key} className="min-w-0">
-          <dt className="truncate text-[10px] tracking-[0.12em] text-mute uppercase">{compact ? m.game.stats[key].short : m.game.stats[key].label}</dt>
-          <dd className={`mt-0.5 font-serif leading-none tabular-nums ${compact ? "text-xl" : "text-2xl"}`}>{stats[key]}</dd>
-          <dd className="mt-1.5">
-            <StatBar value={Number(stats[key])} />
-          </dd>
+        <div key={key} className="flex flex-col items-center rounded-2xl bg-white/[0.04] px-1 py-3">
+          <div className="relative">
+            <ActivityRings rings={[{ value: Number(stats[key]), max: 99, tone: STAT_TONE[key] }]} size={size} stroke={compact ? 6 : 7} label="" />
+            <dd className="absolute inset-0 grid place-items-center font-display text-[15px] tabular-nums">{stats[key]}</dd>
+          </div>
+          <dt className="mt-1.5 max-w-full truncate text-[11px] text-mute">{compact ? m.game.stats[key].short : m.game.stats[key].label}</dt>
         </div>
       ))}
     </dl>
@@ -61,11 +75,10 @@ export function XpBar({ stats }: { stats: Stats }) {
   const { m, locale } = useI18n();
   const span = Math.max(1, stats.level_next - stats.level_floor);
   const pct = Math.max(0, Math.min(1, (stats.xp - stats.level_floor) / span));
-  const steps = ["w-0", "w-[10%]", "w-[20%]", "w-[30%]", "w-[40%]", "w-[50%]", "w-[60%]", "w-[70%]", "w-[80%]", "w-[90%]", "w-full"];
   return (
     <div>
-      <span className="block h-0.5 w-full bg-line" aria-hidden="true">
-        <span className={`block h-0.5 bg-paper ${steps[Math.floor(pct * 10)]}`} />
+      <span className="block h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]" aria-hidden="true">
+        <span className={`block h-1.5 rounded-full bg-linear-to-r from-rose via-violet to-sky ${STEPS[Math.floor(pct * 10)]}`} />
       </span>
       <p className="mt-1.5 flex justify-between text-[11px] text-mute tabular-nums">
         <span>{fmt(m.game.stats.xp, { xp: formatNumber(stats.xp, locale) })}</span>
@@ -98,9 +111,10 @@ export function PlayerCard({
   editSlot?: React.ReactNode;
 }) {
   const { m } = useI18n();
-  const background = getArt(art);
+  // Fond par défaut (jamais choisi) : le dégradé, pas de photo. Les œuvres débloquées restent au choix.
+  const background = art && art !== "nuit-tours" ? getArt(art) : null;
   return (
-    <section className="relative overflow-hidden border border-line bg-surface" aria-label={fmt(m.game.stats.cardAria, { pseudo })}>
+    <section className="card relative overflow-hidden" aria-label={fmt(m.game.stats.cardAria, { pseudo })}>
       {background ? (
         <>
           <Image
@@ -112,19 +126,21 @@ export function PlayerCard({
             sizes="(max-width: 640px) 100vw, 576px"
             className="absolute inset-0 h-full w-full animate-fade object-cover"
           />
-          <div className="absolute inset-0 bg-ink/80" />
+          <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/80 to-black/90" />
         </>
-      ) : null}
+      ) : (
+        <div aria-hidden="true" className="glow-violet absolute inset-x-0 top-0 h-48 opacity-70 [mask-image:linear-gradient(to_bottom,#000,transparent)]" />
+      )}
       <div className={`relative z-10 p-5 ${editSlot ? "pb-16" : ""}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="font-serif text-6xl leading-none tabular-nums">{stats.ovr}</p>
-            <p className="mt-1 text-[10px] tracking-[0.2em] text-mute uppercase">{m.game.stats.overall}</p>
+            <p className="font-dot text-[56px] leading-none">{stats.ovr}</p>
+            <p className="mt-1 text-[12px] font-medium text-paper/70">{m.game.stats.overall}</p>
           </div>
           {avatarSlot ?? <Avatar path={avatarPath} pseudo={pseudo} size={72} className="size-18" />}
         </div>
-        <h2 className="mt-6 font-serif text-4xl leading-none break-words">{pseudo}</h2>
-        <p className="mt-2 text-sm text-mute">
+        <h2 className="mt-5 font-display text-[30px] leading-none break-words">{pseudo}</h2>
+        <p className="mt-1.5 text-sm text-paper/70">
           {fmt(m.game.stats.level, { level: stats.level })} · {titleFor(stats.level, m)}
           {founder ? ` · ${m.game.stats.founder}` : ""}
           {subtitle ? ` · ${subtitle}` : ""}

@@ -52,7 +52,7 @@ export default async function AdminPage() {
           ["Fondateurs", `${o.founders} / 100`],
         ].map(([k, v]) => (
           <div key={k} className="border border-line p-4">
-            <p className="font-serif text-3xl tabular-nums">{v}</p>
+            <p className="font-display text-3xl tabular-nums">{v}</p>
             <p className="mt-1 text-xs text-mute">{k}</p>
           </div>
         ))}
@@ -60,17 +60,17 @@ export default async function AdminPage() {
 
       <section className="grid grid-cols-2 gap-4">
         <Link href="/admin/controles" className="border border-line p-4">
-          <p className="font-serif text-4xl tabular-nums">{o.audits_pending}</p>
+          <p className="font-display text-4xl tabular-nums">{o.audits_pending}</p>
           <p className="mt-1 text-xs text-mute">contrôles à traiter</p>
         </Link>
         <Link href="/admin/signalements" className="border border-line p-4">
-          <p className="font-serif text-4xl tabular-nums">{o.reports_open}</p>
+          <p className="font-display text-4xl tabular-nums">{o.reports_open}</p>
           <p className="mt-1 text-xs text-mute">signalements ouverts</p>
         </Link>
       </section>
 
       <section>
-        <h2 className="font-serif text-3xl">Abonnés</h2>
+        <h2 className="font-display text-3xl">Abonnés</h2>
         <ul className="mt-4 divide-y divide-line border-y border-line text-sm">
           {o.subscribers.map((s) => (
             <li key={`${s.plan}-${s.interval}`} className="flex justify-between py-2">
@@ -86,27 +86,27 @@ export default async function AdminPage() {
       </section>
 
       <section>
-        <h2 className="font-serif text-3xl">Entonnoir</h2>
+        <h2 className="font-display text-3xl">Entonnoir</h2>
         <dl className="mt-4 grid grid-cols-3 gap-4 text-sm">
           <div>
             <dt className="text-xs text-mute">Profils créés</dt>
-            <dd className="font-serif text-3xl tabular-nums">{o.funnel.profiles}</dd>
+            <dd className="font-display text-3xl tabular-nums">{o.funnel.profiles}</dd>
           </div>
           <div>
             <dt className="text-xs text-mute">Arcs construits</dt>
-            <dd className="font-serif text-3xl tabular-nums">{o.funnel.arcs_built}</dd>
+            <dd className="font-display text-3xl tabular-nums">{o.funnel.arcs_built}</dd>
             <dd className="text-xs text-mute">{pct(o.funnel.arcs_built, o.funnel.profiles)}</dd>
           </div>
           <div>
             <dt className="text-xs text-mute">Payants</dt>
-            <dd className="font-serif text-3xl tabular-nums">{o.funnel.paying}</dd>
+            <dd className="font-display text-3xl tabular-nums">{o.funnel.paying}</dd>
             <dd className="text-xs text-mute">{pct(o.funnel.paying, o.funnel.arcs_built)} des arcs construits</dd>
           </div>
         </dl>
       </section>
 
       <section>
-        <h2 className="font-serif text-3xl">Arcs</h2>
+        <h2 className="font-display text-3xl">Arcs</h2>
         <dl className="mt-4 grid grid-cols-3 gap-4 text-sm sm:grid-cols-5">
           {[
             ["En construction", o.arcs.draft ?? 0],
@@ -117,7 +117,7 @@ export default async function AdminPage() {
           ].map(([k, v]) => (
             <div key={k as string}>
               <dt className="text-xs text-mute">{k}</dt>
-              <dd className="font-serif text-3xl tabular-nums">{v}</dd>
+              <dd className="font-display text-3xl tabular-nums">{v}</dd>
             </div>
           ))}
         </dl>
@@ -125,7 +125,7 @@ export default async function AdminPage() {
       </section>
 
       <section>
-        <h2 className="font-serif text-3xl">Ventes par source</h2>
+        <h2 className="font-display text-3xl">Ventes par source</h2>
         <table className="mt-4 w-full text-left text-sm">
           <thead className="text-xs text-mute">
             <tr>
@@ -149,7 +149,7 @@ export default async function AdminPage() {
       </section>
 
       <section>
-        <h2 className="font-serif text-3xl">Accès offerts</h2>
+        <h2 className="font-display text-3xl">Accès offerts</h2>
         <p className="mt-2 text-sm text-mute">Pour tester, ou pour un partenaire. Chaque accès est journalisé.</p>
         <ul className="mt-4 divide-y divide-line border-y border-line text-sm">
           {o.comps.map((c) => (

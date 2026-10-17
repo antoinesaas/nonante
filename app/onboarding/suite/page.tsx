@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SuiteForm } from "@/app/onboarding/suite/SuiteForm";
-import { Hand } from "@/components/Hand";
+import { Aura } from "@/components/Aura";
 import { Logo } from "@/components/Logo";
 import { Answers, startDateOf } from "@/lib/answers";
 import { requireUser } from "@/lib/auth";
@@ -58,42 +58,41 @@ export default async function SuitePage() {
   const priceText = (cents: number) => fmt(m.game.plans.price[interval], { price: formatMoney(cents, locale) }, locale);
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-6 pb-14 grain">
+    <main className="relative isolate mx-auto flex min-h-dvh w-full max-w-xl flex-col overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <Aura tone="violet" className="h-[30rem]" />
       <Logo size="sm" />
-      <div className="my-auto py-12">
-        <Hand underline className="animate-rise text-3xl">
-          {t.hand}
-        </Hand>
-        <h1 className="mt-6 animate-rise font-serif text-5xl leading-[0.95] [animation-delay:80ms]">{t.heading}</h1>
+      <div className="my-auto py-10">
+        <p className="animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
+        <h1 className="mt-2 animate-in font-display text-[40px] leading-[1.02] [animation-delay:80ms]">{t.heading}</h1>
 
-        <dl className="mt-8 animate-rise divide-y divide-line border-y border-line text-sm [animation-delay:160ms]">
-          <div className="py-4">
-            <dt className={label}>{t.goal}</dt>
-            <dd className="mt-1.5 font-serif text-2xl leading-tight">{a.goal}</dd>
-          </div>
-          <div className="flex items-baseline justify-between gap-4 py-4">
+        <div className="glow-violet mt-7 animate-in rounded-[1.75rem] p-5 [animation-delay:120ms]">
+          <p className="text-[13px] font-medium text-paper/75">{t.goal}</p>
+          <p className="mt-1 font-display text-[24px] leading-tight">{a.goal}</p>
+        </div>
+        <dl className="grouped mt-3 animate-in text-sm [animation-delay:160ms]">
+          <div className="flex items-baseline justify-between gap-4 px-4 py-3.5">
             <dt className={label}>{t.day1}</dt>
             <dd>{startLabel}</dd>
           </div>
-          <div className="flex items-baseline justify-between gap-4 py-4">
+          <div className="flex items-baseline justify-between gap-4 px-4 py-3.5">
             <dt className={label}>{m.game.plans.name[plan]}</dt>
-            <dd className="font-serif text-2xl">{covered ? t.included : priceText(price)}</dd>
+            <dd className="font-display text-[20px]">{covered ? t.included : priceText(price)}</dd>
           </div>
           {discount ? (
             <>
-              <div className="flex items-baseline justify-between gap-4 py-4">
+              <div className="flex items-baseline justify-between gap-4 px-4 py-3.5">
                 <dt className={label}>{fmt(t.discount[discount.kind], { name: discount.pseudo })}</dt>
-                <dd>−{discount.percent} %</dd>
+                <dd className="text-ok">−{discount.percent} %</dd>
               </div>
-              <div className="flex items-baseline justify-between gap-4 py-4">
+              <div className="flex items-baseline justify-between gap-4 px-4 py-3.5">
                 <dt className={label}>{t.toPay}</dt>
-                <dd className="font-serif text-3xl">{formatMoney(total, locale)}</dd>
+                <dd className="font-display text-[26px]">{formatMoney(total, locale)}</dd>
               </div>
             </>
           ) : null}
         </dl>
 
-        <div className="mt-8 animate-rise [animation-delay:240ms]">
+        <div className="mt-7 animate-in [animation-delay:240ms]">
           <SuiteForm
             needsProfile={!profile}
             pseudo={profile?.pseudo ?? a.pseudo ?? ""}

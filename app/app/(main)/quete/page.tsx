@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChallengeDeclaratif } from "@/app/app/(main)/quete/ChallengeDeclaratif";
+import { Aura } from "@/components/Aura";
 import { BackLink } from "@/components/BackLink";
 import { LinkForm } from "@/components/LinkForm";
 import { requireUser } from "@/lib/auth";
 import { fmt, signed } from "@/lib/i18n/format";
 import { getI18n } from "@/lib/i18n/server";
 import type { Dashboard } from "@/lib/types";
-import { btnPrimary, label } from "@/lib/ui";
+import { btnPrimary, sectionTitle } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
@@ -35,17 +36,20 @@ export default async function ChallengePage() {
 
   return (
     <>
+      <Aura tone="violet" />
       <BackLink />
-      <p className={`${label} mt-4`}>{c ? fmt(t.label, { week: c.week, kind: c.kind === "piege" ? t.trap : fmt(t.tier, { n: c.level }) }) : t.fallback}</p>
       {c && text ? (
         <>
-          <h1 className="mt-4 font-serif text-4xl leading-tight text-balance">{text.title}</h1>
-          <p className="mt-3 text-mute">{text.description}</p>
-          <p className="mt-6 flex gap-6 text-sm">
-            <span>{fmt(t.done, { n: signed(c.points_done) })}</span>
-            <span className="text-mute">{fmt(t.failed, { n: signed(c.points_failed) })}</span>
-          </p>
-          <p className="mt-6 font-serif text-5xl tabular-nums">{c.status === "done" ? t.doneBig : c.status === "failed" ? t.failedBig : `${c.progress.current} / ${c.progress.goal}`}</p>
+          <section className="glow-violet mt-5 animate-in rounded-[2rem] p-6">
+            <p className="text-[13px] font-medium text-paper/75">{fmt(t.label, { week: c.week, kind: c.kind === "piege" ? t.trap : fmt(t.tier, { n: c.level }) })}</p>
+            <h1 className="mt-2 font-display text-[30px] leading-tight text-balance">{text.title}</h1>
+            <p className="mt-2 text-[15px] text-paper/85">{text.description}</p>
+            <p className="mt-6 font-dot text-[48px] leading-none">{c.status === "done" ? t.doneBig : c.status === "failed" ? t.failedBig : `${c.progress.current}/${c.progress.goal}`}</p>
+            <p className="mt-4 flex flex-wrap gap-2 text-sm">
+              <span className="rounded-full bg-black/30 px-3 py-1">{fmt(t.done, { n: signed(c.points_done) })}</span>
+              <span className="rounded-full bg-black/30 px-3 py-1 text-paper/75">{fmt(t.failed, { n: signed(c.points_failed) })}</span>
+            </p>
+          </section>
 
           {c.status === "assigned" ? (
             <div className="mt-8">
@@ -62,21 +66,24 @@ export default async function ChallengePage() {
           ) : null}
         </>
       ) : (
-        <p className="mt-4 text-mute">{t.soon}</p>
+        <>
+          <p className="mt-5 text-[13px] text-mute">{t.fallback}</p>
+          <p className="card mt-3 p-5 text-mute">{t.soon}</p>
+        </>
       )}
 
       {history && history.length > 1 ? (
-        <section className="mt-14">
-          <h2 className="font-serif text-2xl">{t.past}</h2>
-          <ul className="mt-4 divide-y divide-line border-y border-line text-sm">
+        <section className="mt-10">
+          <h2 className={sectionTitle}>{t.past}</h2>
+          <ul className="grouped mt-3 text-sm">
             {history
               .filter((h) => h.id !== c?.assignment_id)
               .map((h) => (
-                <li key={h.id} className="flex justify-between gap-4 py-3">
+                <li key={h.id} className="flex justify-between gap-4 px-4 py-3.5">
                   <span>
                     <span className="text-mute">{fmt(t.week, { n: h.week })}</span> {titleOf.get(h.challenge_id)}
                   </span>
-                  <span className={h.status === "done" ? "text-paper" : "text-mute"}>{h.status === "done" ? t.statusDone : h.status === "failed" ? t.statusFailed : t.statusRunning}</span>
+                  <span className={h.status === "done" ? "text-ok" : "text-mute"}>{h.status === "done" ? t.statusDone : h.status === "failed" ? t.statusFailed : t.statusRunning}</span>
                 </li>
               ))}
           </ul>

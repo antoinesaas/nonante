@@ -30,7 +30,7 @@ export default async function AuditQueuePage() {
 
   return (
     <section>
-      <h1 className="font-serif text-4xl">Contrôles</h1>
+      <h1 className="font-display text-4xl">Contrôles</h1>
       <p className="mt-2 text-sm text-mute">
         Les contrôles sans réponse sous 24 h échouent automatiquement. Les photos s&apos;ouvrent via une URL signée de 60 secondes.
       </p>

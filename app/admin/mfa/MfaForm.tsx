@@ -40,7 +40,7 @@ export function MfaForm({ verifiedFactorId }: { verifiedFactorId: string | null 
             autoComplete="one-time-code"
             maxLength={6}
             placeholder="123456"
-            className={`${input} font-serif text-3xl tracking-[0.3em]`}
+            className={`${input} font-display text-3xl tracking-[0.3em]`}
           />
           <SubmitButton className={btnPrimary} pendingLabel="Vérification…">
             Vérifier

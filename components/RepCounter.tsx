@@ -2,6 +2,7 @@
 
 import type { PoseLandmarker } from "@mediapipe/tasks-vision";
 import Link from "next/link";
+import { Aura } from "@/components/Aura";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { completeReps, startChallengeSession, startSession, validateDeclaratif } from "@/app/actions/proofs";
@@ -241,17 +242,18 @@ export function RepCounter(props: Props) {
   const cameraVisible = phase === "loading" || phase === "ready" || phase === "counting";
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
-      <div className="flex h-11 items-center">
-        <Link href="/app" aria-label={m.common.actions.back} className="-ml-2 grid size-11 place-items-center rounded-full text-mute transition-[color,transform] hover:text-paper active:scale-90">
+    <main className="relative isolate mx-auto flex min-h-dvh w-full max-w-xl flex-col overflow-x-clip px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1.75rem,env(safe-area-inset-bottom))]">
+      <Aura tone="amber" />
+      <div className="relative z-10 flex h-11 items-center">
+        <Link href="/app" aria-label={m.common.actions.back} className="liquid press grid size-10 place-items-center rounded-full">
           <svg viewBox="0 0 16 16" className="size-4" aria-hidden="true">
             <path d="M10 3 L5 8 L10 13" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </Link>
       </div>
-      <p className="mt-2 text-center text-sm text-mute">{props.label}</p>
+      <p className="relative z-10 mt-3 text-center text-sm text-mute">{props.label}</p>
 
-      <div className={`relative mt-6 aspect-[3/4] w-full overflow-hidden rounded-xs bg-surface ${cameraVisible ? "animate-fade" : "hidden"}`}>
+      <div className={`relative z-10 mt-5 aspect-[3/4] w-full overflow-hidden rounded-[2rem] bg-surface shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] ${cameraVisible ? "animate-in" : "hidden"}`}>
         <video ref={video} playsInline muted autoPlay className="h-full w-full -scale-x-100 object-cover" />
         {phase === "loading" ? (
           <div className="absolute inset-0 grid place-items-center bg-ink/60">
@@ -259,13 +261,13 @@ export function RepCounter(props: Props) {
           </div>
         ) : null}
         {phase === "ready" ? (
-          <p className={`absolute inset-x-3 top-3 rounded-full px-4 py-2 text-center text-sm transition-colors ${status === t.framed ? "bg-paper text-ink" : "glass text-paper"}`}>{status}</p>
+          <p className={`absolute inset-x-3 top-3 rounded-full px-4 py-2 text-center text-sm font-medium transition-colors ${status === t.framed ? "pearl" : "glass text-paper"}`}>{status}</p>
         ) : null}
         {phase === "counting" ? (
           <>
             <p className="glass absolute inset-x-3 top-3 rounded-full px-4 py-2 text-center text-sm">{status}</p>
             <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-ink/90 to-transparent p-5 pt-12 text-center">
-              <p className="font-serif text-8xl leading-none tabular-nums">
+              <p className="font-dot text-[88px] leading-none">
                 <span key={count} className="inline-block animate-pop">
                   {count}
                 </span>
@@ -276,10 +278,13 @@ export function RepCounter(props: Props) {
         ) : null}
       </div>
 
-      <div className="mt-auto flex flex-col items-center gap-4 pt-8 text-center">
+      <div className="relative z-10 mt-auto flex flex-col items-center gap-4 pt-8 text-center">
         {phase === "intro" ? (
           <>
-            <h1 className="font-serif text-4xl leading-tight">{fmt(t.goal, { goal })}</h1>
+            <div className="glow-amber grid size-36 place-items-center rounded-full">
+              <span className="font-dot text-[48px] leading-none">{props.target ?? "∞"}</span>
+            </div>
+            <h1 className="font-display text-[30px] leading-tight">{fmt(t.goal, { goal })}</h1>
             <p className="text-sm leading-relaxed text-mute">{t.setup}</p>
             <button type="button" onClick={enableCamera} className={btnPrimary}>
               {t.enable}
@@ -326,7 +331,7 @@ export function RepCounter(props: Props) {
 
         {phase === "error" ? (
           <>
-            <p className="font-serif text-3xl">{t.notValid}</p>
+            <p className="font-display text-[30px]">{t.notValid}</p>
             {message ? <p className="text-mute">{message}</p> : null}
             <button type="button" onClick={enableCamera} className={btnPrimary}>
               {t.retry}
@@ -340,8 +345,8 @@ export function RepCounter(props: Props) {
         ) : null}
 
         {phase === "done" || phase === "rejected" ? (
-          <div className="w-full animate-rise">
-            <p className="font-serif text-4xl">{phase === "done" ? t.done : t.notValid}</p>
+          <div className="w-full animate-in">
+            <p className="font-display text-[34px]">{phase === "done" ? t.done : t.notValid}</p>
             {message ? <p className="mt-2 text-mute">{message}</p> : null}
             <button type="button" onClick={() => router.replace("/app")} className={`${btnPrimary} mt-6`}>
               {m.app.timer.finish}

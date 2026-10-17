@@ -166,7 +166,7 @@ export function LiquidTabBar({ tabs, crowded }: { tabs: Tab[]; crowded: boolean 
           e.stopPropagation();
         }
       }}
-      className={`glass pointer-events-auto mx-auto grid max-w-md touch-none items-stretch rounded-full p-1.5 select-none ${COLS[tabs.length] ?? "grid-cols-6"} ${crowded ? "gap-0.5" : "gap-1"}`}
+      className={`glass pointer-events-auto mx-auto grid max-w-md touch-none items-stretch rounded-full p-1 select-none ${COLS[tabs.length] ?? "grid-cols-5"} ${crowded ? "gap-0.5" : "gap-1"}`}
     >
       <span
         ref={lens}
@@ -175,12 +175,12 @@ export function LiquidTabBar({ tabs, crowded }: { tabs: Tab[]; crowded: boolean 
       />
       {tabs.map((tab, i) => {
         const lit = hover !== null ? hover === i : i === shown;
-        const className = `flex h-14 flex-col items-center justify-center gap-0.5 rounded-full font-medium transition-[color,transform] duration-200 active:scale-90 ${
-          crowded ? "text-[9px]" : "text-[10px] tracking-wide"
+        const className = `flex h-[3.4rem] flex-col items-center justify-center gap-0.5 rounded-full font-medium transition-[color,transform] duration-200 active:scale-90 ${
+          crowded ? "text-[10px]" : "text-[10.5px]"
         } ${lit ? "text-paper" : "text-mute"}`;
         const content = (
           <>
-            <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={lit ? 2 : 1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className={`size-[1.45rem] transition-transform duration-300 ${lit ? "scale-105" : ""}`} fill="none" stroke="currentColor" strokeWidth={lit ? 2.1 : 1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               {tab.icon}
             </svg>
             <span className="max-w-full truncate px-0.5">{tab.label}</span>

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/app/login/LoginForm";
-import { Hand } from "@/components/Hand";
+import { ActivityRings } from "@/components/ActivityRings";
+import { Aura } from "@/components/Aura";
 import { Logo } from "@/components/Logo";
 import { getUser, safeNext } from "@/lib/auth";
 import { getI18n } from "@/lib/i18n/server";
@@ -20,15 +21,28 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const t = m.auth;
 
   return (
-    <div className="min-h-dvh grain">
-      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-6 pb-12">
+    <div className="relative isolate min-h-dvh overflow-hidden">
+      <Aura tone="violet" className="h-[34rem] opacity-60" />
+      <main className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]">
         <Link href="/" aria-label={m.common.homeAria}>
           <Logo />
         </Link>
-        <div className="my-auto py-16">
-          <Hand className="animate-rise text-3xl text-mute">{t.hand}</Hand>
-          <h1 className="mt-3 animate-rise font-serif text-5xl leading-none [animation-delay:80ms]">{t.heading}</h1>
-          <p className="mt-5 animate-rise text-paper/80 [animation-delay:140ms]">{t.text}</p>
+        <div className="my-auto py-12">
+          <ActivityRings
+            rings={[
+              { value: 0.8, max: 1, tone: "rose" },
+              { value: 0.6, max: 1, tone: "mint" },
+              { value: 0.4, max: 1, tone: "sky" },
+            ]}
+            size={96}
+            stroke={10}
+            gap={3}
+            label=""
+            className="animate-pop"
+          />
+          <p className="mt-8 animate-in bg-linear-to-r from-rose via-violet to-sky bg-clip-text text-[15px] font-semibold text-transparent">{t.hand}</p>
+          <h1 className="mt-2 animate-in font-display text-[40px] leading-[1.02] [animation-delay:80ms]">{t.heading}</h1>
+          <p className="mt-4 animate-in text-paper/80 [animation-delay:140ms]">{t.text}</p>
           {params.erreur === "lien" ? (
             <p role="alert" className="mt-6 text-sm">
               {t.errorLink}
@@ -38,7 +52,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
               {t.errorOauth}
             </p>
           ) : null}
-          <div className="mt-10 animate-rise [animation-delay:200ms]">
+          <div className="mt-10 animate-in [animation-delay:200ms]">
             <LoginForm next={next} />
           </div>
           <p className="mt-10 text-sm text-mute">

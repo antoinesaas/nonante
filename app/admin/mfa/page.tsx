@@ -14,7 +14,7 @@ export default async function MfaPage() {
 
   return (
     <section className="max-w-md">
-      <h1 className="font-serif text-4xl">Double authentification.</h1>
+      <h1 className="font-display text-4xl">Double authentification.</h1>
       <p className="mt-3 text-sm text-mute">
         {verified
           ? "Entre le code à 6 chiffres de ton application d'authentification."

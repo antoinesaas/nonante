@@ -19,7 +19,7 @@ export function FileField({ name, label, placeholder, choose, hint }: { name: st
     <label className="block">
       <span className={labelClass}>{label}</span>
       <span
-        className={`mt-2 flex h-12 cursor-pointer items-center justify-between gap-3 rounded-xs border border-dashed px-4 text-sm transition-colors hover:border-mute ${fileName ? "border-paper text-paper" : "border-line text-mute"}`}
+        className={`mt-2 flex h-12 cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed px-4 text-sm transition-colors hover:border-mute ${fileName ? "border-paper text-paper" : "border-line text-mute"}`}
       >
         <span className="truncate">{fileName ?? placeholder}</span>
         <span className="shrink-0 text-paper">{choose}</span>

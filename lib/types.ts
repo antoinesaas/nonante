@@ -183,6 +183,9 @@ export type Dashboard = {
   level_up?: boolean;
 };
 
+/** Un des 7 derniers jours (my_week) : principes prévus et prouvés, pour les mini-anneaux de la semaine. */
+export type WeekDay = { day: string; in_arc: boolean; status: "green" | "red" | "white" | "joker" | null; joker: boolean; due: number; done: number };
+
 export type DayDetail = {
   day: string;
   status: "green" | "red" | "white" | "joker" | null;
@@ -356,7 +359,9 @@ export type MentalMath = {
   correct: number;
   total: number;
   points: number;
-  entries: { id: string; day: string; level: number; questions: MathChecked[]; correct: number; total: number; points: number }[];
+  avg_ms: number | null;
+  best_ms: number | null;
+  entries: { id: string; day: string; level: number; questions: MathChecked[]; correct: number; total: number; points: number; duration_ms: number | null }[];
 };
 
 /** Aperçu des principes pour un visiteur (preview_principles). */

@@ -21,3 +21,11 @@ export function mathText(q: MathQuestion, locale: Locale, percentOf: string): st
       return `${a}²`;
   }
 }
+
+/** 42 300 ms → « 42 s » ; 95 000 ms → « 1 min 35 s ». */
+export function formatDuration(ms: number, units: { min: string; s: string }): string {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const min = Math.floor(total / 60);
+  const s = total % 60;
+  return min ? `${min} ${units.min} ${String(s).padStart(2, "0")} ${units.s}` : `${s} ${units.s}`;
+}

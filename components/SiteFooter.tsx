@@ -18,7 +18,8 @@ export async function SiteFooter() {
     ["/legal/confidentialite", f.privacy],
   ] as const;
   return (
-    <footer className="mx-auto w-full max-w-xl border-t border-line px-5 pt-10 pb-12 text-sm text-mute lg:max-w-6xl lg:px-8">
+    <footer className="mx-auto w-full max-w-xl px-5 pt-10 pb-[max(3rem,env(safe-area-inset-bottom))] text-sm text-mute lg:max-w-6xl lg:px-8">
+      <div aria-hidden="true" className="mb-10 h-px w-full bg-linear-to-r from-transparent via-white/15 to-transparent" />
       <div className="lg:flex lg:items-start lg:justify-between lg:gap-12">
         <div>
           <Link href="/" aria-label={m.common.homeAria}>

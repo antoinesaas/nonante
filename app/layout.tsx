@@ -1,7 +1,7 @@
 import { Analytics } from "@vercel/analytics/next";
 import { Haptics } from "@/components/Haptics";
 import type { Metadata, Viewport } from "next";
-import { Caveat, Instrument_Serif, Inter } from "next/font/google";
+import { Doto, Inter, Inter_Tight } from "next/font/google";
 import { connection } from "next/server";
 import { I18nProvider } from "@/components/I18nProvider";
 import { getI18n } from "@/lib/i18n/server";
@@ -13,21 +13,36 @@ const inter = Inter({
   display: "swap",
 });
 
-const instrumentSerif = Instrument_Serif({
-  weight: "400",
-  style: ["normal", "italic"],
+// Titres et grands chiffres : Inter Tight, serré comme les grands titres d'iOS.
+const interTight = Inter_Tight({
   subsets: ["latin"],
-  variable: "--font-instrument-serif",
+  weight: ["500", "600", "700"],
+  variable: "--font-inter-tight",
   display: "swap",
 });
 
-// Écriture manuscrite : quelques mots seulement (annotations du questionnaire, accents de la landing).
-const caveat = Caveat({
-  weight: ["500", "700"],
+// Chiffres en matrice de points (jour de l'arc, minuteur) : quelques chiffres seulement.
+const doto = Doto({
   subsets: ["latin"],
-  variable: "--font-caveat",
+  weight: ["700", "800"],
+  variable: "--font-doto",
   display: "swap",
 });
+
+// Écrans d'iPhone couverts par les images de démarrage : largeur, hauteur (points), densité.
+const SPLASH = [
+  [440, 956, 3],
+  [402, 874, 3],
+  [430, 932, 3],
+  [393, 852, 3],
+  [428, 926, 3],
+  [390, 844, 3],
+  [375, 812, 3],
+  [414, 896, 3],
+  [414, 896, 2],
+  [414, 736, 3],
+  [375, 667, 2],
+] as const;
 
 const OG_LOCALE = { fr: "fr_FR", en: "en_GB", de: "de_DE", es: "es_ES" } as const;
 
@@ -38,14 +53,23 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: `Nonante · ${m.common.tagline}`, template: "%s · Nonante" },
     description: m.common.taglineLong,
     applicationName: "Nonante",
-    appleWebApp: { capable: true, title: "Nonante", statusBarStyle: "black-translucent" },
+    appleWebApp: {
+      capable: true,
+      title: "Nonante",
+      statusBarStyle: "black-translucent",
+      // Images de démarrage (scripts/gen-splash.mjs) : l'iPhone les montre pendant le lancement, plus d'écran noir.
+      startupImage: SPLASH.map(([w, h, dpr]) => ({
+        url: `/splash/${w * dpr}x${h * dpr}.png`,
+        media: `(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${dpr}) and (orientation: portrait)`,
+      })),
+    },
     icons: { apple: "/icons/apple-touch-icon.png" },
     openGraph: { title: m.common.tagline, description: m.common.taglineLong, siteName: "Nonante", locale: OG_LOCALE[locale], type: "website" },
   };
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0A0A0A",
+  themeColor: "#000000",
   colorScheme: "dark",
 };
 
@@ -55,7 +79,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const { locale, m } = await getI18n();
 
   return (
-    <html lang={locale} className={`${inter.variable} ${instrumentSerif.variable} ${caveat.variable}`}>
+    <html lang={locale} className={`${inter.variable} ${interTight.variable} ${doto.variable}`}>
       <body className="min-h-dvh bg-ink font-sans text-paper antialiased">
         <I18nProvider locale={locale} messages={m}>
           {children}

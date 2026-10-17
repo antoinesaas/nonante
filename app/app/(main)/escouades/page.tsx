@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArtBand } from "@/components/Art";
+import { Aura } from "@/components/Aura";
 import { BackLink } from "@/components/BackLink";
 import { CopyButton } from "@/components/CopyButton";
 import { addDays } from "@/lib/answers";
-import { IMAGES } from "@/lib/art";
 import { requireUser } from "@/lib/auth";
 import { todayParis } from "@/lib/dates";
 import { siteUrl } from "@/lib/env";
@@ -12,8 +11,8 @@ import { fmt, formatDay } from "@/lib/i18n/format";
 import { squadName } from "@/lib/i18n/labels";
 import { getI18n } from "@/lib/i18n/server";
 import type { PlanState, SquadView } from "@/lib/types";
-import { btnLink, label } from "@/lib/ui";
-import { CreateForm, JoinForm, JoinPublicButton, LeaveButton } from "./SquadForms";
+import { btnSmall, label, largeTitle, sectionTitle } from "@/lib/ui";
+import { JoinPublicButton, LeaveButton, SquadActions } from "./SquadForms";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
@@ -31,101 +30,82 @@ export default async function SquadsPage() {
 
   return (
     <>
+      <Aura tone="sky" />
       <div className="lg:hidden">
         <BackLink />
       </div>
-      <ArtBand slug={IMAGES.squads} className="-mx-5 mt-2 h-56 lg:mx-0">
+      <header className="mt-4 animate-in">
         <p className={label}>{t.title}</p>
-        <h1 className="mt-2 font-serif text-4xl leading-none">{t.heading}</h1>
-      </ArtBand>
-      <p className="mt-6 text-sm text-mute">{t.intro}</p>
+        <h1 className={`mt-1 ${largeTitle}`}>{t.heading}</h1>
+        <p className="mt-2 text-sm text-mute">{t.intro}</p>
+      </header>
+
+      <div className="mt-6">
+        <SquadActions canCreate={canCreate} today={todayParis()} maxDay={addDays(todayParis(), 120)} />
+      </div>
 
       <div className="lg:grid lg:grid-cols-2 lg:gap-12">
-        <div>
-          <section className="mt-10">
-            <h2 className="font-serif text-3xl">{t.mine}</h2>
-            {squads.length ? (
-              <ul className="mt-4 divide-y divide-line border-y border-line">
-                {squads.map((s) => (
-                  <li key={s.id} className="py-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="text-lg">{squadName(s, m)}</p>
-                        <p className="mt-1 text-xs text-mute">
-                          {members(s.members)}
-                          {s.is_official ? t.official : s.is_public ? t.public : t.private}
-                          {s.is_official ? t.everyMonday : s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale, { year: false }) }) : ""}
-                          {s.is_owner ? t.owner : ""}
-                        </p>
-                        {s.description && !s.is_official ? <p className="mt-2 text-sm text-mute">{s.description}</p> : null}
-                      </div>
-                      <Link href={`/classement?escouade=${s.id}`} className={btnLink}>
-                        {t.leaderboard}
-                      </Link>
-                    </div>
-                    {s.code ? (
-                      <div className="mt-4 flex items-center justify-between gap-4 rounded-xs border border-line p-3">
-                        <span>
-                          <span className="text-xs text-mute">{t.code}</span>
-                          <span className="font-serif text-2xl tracking-widest">{s.code}</span>
-                        </span>
-                        <CopyButton value={fmt(t.inviteText, { name: squadName(s, m), code: s.code, url: `${siteUrl()}/app/escouades` })} label={t.invite} />
-                      </div>
-                    ) : null}
-                    <div className="mt-3">
-                      <LeaveButton id={s.id} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-4 text-sm text-mute">{t.none}</p>
-            )}
-          </section>
-
-          <section className="mt-10">
-            <JoinForm />
-          </section>
-        </div>
-
-        <div>
-          {publicSquads.length ? (
-            <section className="mt-12 lg:mt-10">
-              <h2 className="font-serif text-3xl">{t.open}</h2>
-              <ul className="mt-4 divide-y divide-line border-y border-line">
-                {publicSquads.map((s) => (
-                  <li key={s.id} className="flex items-start justify-between gap-4 py-4">
+        <section className="mt-8">
+          <h2 className={sectionTitle}>{t.mine}</h2>
+          {squads.length ? (
+            <ul className="mt-3 space-y-2.5">
+              {squads.map((s) => (
+                <li key={s.id} className="card p-4">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <p>{squadName(s, m)}</p>
-                      <p className="mt-1 text-xs text-mute">
+                      <p className="text-[17px] font-medium">{squadName(s, m)}</p>
+                      <p className="mt-0.5 text-[12px] text-mute">
                         {members(s.members)}
-                        {s.is_official ? `${t.official}${t.everyMonday}` : s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale) }) : ""}
+                        {s.is_official ? t.official : s.is_public ? t.public : t.private}
+                        {s.is_official ? t.everyMonday : s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale, { year: false }) }) : ""}
+                        {s.is_owner ? t.owner : ""}
                       </p>
-                      {s.description && !s.is_official ? <p className="mt-1 text-sm text-mute">{s.description}</p> : null}
+                      {s.description && !s.is_official ? <p className="mt-2 text-sm text-mute">{s.description}</p> : null}
                     </div>
-                    <JoinPublicButton id={s.id} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
+                    <Link href={`/classement?escouade=${s.id}`} className={btnSmall}>
+                      {t.leaderboard}
+                    </Link>
+                  </div>
+                  {s.code ? (
+                    <div className="glow-sky mt-4 flex items-center justify-between gap-4 rounded-2xl p-3.5">
+                      <span>
+                        <span className="block text-[11px] text-paper/75">{t.code}</span>
+                        <span className="font-display text-[22px] tracking-[0.2em]">{s.code}</span>
+                      </span>
+                      <CopyButton value={fmt(t.inviteText, { name: squadName(s, m), code: s.code, url: `${siteUrl()}/app/escouades` })} label={t.invite} />
+                    </div>
+                  ) : null}
+                  <div className="mt-3">
+                    <LeaveButton id={s.id} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="card mt-3 p-4 text-sm text-mute">{t.none}</p>
+          )}
+        </section>
 
-          <section className="mt-12 lg:mt-10">
-            <h2 className="font-serif text-3xl">{t.create}</h2>
-            <div className="mt-6 rounded-xs border border-line bg-surface p-4">
-              {canCreate ? (
-                <CreateForm today={todayParis()} maxDay={addDays(todayParis(), 120)} />
-              ) : (
-                <p className="text-sm">
-                  {t.proOnly}{" "}
-                  <Link href="/abonnement" className={btnLink}>
-                    {t.seePlans}
-                  </Link>
-                </p>
-              )}
-            </div>
+        {publicSquads.length ? (
+          <section className="mt-8">
+            <h2 className={sectionTitle}>{t.open}</h2>
+            <ul className="grouped mt-3">
+              {publicSquads.map((s) => (
+                <li key={s.id} className="flex items-center justify-between gap-4 px-4 py-3.5">
+                  <div className="min-w-0">
+                    <p className="text-[15px]">{squadName(s, m)}</p>
+                    <p className="mt-0.5 text-[12px] text-mute">
+                      {members(s.members)}
+                      {s.is_official ? `${t.official}${t.everyMonday}` : s.start_date ? fmt(t.start, { date: formatDay(s.start_date, locale) }) : ""}
+                    </p>
+                    {s.description && !s.is_official ? <p className="mt-1 text-sm text-mute">{s.description}</p> : null}
+                  </div>
+                  <JoinPublicButton id={s.id} />
+                </li>
+              ))}
+            </ul>
           </section>
-        </div>
+        ) : null}
       </div>
     </>
   );
