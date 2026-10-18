@@ -218,6 +218,7 @@ export const app = {
     reasonBeats: "La connexion s'est coupée trop longtemps.",
     reasonShort: "Pas assez de temps passé sur l'écran.",
     startFailed: "Impossible de lancer la session.",
+    restart: "Relancer une session",
     finish: "Retour à aujourd'hui",
   },
   reps: {

@@ -219,6 +219,7 @@ export const app: typeof fr = {
     reasonBeats: "The connection dropped for too long.",
     reasonShort: "Not enough time spent on the screen.",
     startFailed: "Couldn't start the session.",
+    restart: "Start a new session",
     finish: "Back to today",
   },
   reps: {

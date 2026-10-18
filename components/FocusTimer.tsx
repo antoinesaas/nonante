@@ -343,6 +343,18 @@ export function FocusTimer(props: Props) {
     [],
   );
 
+  /** Retour à l'écran de départ après une session cassée ou arrêtée. */
+  function restart() {
+    session.current = null;
+    finishing.current = false;
+    hiddenAt.current = null;
+    setMessage(null);
+    setPoints(null);
+    setConfirmStop(false);
+    setRemaining(minutes * 60);
+    setPhase("ready");
+  }
+
   async function stop() {
     const s = session.current;
     if (!s) return;
@@ -457,9 +469,21 @@ export function FocusTimer(props: Props) {
             <p className="mt-2 text-mute">
               {phase === "completed" ? (points !== null ? fmt(t.donePoints, { n: points }) : null) : `${phase === "broken" && message ? `${message} ` : ""}${t.penalty}`}
             </p>
-            <button type="button" onClick={() => router.replace("/app")} className={`${btnPrimary} mt-6`}>
-              {t.finish}
-            </button>
+            {phase === "completed" ? (
+              <button type="button" onClick={() => router.replace("/app")} className={`${btnPrimary} mt-6`}>
+                {t.finish}
+              </button>
+            ) : (
+              // Une session cassée ou arrêtée coûte ses points, mais on peut repartir tout de suite.
+              <div className="mt-6 space-y-3">
+                <button type="button" onClick={restart} className={btnPrimary}>
+                  {t.restart}
+                </button>
+                <button type="button" onClick={() => router.replace("/app")} className={`${btnSecondary} w-full`}>
+                  {t.finish}
+                </button>
+              </div>
+            )}
           </div>
         ) : null}
 
