@@ -2,6 +2,8 @@
 begin;
 -- V13 (18 octobre 2026) : le minuteur se règle à la minute près, de 10 à 180 minutes par pas de 5
 -- (sélecteur à faire glisser), au lieu de 25, 50 ou 90. Difficulté inchangée : ≤ 25 → 1, ≤ 50 → 2, au-delà → 3.
+-- Après une session cassée, changer la durée ne répond plus « Déjà validé aujourd'hui ».
+-- Le principe de travail profond ne dit plus « téléphone dans une autre pièce » (le minuteur tourne sur le téléphone).
 
 create or replace function public._valid_minutes(p_minutes int) returns boolean
 language sql immutable set search_path = '' as $$
@@ -111,10 +113,19 @@ begin
   if (p.target ->> 'minutes')::int = p_minutes then
     return p.id;
   end if;
-  if public._used_today(p.id) then
+  if exists (select 1 from public.validations where principle_id = p.id and day = public.paris_today()) then
     raise exception 'Déjà validé aujourd''hui.';
   end if;
   v_then := regexp_replace(p.then_text, '\d+(\s?(minutes|minute|min|Minuten|minutos)\y)', p_minutes::text || '\1');
+  -- Une session déjà lancée aujourd'hui (cassée ou arrêtée) : la durée change sur place. Chaque session garde sa
+  -- propre durée, et la nouvelle version n'attend pas demain (avant, « Déjà validé » s'affichait à tort).
+  if public._used_today(p.id) then
+    update public.principles
+       set target = jsonb_set(p.target, '{minutes}', to_jsonb(p_minutes)), then_text = v_then,
+           difficulty = public._difficulty('session', jsonb_set(p.target, '{minutes}', to_jsonb(p_minutes)), p.difficulty)
+     where id = p.id;
+    return p.id;
+  end if;
   return public._save_principle(v_user, p.id, p.pillar, p.if_text, v_then, p.proof_type,
     jsonb_set(p.target, '{minutes}', to_jsonb(p_minutes)), p.days, p.difficulty, null, null);
 end;
@@ -173,5 +184,17 @@ begin
   );
 end;
 $$;
+
+-- « Téléphone dans une autre pièce » retiré du travail profond : gabarit (4 langues) et principes déjà créés.
+update public.principle_templates
+   set then_text = 'alors {minutes} minutes de travail profond',
+       i18n = jsonb_set(jsonb_set(jsonb_set(i18n,
+         '{en,then_text}', '"{minutes} minutes of deep work"'),
+         '{de,then_text}', '"{minutes} Minuten konzentrierte Arbeit"'),
+         '{es,then_text}', '"{minutes} minutos de trabajo profundo"')
+ where code = 'bloc_profond';
+update public.principles
+   set then_text = regexp_replace(then_text, ',\s*(téléphone dans une autre pièce|phone in another room|Handy in einem anderen Raum|con el móvil en otra habitación)', '')
+ where then_text ~ ',\s*(téléphone dans une autre pièce|phone in another room|Handy in einem anderen Raum|con el móvil en otra habitación)';
 
 commit;

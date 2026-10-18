@@ -199,7 +199,6 @@ export const app: typeof fr = {
     starting: "Starting…",
     stop: "Stop",
     rule: "10 s off the screen: the session breaks.",
-    durationHint: "Swipe to pick the length (10 min minimum): your principle follows.",
     durationLabel: "Length",
     soundTitle: "Background sound",
     volume: "Volume",

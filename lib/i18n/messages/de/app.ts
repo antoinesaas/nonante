@@ -199,7 +199,6 @@ export const app: typeof fr = {
     starting: "Wird gestartet…",
     stop: "Stopp",
     rule: "10 s weg vom Bildschirm: Die Session bricht ab.",
-    durationHint: "Wische, um die Dauer zu wählen (mindestens 10 Min.): Dein Prinzip passt sich an.",
     durationLabel: "Dauer",
     soundTitle: "Hintergrundklang",
     volume: "Lautstärke",

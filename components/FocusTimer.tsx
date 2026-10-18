@@ -428,7 +428,6 @@ export function FocusTimer(props: Props) {
                 label={t.durationLabel}
                 unit={fmt(t.minutes, { n: "" }).trim()}
               />
-              {props.mode === "principle" ? <p className="text-xs text-mute">{t.durationHint}</p> : null}
             </div>
             <div className="text-left">
               <p className="mb-2 text-[13px] font-medium text-mute">{t.soundTitle}</p>

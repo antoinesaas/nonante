@@ -365,6 +365,12 @@ const left = await as(B, () => rpc("leave_session"));
 check("page du minuteur quittée : session cassée, − 5", left.status === "broken"
   && (await val("select delta from public.points_ledger where reason = 'session_broken' and ref_id = $1", [sLeave.id])) === -5);
 check("rien à casser ensuite", (await as(B, () => rpc("leave_session"))).status === "none");
+check("travail profond sans « téléphone dans une autre pièce »", !bureau.then_text.includes("téléphone"), bureau.then_text);
+// V13 : après des sessions cassées, la durée change sur place (plus de « Déjà validé aujourd'hui »).
+const moved = await as(B, () => rpc("set_session_minutes", { p_id: bureau.id, p_minutes: 45 }));
+const b45 = await one("select * from public.principles where id = $1", [bureau.id]);
+check("durée changée après une session cassée", moved === bureau.id && b45.target.minutes === 45 && b45.difficulty === 2 && b45.then_text.includes("45 minutes"), JSON.stringify(b45));
+await as(B, () => rpc("set_session_minutes", { p_id: bureau.id, p_minutes: 90 }));
 const s3 = await as(B, () => rpc("start_proof_session", { p_principle_id: bureau.id }));
 await q("update public.proof_sessions set started_at = now() - interval '90 minutes 5 seconds', heartbeats = 360, last_heartbeat_at = now() - interval '5 seconds' where id = $1", [s3.id]);
 const done = await as(B, () => rpc("complete_session", { p_session_id: s3.id, p_nonce: s3.nonce }));

@@ -198,7 +198,6 @@ export const app = {
     starting: "Lancement…",
     stop: "Stop",
     rule: "10 s hors de l'écran : la session casse.",
-    durationHint: "Fais glisser pour choisir la durée (10 min minimum) : ton principe suit.",
     durationLabel: "Durée",
     soundTitle: "Ambiance sonore",
     volume: "Volume",
