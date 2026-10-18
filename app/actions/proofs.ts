@@ -156,9 +156,12 @@ export async function submitPhoto(_prev: ProofResult, formData: FormData): Promi
  * Lance le minuteur d'un principe. Durée changée juste avant (25, 50 ou 90 min) : le principe est d'abord modifié
  * (il peut changer d'identifiant s'il était déjà en vigueur), puis la session part sur lui.
  */
+/** Durée du minuteur : de 10 à 180 minutes, par pas de 5 (comme `_valid_minutes` en SQL). */
+const validMinutes = (n: number) => Number.isInteger(n) && n >= 10 && n <= 180 && n % 5 === 0;
+
 export async function startSession(principleId: string, minutes?: number): Promise<{ session?: StartedSession; principleId?: string; message?: string }> {
   if (!Id.safeParse(principleId).success) return { message: await invalid() };
-  if (minutes !== undefined && ![25, 50, 90].includes(minutes)) return { message: (await getI18n()).m.actions.proof.invalidLength };
+  if (minutes !== undefined && !validMinutes(minutes)) return { message: (await getI18n()).m.actions.proof.invalidLength };
   const ctx = await context("session", 20);
   if ("error" in ctx) return { message: ctx.error!.message ?? undefined };
   let id = principleId;
@@ -178,7 +181,7 @@ export async function startChallengeSession(
   minutes: number | null,
 ): Promise<{ session?: StartedSession; message?: string }> {
   if (!Id.safeParse(assignmentId).success) return { message: await invalid() };
-  if (minutes !== null && ![25, 50, 90].includes(minutes)) return { message: (await getI18n()).m.actions.proof.invalidLength };
+  if (minutes !== null && !validMinutes(minutes)) return { message: (await getI18n()).m.actions.proof.invalidLength };
   const ctx = await context("session", 20);
   if ("error" in ctx) return { message: ctx.error!.message ?? undefined };
   const { data, error } = await ctx.supabase.rpc("start_challenge_session", { p_assignment_id: assignmentId, p_minutes: minutes });

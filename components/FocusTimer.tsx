@@ -9,6 +9,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { Ring } from "@/components/Ring";
 import { AMBIENCES, Ambience, type AmbienceKind, PAD_DEFAULT, type Pad } from "@/lib/ambience";
 import { SoundPad } from "@/components/SoundPad";
+import { DurationPicker } from "@/components/DurationPicker";
 import { Sheet } from "@/components/Sheet";
 import type { Messages } from "@/lib/i18n/messages";
 import { fmt } from "@/lib/i18n/format";
@@ -418,36 +419,19 @@ export function FocusTimer(props: Props) {
         {phase === "ready" || phase === "starting" ? (
           <>
             <div className="space-y-2">
-              <div className="flex justify-center gap-2">
-                {[25, 50, 90].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => {
-                      setMinutes(n);
-                      setRemaining(n * 60);
-                    }}
-                    aria-pressed={minutes === n}
-                    className={`press h-10 rounded-full px-4 text-sm font-medium ${minutes === n ? "pearl" : "liquid text-paper/85"}`}
-                  >
-                    {fmt(t.minutes, { n })}
-                  </button>
-                ))}
-              </div>
+              <DurationPicker
+                value={minutes}
+                onChange={(n) => {
+                  setMinutes(n);
+                  setRemaining(n * 60);
+                }}
+                label={t.durationLabel}
+                unit={fmt(t.minutes, { n: "" }).trim()}
+              />
               {props.mode === "principle" ? <p className="text-xs text-mute">{t.durationHint}</p> : null}
             </div>
             <div className="text-left">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[13px] font-medium text-mute">{t.soundTitle}</p>
-                <button type="button" onClick={() => setSoundSheet(true)} className="liquid press flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium">
-                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-                    <path d="M4 7 H20 M4 17 H20" />
-                    <circle cx="9" cy="7" r="2.2" fill="currentColor" />
-                    <circle cx="15" cy="17" r="2.2" fill="currentColor" />
-                  </svg>
-                  {t.pad.open}
-                </button>
-              </div>
+              <p className="mb-2 text-[13px] font-medium text-mute">{t.soundTitle}</p>
               {soundChips}
             </div>
             <button type="button" onClick={start} disabled={phase === "starting"} className={btnPrimary}>
@@ -494,7 +478,7 @@ export function FocusTimer(props: Props) {
         ) : null}
       </div>
 
-      <Sheet open={soundSheet && !ended} onClose={() => setSoundSheet(false)} title={t.pad.title}>
+      <Sheet open={soundSheet && running} onClose={() => setSoundSheet(false)} title={t.pad.title}>
         {soundChips}
         <p className="mt-4 mb-4 text-sm text-mute">{t.pad.hint}</p>
         <SoundPad value={pad} onChange={changePad} onCommit={savePad} />

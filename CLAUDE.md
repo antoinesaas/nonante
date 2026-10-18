@@ -71,18 +71,18 @@ une unité facultatifs. Affiché en haut du tableau de bord.
   œuvre, travail profond, « manger la grenouille », règle des 2 minutes, règle des 100 de prospection,
   « jamais deux fois », empilement d'habitudes, réveil fixe…), choisis selon l'objectif et les réponses de
   l'onboarding. Tout est modifiable, on peut en créer de zéro.
-- La **difficulté est calculée par le serveur** depuis la preuve et la cible (25/50/90 min → 1/2/3 ; pompes
+- La **difficulté est calculée par le serveur** depuis la preuve et la cible (minuteur ≤ 25 min/≤ 50 min/plus → 1/2/3 ; pompes
   ≤ 15/≤ 40/plus ; squats ≤ 25/≤ 60/plus ; réveil ≥ 7 h 30/≥ 6 h 30/avant). Preuves faibles : 1 ou 2 au choix.
 - Pendant l'arc, un ajout, une modification ou un retrait compte **tout de suite** ; seul un principe déjà prouvé (ou
   dont une session a été lancée) aujourd'hui change **le lendemain** (versions `active_from` / `active_until`, v9).
-  Le minuteur peut changer de durée (25/50/90) juste avant d'être lancé : le principe suit (`set_session_minutes`).
+  Le minuteur peut changer de durée (10 à 180 min) juste avant d'être lancé : le principe suit (`set_session_minutes`).
 - « Aujourd'hui » liste tous les principes dans une seule liste : ceux du jour, puis ceux prévus un autre jour (en retrait, avec leurs jours). En tête, trois anneaux : principes prouvés aujourd'hui, jours verts de la semaine (/7), jours verts de l'arc (/75), et la semaine en mini-anneaux (`my_week`, v11). Un toucher sur les anneaux ouvre `/app/historique` : tout l'arc en calendrier mensuel, un mini-anneau par jour, détail du jour en feuille (`my_history`, v12). Changer de langue traduit l'arc ouvert (v8).
 - Nombre max : 6 (Arc 90 jours), 12 (Pro et Fondateur).
 
 ### Preuves
 | Type | Force | Comment |
 |---|---|---|
-| `session` | forte | Minuteur 25/50/90 min, deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée. Ambiances sonores synthétisées dans le navigateur (`lib/ambience.ts` : musique, pluie, forêt, océan, route, feu, bruit brun), fabriquées au lancement puis jouées en boucles raccordées sans couture, de longueurs premières entre elles (pas de répétition audible sur une heure), sans script pendant la lecture (le son continue écran verrouillé : `audioSession` « playback » + lecteur média silencieux). Pavé façon Endel (`components/SoundPad.tsx`) : calme ↔ intense, fluide ↔ structuré (pulsation musicale) |
+| `session` | forte | Minuteur de 10 à 180 min par pas de 5 (roue à faire glisser, `DurationPicker`, v13 `_valid_minutes`), deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée. Ambiances sonores synthétisées dans le navigateur (`lib/ambience.ts` : musique, pluie, forêt, océan, route, feu, bruit brun), fabriquées au lancement puis jouées en boucles raccordées sans couture, de longueurs premières entre elles (pas de répétition audible sur une heure), sans script pendant la lecture (le son continue écran verrouillé : `audioSession` « playback » + lecteur média silencieux). Pavé façon Endel (`components/SoundPad.tsx`) : calme ↔ intense, fluide ↔ structuré (pulsation musicale) |
 | `reps` | forte | Pompes ou squats comptés à la caméra (MediaPipe, sur l'appareil, aucune image envoyée) |
 | `reveil` | forte | Ouvrir l'app dans les 2 h 30 avant l'heure et répondre à 5 calculs de tête (un par écran, clavier numérique, chrono) selon le niveau d'études (lycée 1, prépa et ingénieur 3, sinon 2) ; +5 par bonne réponse, une erreur ne coûte rien, temps mesuré par le serveur (v10-v11, `complete_wake_quiz`, table `mental_math.duration_ms`) |
 | `photo` | faible | Photo prise dans l'app (pas la galerie) |

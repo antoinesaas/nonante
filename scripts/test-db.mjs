@@ -167,8 +167,8 @@ check("textes normalisés", pc.if_text === "Si je finis de déjeuner" && pc.then
 check("preuve faible : difficulté plafonnée à 2", pc.difficulty === 2);
 check("objectif chiffré gardé", pc.target.count === 3 && pc.target.unit === "appels");
 await rejects("durée de session invalide", () => as(A, () => rpc("save_principle", {
-  p_id: null, p_pillar: "focus", p_if: "x y", p_then: "travailler", p_proof_type: "session", p_target: JSON.stringify({ minutes: 40 }), p_days: [1], p_difficulty: 1,
-})), "25, 50 ou 90");
+  p_id: null, p_pillar: "focus", p_if: "x y", p_then: "travailler", p_proof_type: "session", p_target: JSON.stringify({ minutes: 42 }), p_days: [1], p_difficulty: 1,
+})), "de 10 à 180");
 await rejects("réveil à 11 h refusé", () => as(A, () => rpc("save_principle", {
   p_id: null, p_pillar: "energie", p_if: "il est 11 h", p_then: "debout", p_proof_type: "reveil", p_target: JSON.stringify({ before: "11:00" }), p_days: [1], p_difficulty: 1,
 })), "Heure de lever");
@@ -316,8 +316,17 @@ const sess25 = await as(A, () => rpc("set_session_minutes", { p_id: sessP, p_min
 const s25 = await one("select * from public.principles where id = $1", [sess25]);
 check("minuteur : durée changée avant de lancer (cible, difficulté, texte, dès aujourd'hui)", s25.target.minutes === 25 && s25.difficulty === 1
   && s25.then_text === "alors 25 minutes de travail profond." && s25.active_from.toISOString().slice(0, 10) === today, JSON.stringify(s25));
-await rejects("minuteur : durée hors liste refusée", () => as(A, () => rpc("set_session_minutes", { p_id: sess25, p_minutes: 40 })), "Durée invalide");
-await as(A, () => rpc("remove_principle", { p_id: sess25 }));
+// V13 : de 10 à 180 minutes, par pas de 5.
+const sess10 = await as(A, () => rpc("set_session_minutes", { p_id: sess25, p_minutes: 10 }));
+const s10 = await one("select * from public.principles where id = $1", [sess10]);
+check("minuteur : 10 minutes acceptées (difficulté 1)", s10.target.minutes === 10 && s10.difficulty === 1, JSON.stringify(s10));
+const sess65 = await as(A, () => rpc("set_session_minutes", { p_id: sess10, p_minutes: 65 }));
+const s65 = await one("select * from public.principles where id = $1", [sess65]);
+check("minuteur : 65 minutes acceptées (difficulté 3)", s65.target.minutes === 65 && s65.difficulty === 3 && s65.then_text.includes("65 minutes"), JSON.stringify(s65));
+await rejects("minuteur : moins de 10 minutes refusé", () => as(A, () => rpc("set_session_minutes", { p_id: sess65, p_minutes: 5 })), "Durée invalide");
+await rejects("minuteur : durée hors pas de 5 refusée", () => as(A, () => rpc("set_session_minutes", { p_id: sess65, p_minutes: 42 })), "Durée invalide");
+await rejects("minuteur : plus de 180 minutes refusé", () => as(A, () => rpc("set_session_minutes", { p_id: sess65, p_minutes: 185 })), "Durée invalide");
+await as(A, () => rpc("remove_principle", { p_id: sess65 }));
 await rejects("modifier le principe d'un autre", () => as(B, () => rpc("remove_principle", { p_id: v2 })), "introuvable");
 
 // ---------------------------------------------------------------------------
