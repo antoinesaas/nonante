@@ -82,7 +82,7 @@ une unité facultatifs. Affiché en haut du tableau de bord.
 ### Preuves
 | Type | Force | Comment |
 |---|---|---|
-| `session` | forte | Minuteur 25/50/90 min, deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée. Ambiances sonores synthétisées dans le navigateur (`lib/ambience.ts` : pluie, forêt, route, océan, feu, bruit brun) |
+| `session` | forte | Minuteur 25/50/90 min, deux boutons (Lancer, Stop avec confirmation −5), battement toutes les 15 s, casse après 10 s hors écran, 45 s sans battement, retour ou page quittée. Ambiances sonores synthétisées dans le navigateur (`lib/ambience.ts` : musique, pluie, forêt, océan, route, feu, bruit brun), fabriquées au lancement puis jouées en boucles raccordées sans couture, de longueurs premières entre elles (pas de répétition audible sur une heure), sans script pendant la lecture (le son continue écran verrouillé : `audioSession` « playback » + lecteur média silencieux). Pavé façon Endel (`components/SoundPad.tsx`) : calme ↔ intense, fluide ↔ structuré (pulsation musicale) |
 | `reps` | forte | Pompes ou squats comptés à la caméra (MediaPipe, sur l'appareil, aucune image envoyée) |
 | `reveil` | forte | Ouvrir l'app dans les 2 h 30 avant l'heure et répondre à 5 calculs de tête (un par écran, clavier numérique, chrono) selon le niveau d'études (lycée 1, prépa et ingénieur 3, sinon 2) ; +5 par bonne réponse, une erreur ne coûte rien, temps mesuré par le serveur (v10-v11, `complete_wake_quiz`, table `mental_math.duration_ms`) |
 | `photo` | faible | Photo prise dans l'app (pas la galerie) |

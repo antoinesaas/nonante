@@ -7,7 +7,8 @@ import { abandonSession, completeSession, heartbeat, leaveSession, startChalleng
 import { Aura } from "@/components/Aura";
 import { useI18n } from "@/components/I18nProvider";
 import { Ring } from "@/components/Ring";
-import { AMBIENCES, Ambience, type AmbienceKind } from "@/lib/ambience";
+import { AMBIENCES, Ambience, type AmbienceKind, PAD_DEFAULT, type Pad } from "@/lib/ambience";
+import { SoundPad } from "@/components/SoundPad";
 import { Sheet } from "@/components/Sheet";
 import type { Messages } from "@/lib/i18n/messages";
 import { fmt } from "@/lib/i18n/format";
@@ -26,6 +27,11 @@ type Props = (
 
 const HEARTBEAT_MS = 15_000;
 const HIDDEN_LIMIT_MS = 10_000;
+
+/** Écart entre l'horloge du serveur et celle du téléphone. */
+function clockSkew(serverNow: string): number {
+  return Date.parse(serverNow) - Date.now();
+}
 
 function mmss(seconds: number): string {
   const s = Math.max(0, Math.ceil(seconds));
@@ -61,6 +67,7 @@ function BackArrow({ label, onClick, href }: { label: string; onClick?: () => vo
 
 const AMBIENCE_ICON: Record<AmbienceKind, React.ReactNode> = {
   none: <path d="M5 9 V15 H8.5 L13 19 V5 L8.5 9 Z M17 9.5 L21 14.5 M21 9.5 L17 14.5" />,
+  focus: <path d="M9 18 A2.5 2.5 0 1 1 9 17.9 Z M9 18 V5 L19 3 V16 M19 16 A2.5 2.5 0 1 1 19 15.9 Z M9 9 L19 7" />,
   rain: <path d="M7 14 A4.5 4.5 0 0 1 8 5.2 A5.5 5.5 0 0 1 18.5 7.5 A3.5 3.5 0 0 1 18 14 M8 17 L7 20 M12 17 L11 20 M16 17 L15 20" />,
   forest: <path d="M12 3 L6 12 H9.5 L5.5 18 H18.5 L14.5 12 H18 Z M12 18 V21" />,
   road: <path d="M8 3 L5 21 M16 3 L19 21 M12 4 V7 M12 10 V13 M12 16 V19" />,
@@ -70,6 +77,7 @@ const AMBIENCE_ICON: Record<AmbienceKind, React.ReactNode> = {
 };
 
 const AMBIENCE_KEY = "nonante:ambiance";
+const PAD_KEY = "nonante:pave";
 const noSubscribe = () => () => {};
 
 /** Ambiance choisie la dernière fois (préférence de ce téléphone seulement). */
@@ -81,6 +89,20 @@ function savedAmbience(): AmbienceKind {
     // Stockage indisponible (navigation privée) : « silence ».
     return "none";
   }
+}
+
+/** Réglage du pavé gardé sur ce téléphone, sous forme de texte « x,y » (valeur stable pour React). */
+function savedPadText(): string {
+  try {
+    return window.localStorage.getItem(PAD_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function parsePad(text: string): Pad {
+  const [x, y] = text.split(",").map(Number);
+  return Number.isFinite(x) && Number.isFinite(y) ? { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) } : PAD_DEFAULT;
 }
 
 /**
@@ -103,6 +125,9 @@ export function FocusTimer(props: Props) {
   const sound = chosen ?? saved;
   const [volume, setVolume] = useState(0.7);
   const [soundSheet, setSoundSheet] = useState(false);
+  const savedPad = useSyncExternalStore(noSubscribe, savedPadText, () => "");
+  const [movedPad, setPad] = useState<Pad | null>(null);
+  const pad = movedPad ?? parsePad(savedPad);
   const ambience = useRef<Ambience | null>(null);
 
   const session = useRef<StartedSession | null>(null);
@@ -120,6 +145,28 @@ export function FocusTimer(props: Props) {
   // Page quittée : le son s'arrête.
   useEffect(() => () => ambience.current?.dispose(), []);
 
+  function playSound(kind: AmbienceKind) {
+    ambience.current ??= new Ambience();
+    const a = ambience.current;
+    a.setVolume(volume);
+    a.setPad(pad);
+    a.setTitle(`${t.sounds[kind]} · ${props.label}`);
+    a.play(kind);
+  }
+
+  function changePad(p: Pad) {
+    setPad(p);
+    ambience.current?.setPad(p);
+  }
+
+  function savePad(p: Pad) {
+    try {
+      window.localStorage.setItem(PAD_KEY, `${p.x.toFixed(3)},${p.y.toFixed(3)}`);
+    } catch {
+      // Préférence non gardée : sans conséquence.
+    }
+  }
+
   /** Choisir une ambiance la fait entendre tout de suite (geste de l'utilisateur : le son est autorisé sur iPhone). */
   function chooseSound(kind: AmbienceKind) {
     setSound(kind);
@@ -128,9 +175,7 @@ export function FocusTimer(props: Props) {
     } catch {
       // Préférence non gardée : sans conséquence.
     }
-    ambience.current ??= new Ambience();
-    ambience.current.setVolume(volume);
-    ambience.current.play(kind);
+    playSound(kind);
   }
 
   // Fin de la session : le son s'efface.
@@ -206,11 +251,7 @@ export function FocusTimer(props: Props) {
   async function start() {
     setPhase("starting");
     setMessage(null);
-    if (sound !== "none") {
-      ambience.current ??= new Ambience();
-      ambience.current.setVolume(volume);
-      ambience.current.play(sound);
-    }
+    if (sound !== "none") playSound(sound);
     const r =
       props.mode === "principle"
         ? await startSession(principleId.current, minutes === props.minutes ? undefined : minutes)
@@ -228,7 +269,7 @@ export function FocusTimer(props: Props) {
       return;
     }
     session.current = r.session;
-    skew.current = Date.parse(r.session.server_now) - Date.now();
+    skew.current = clockSkew(r.session.server_now);
     setMinutes(r.session.minutes ?? minutes);
     setRemaining((r.session.minutes ?? minutes) * 60);
     // Le geste « retour » ouvre la confirmation au lieu de quitter la page.
@@ -384,7 +425,17 @@ export function FocusTimer(props: Props) {
               {props.mode === "principle" ? <p className="text-xs text-mute">{t.durationHint}</p> : null}
             </div>
             <div className="text-left">
-              <p className="mb-2 text-[13px] font-medium text-mute">{t.soundTitle}</p>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[13px] font-medium text-mute">{t.soundTitle}</p>
+                <button type="button" onClick={() => setSoundSheet(true)} className="liquid press flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium">
+                  <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                    <path d="M4 7 H20 M4 17 H20" />
+                    <circle cx="9" cy="7" r="2.2" fill="currentColor" />
+                    <circle cx="15" cy="17" r="2.2" fill="currentColor" />
+                  </svg>
+                  {t.pad.open}
+                </button>
+              </div>
               {soundChips}
             </div>
             <button type="button" onClick={start} disabled={phase === "starting"} className={btnPrimary}>
@@ -419,9 +470,11 @@ export function FocusTimer(props: Props) {
         ) : null}
       </div>
 
-      <Sheet open={soundSheet && running} onClose={() => setSoundSheet(false)} title={t.soundTitle}>
+      <Sheet open={soundSheet && !ended} onClose={() => setSoundSheet(false)} title={t.pad.title}>
         {soundChips}
-        <label className="mt-5 block pb-4">
+        <p className="mt-4 mb-4 text-sm text-mute">{t.pad.hint}</p>
+        <SoundPad value={pad} onChange={changePad} onCommit={savePad} />
+        <label className="mt-5 block">
           <span className="text-[13px] font-medium text-mute">{t.volume}</span>
           <input
             type="range"
@@ -434,9 +487,12 @@ export function FocusTimer(props: Props) {
               setVolume(v);
               ambience.current?.setVolume(v);
             }}
-            className="mt-3 w-full accent-[#ff4f86]"
+            className="mt-3 w-full accent-[#9b6bff]"
           />
         </label>
+        <button type="button" onClick={() => setSoundSheet(false)} className={`${btnPrimary} mt-6 mb-2`}>
+          {t.pad.done}
+        </button>
       </Sheet>
 
       <Sheet open={confirmStop && running} onClose={() => setConfirmStop(false)} title={t.stopTitle}>
