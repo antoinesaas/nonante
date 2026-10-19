@@ -97,7 +97,7 @@ envoyer sous 24 h, jugé dans `/admin`). Validation le jour même avant minuit (
 Valeur = 10 × difficulté. Raté (jour blanc compris) : − valeur, rien de plus (v10). Total à −500 ou moins : il repart à 0
 (ligne `reset`, jamais comptée en XP ni dans les points de la semaine, du mois ou du jour). Calcul mental du réveil (5 questions) : + 5 par
 bonne réponse.
-Session cassée − 5. Contrôle refusé − 3× valeur et +1 preuve refusée. Semaine d'arc parfaite + 50. Quête
+Minuteur déjà validé : il se refait, chaque session tenue en plus = session bonus de 10 × difficulté de sa durée, 3 au plus par jour (v14, ligne `session_bonus`, compte dans l'XP et le pilier, pas dans la couleur du jour ; bouton « Refaire » sur Aujourd'hui). Session cassée − 5. Contrôle refusé − 3× valeur et +1 preuve refusée. Semaine d'arc parfaite + 50. Quête
 réussie + 100/200/300, ratée − 50/100/150 ; piège ± 150. Revenu : 10 + 1 par 10 € (50 max), note : 5 à 20 selon la note
 (dès 10/20) ; la moitié sans preuve, plafonds 50 et 30 par jour, repris si on retire l'entrée. Succès
 + 25 à + 300. Arc tenu + 500. Constantes dans `lib/rules.ts` et en SQL (à garder synchronisées).

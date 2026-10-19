@@ -120,6 +120,8 @@ export const game = {
     dotAria: "Jour {n} : {status}",
     day: "Jour {n} · {date}",
     refused: "refusée",
+    bonus: "+ {n} session bonus ({p})",
+    bonusPlural: "+ {n} sessions bonus ({p})",
     total: "Total du jour :",
   },
   commitments: {

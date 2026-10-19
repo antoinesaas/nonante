@@ -198,6 +198,10 @@ export const app = {
     starting: "Lancement…",
     stop: "Stop",
     rule: "10 s hors de l'écran : la session casse.",
+    bonusHint: "Déjà validé aujourd'hui. Session bonus : +{n} points ({left} sur {max} restantes).",
+    bonusCapped: "Déjà validé aujourd'hui, et les {max} sessions bonus du jour sont faites : celle-ci ne rapporte plus de points.",
+    doneBonus: "+{n} points, session bonus.",
+    doneCapped: "Plafond de sessions bonus atteint : pas de points cette fois.",
     durationLabel: "Durée",
     soundTitle: "Ambiance sonore",
     volume: "Volume",
@@ -251,6 +255,7 @@ export const app = {
     retry: "Réessayer",
   },
   today: {
+    again: "Refaire une session",
     profileAria: "Mon profil",
     line: "Niv. {level} · {title} · note {ovr}",
     rank: "{rank}e sur {total} cette semaine",

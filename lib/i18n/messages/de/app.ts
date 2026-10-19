@@ -199,6 +199,10 @@ export const app: typeof fr = {
     starting: "Wird gestartet…",
     stop: "Stopp",
     rule: "10 s weg vom Bildschirm: Die Session bricht ab.",
+    bonusHint: "Heute schon erledigt. Bonus-Session: +{n} Punkte ({left} von {max} übrig).",
+    bonusCapped: "Heute schon erledigt, und die {max} Bonus-Sessions des Tages sind verbraucht: Diese bringt keine Punkte.",
+    doneBonus: "+{n} Punkte, Bonus-Session.",
+    doneCapped: "Limit der Bonus-Sessions erreicht: diesmal keine Punkte.",
     durationLabel: "Dauer",
     soundTitle: "Hintergrundklang",
     volume: "Lautstärke",
@@ -252,6 +256,7 @@ export const app: typeof fr = {
     retry: "Erneut versuchen",
   },
   today: {
+    again: "Noch eine Session",
     profileAria: "Mein Profil",
     line: "Lvl {level} · {title} · Note {ovr}",
     rank: "Platz {rank} von {total} diese Woche",

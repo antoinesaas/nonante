@@ -197,6 +197,7 @@ export type DayDetail = {
     pillar: Pillar;
     validation: { status: string; strength: string; points: number } | null;
     miss: { points: number; streak: number; white: boolean } | null;
+    bonus?: { count: number; points: number } | null;
   }[];
 };
 

@@ -121,6 +121,8 @@ export const game: typeof fr = {
     dotAria: "Día {n}: {status}",
     day: "Día {n} · {date}",
     refused: "rechazada",
+    bonus: "+ {n} sesión extra ({p})",
+    bonusPlural: "+ {n} sesiones extra ({p})",
     total: "Total del día:",
   },
   commitments: {

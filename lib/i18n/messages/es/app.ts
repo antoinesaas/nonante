@@ -199,6 +199,10 @@ export const app: typeof fr = {
     starting: "Empezando…",
     stop: "Parar",
     rule: "10 s fuera de la pantalla: la sesión se rompe.",
+    bonusHint: "Ya hecho hoy. Sesión extra: +{n} puntos (quedan {left} de {max}).",
+    bonusCapped: "Ya hecho hoy, y las {max} sesiones extra del día están hechas: esta no suma puntos.",
+    doneBonus: "+{n} puntos, sesión extra.",
+    doneCapped: "Límite de sesiones extra alcanzado: esta vez sin puntos.",
     durationLabel: "Duración",
     soundTitle: "Sonido ambiente",
     volume: "Volumen",
@@ -252,6 +256,7 @@ export const app: typeof fr = {
     retry: "Reintentar",
   },
   today: {
+    again: "Hacer otra sesión",
     profileAria: "Mi perfil",
     line: "Niv. {level} · {title} · nota {ovr}",
     rank: "Puesto {rank} de {total} esta semana",

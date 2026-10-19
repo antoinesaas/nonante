@@ -15,6 +15,7 @@ import type { Messages } from "@/lib/i18n/messages";
 import { fmt } from "@/lib/i18n/format";
 import type { StartedSession } from "@/lib/types";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
+import { SESSION_BONUS_MAX, sessionDifficulty } from "@/lib/rules";
 
 type Phase = "ready" | "starting" | "running" | "finishing" | "completed" | "broken" | "abandoned";
 
@@ -24,6 +25,8 @@ type Props = (
 ) & {
   /** Une session de cette page tournait encore (page rechargée, appli rouverte) : elle casse dès l'ouverture. */
   orphan?: boolean;
+  /** Principe déjà validé aujourd'hui : nombre de sessions bonus déjà tenues (null sinon). */
+  bonusUsed?: number | null;
 };
 
 const HEARTBEAT_MS = 15_000;
@@ -121,6 +124,8 @@ export function FocusTimer(props: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
   const [points, setPoints] = useState<number | null>(null);
+  const [bonusDone, setBonusDone] = useState<{ capped: boolean } | null>(null);
+  const [bonusUsed, setBonusUsed] = useState(props.bonusUsed ?? null);
   const saved = useSyncExternalStore(noSubscribe, savedAmbience, () => "none" as AmbienceKind);
   const [chosen, setSound] = useState<AmbienceKind | null>(null);
   const sound = chosen ?? saved;
@@ -236,6 +241,13 @@ export function FocusTimer(props: Props) {
     if (r.status === "completed") {
       setPhase("completed");
       setPoints(r.points ?? null);
+      if (r.bonus) {
+        setBonusDone({ capped: Boolean(r.capped) });
+        setBonusUsed((u) => (r.capped ? u : (u ?? 0) + 1));
+      } else {
+        // Première session tenue du jour : la suivante sera une session bonus.
+        setBonusUsed(0);
+      }
       setConfirmStop(false);
       void wakeLock.current?.release().catch(() => {});
     } else if (r.status === "error") {
@@ -351,6 +363,7 @@ export function FocusTimer(props: Props) {
     hiddenAt.current = null;
     setMessage(null);
     setPoints(null);
+    setBonusDone(null);
     setConfirmStop(false);
     setRemaining(minutes * 60);
     setPhase("ready");
@@ -428,6 +441,13 @@ export function FocusTimer(props: Props) {
                 label={t.durationLabel}
                 unit={fmt(t.minutes, { n: "" }).trim()}
               />
+              {bonusUsed !== null && props.mode === "principle" ? (
+                <p className="mt-2 text-xs text-mute">
+                  {bonusUsed >= SESSION_BONUS_MAX
+                    ? fmt(t.bonusCapped, { max: SESSION_BONUS_MAX })
+                    : fmt(t.bonusHint, { n: 10 * sessionDifficulty(minutes), left: SESSION_BONUS_MAX - bonusUsed, max: SESSION_BONUS_MAX })}
+                </p>
+              ) : null}
             </div>
             <div className="text-left">
               <p className="mb-2 text-[13px] font-medium text-mute">{t.soundTitle}</p>
@@ -450,12 +470,20 @@ export function FocusTimer(props: Props) {
           <div className="animate-in">
             <p className="font-display text-[34px]">{phase === "completed" ? t.done : phase === "broken" ? t.broken : t.abandoned}</p>
             <p className="mt-2 text-mute">
-              {phase === "completed" ? (points !== null ? fmt(t.donePoints, { n: points }) : null) : `${phase === "broken" && message ? `${message} ` : ""}${t.penalty}`}
+              {phase === "completed" ? (bonusDone ? (bonusDone.capped ? t.doneCapped : fmt(t.doneBonus, { n: points ?? 0 })) : points !== null ? fmt(t.donePoints, { n: points }) : null) : `${phase === "broken" && message ? `${message} ` : ""}${t.penalty}`}
             </p>
             {phase === "completed" ? (
-              <button type="button" onClick={() => router.replace("/app")} className={`${btnPrimary} mt-6`}>
-                {t.finish}
-              </button>
+              <div className="mt-6 space-y-3">
+                <button type="button" onClick={() => router.replace("/app")} className={btnPrimary}>
+                  {t.finish}
+                </button>
+                {props.mode === "principle" ? (
+                  // V14 : un minuteur tenu se refait (session bonus).
+                  <button type="button" onClick={restart} className={`${btnSecondary} w-full`}>
+                    {m.app.today.again}
+                  </button>
+                ) : null}
+              </div>
             ) : (
               // Une session cassée ou arrêtée coûte ses points, mais on peut repartir tout de suite.
               <div className="mt-6 space-y-3">

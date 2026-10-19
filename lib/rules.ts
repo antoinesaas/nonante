@@ -16,6 +16,11 @@ export const MISS_MULTIPLIER = 1;
 export const POINTS_FLOOR = -500;
 
 /** Réveil : cinq calculs de tête selon le niveau d'études, chronométrés ; +5 par bonne réponse, une erreur ne coûte rien. */
+/** Sessions bonus (v14) : un minuteur déjà validé se refait, 10 × difficulté, 3 au plus par jour. */
+export const SESSION_BONUS_MAX = 3;
+/** Difficulté d'une session selon sa durée (comme `_difficulty` en SQL). */
+export const sessionDifficulty = (minutes: number) => (minutes <= 25 ? 1 : minutes <= 50 ? 2 : 3);
+
 export const MENTAL_MATH = { questions: 5, pointsPerRight: 5 } as const;
 export const BROKEN_SESSION_PENALTY = -5;
 /** Contrôle refusé ou non envoyé : − 3 × valeur ; revenu refusé : − 30. */

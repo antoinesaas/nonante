@@ -211,15 +211,15 @@ export async function heartbeat(sessionId: string, nonce: string, visible: boole
   return localized(data as SessionStatus, ctx.i18n);
 }
 
-export async function completeSession(sessionId: string, nonce: string): Promise<SessionStatus & { points?: number }> {
+export async function completeSession(sessionId: string, nonce: string): Promise<SessionStatus & { points?: number; bonus?: boolean; capped?: boolean }> {
   if (!Id.safeParse(sessionId).success || !Nonce.safeParse(nonce).success) return { status: "error", message: await invalid() };
   const ctx = await context("session", 20);
   if ("error" in ctx) return { status: "error", message: ctx.error!.message ?? undefined };
   const { data, error } = await ctx.supabase.rpc("complete_session", { p_session_id: sessionId, p_nonce: nonce });
   if (error) return { status: "error", message: userMessage(error, ctx.i18n) };
   revalidatePath("/app");
-  const r = data as { status: string; reason?: string; validation?: ValidationResult | null };
-  return localized({ status: r.status, reason: r.reason, points: r.validation?.points }, ctx.i18n);
+  const r = data as { status: string; reason?: string; validation?: ValidationResult | null; bonus?: number; capped?: boolean };
+  return localized({ status: r.status, reason: r.reason, points: r.validation?.points ?? r.bonus, bonus: r.bonus !== undefined, capped: r.capped }, ctx.i18n);
 }
 
 export async function abandonSession(sessionId: string, nonce: string): Promise<SessionStatus> {

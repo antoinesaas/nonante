@@ -199,6 +199,10 @@ export const app: typeof fr = {
     starting: "Starting…",
     stop: "Stop",
     rule: "10 s off the screen: the session breaks.",
+    bonusHint: "Already done today. Bonus session: +{n} points ({left} of {max} left).",
+    bonusCapped: "Already done today, and today's {max} bonus sessions are used: this one earns no points.",
+    doneBonus: "+{n} points, bonus session.",
+    doneCapped: "Bonus session limit reached: no points this time.",
     durationLabel: "Length",
     soundTitle: "Background sound",
     volume: "Volume",
@@ -252,6 +256,7 @@ export const app: typeof fr = {
     retry: "Try again",
   },
   today: {
+    again: "Do another session",
     profileAria: "My profile",
     line: "Lvl {level} · {title} · rating {ovr}",
     rank: "#{rank} of {total} this week",

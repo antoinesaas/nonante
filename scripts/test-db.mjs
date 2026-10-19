@@ -375,6 +375,28 @@ const s3 = await as(B, () => rpc("start_proof_session", { p_principle_id: bureau
 await q("update public.proof_sessions set started_at = now() - interval '90 minutes 5 seconds', heartbeats = 360, last_heartbeat_at = now() - interval '5 seconds' where id = $1", [s3.id]);
 const done = await as(B, () => rpc("complete_session", { p_session_id: s3.id, p_nonce: s3.nonce }));
 check("session complète : preuve forte, 100 %", done.status === "completed" && done.validation.points === 30, JSON.stringify(done));
+// V14 : sessions bonus sur un minuteur déjà validé.
+async function bonusRun(minutes) {
+  if (minutes) await as(B, () => rpc("set_session_minutes", { p_id: bureau.id, p_minutes: minutes }));
+  const b = await as(B, () => rpc("start_proof_session", { p_principle_id: bureau.id }));
+  const m = b.minutes;
+  await q(`update public.proof_sessions set started_at = now() - interval '${m} minutes 5 seconds', heartbeats = ${m * 4}, last_heartbeat_at = now() - interval '5 seconds' where id = $1`, [b.id]);
+  return { start: b, end: await as(B, () => rpc("complete_session", { p_session_id: b.id, p_nonce: b.nonce })) };
+}
+const bonus1 = await bonusRun();
+check("minuteur validé : session bonus lancée", bonus1.start.bonus === true);
+check("session bonus tenue : + 30 (90 min)", bonus1.end.status === "completed" && bonus1.end.bonus === 30, JSON.stringify(bonus1.end));
+check("bonus inscrit au registre", (await val("select delta from public.points_ledger where reason = 'session_bonus' and ref_id = $1", [bonus1.start.id])) === 30);
+check("une seule validation pour le jour", (await val("select count(*)::int from public.validations where principle_id = $1 and day = public.paris_today()", [bureau.id])) === 1);
+const bonus2 = await bonusRun(20);
+check("durée changée après validation : session bonus de 20 min, + 10", bonus2.start.minutes === 20 && bonus2.end.bonus === 10, JSON.stringify(bonus2));
+const bonus3 = await bonusRun();
+const bonus4 = await bonusRun();
+check("au-delà de 3 bonus par jour : tenue, sans points", bonus3.end.bonus === 10 && bonus4.end.status === "completed" && bonus4.end.bonus === 0 && bonus4.end.capped === true, JSON.stringify(bonus4.end));
+const detailB = await as(B, () => rpc("day_detail", { p_day: today }));
+const bureauDetail = detailB.principles.find((x) => x.bonus);
+check("détail du jour : 3 sessions bonus, + 50", bureauDetail?.bonus?.count === 3 && bureauDetail.bonus.points === 50, JSON.stringify(bureauDetail));
+await as(B, () => rpc("set_session_minutes", { p_id: bureau.id, p_minutes: 90 }));
 
 // ---------------------------------------------------------------------------
 console.log("\nRépétitions et réveil");

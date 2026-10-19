@@ -64,7 +64,10 @@ export function CalendarInteractive({ days }: { days: CalendarDay[] }) {
                 <ul className="grouped mt-5">
                   {detail.principles.map((p, i) => (
                     <li key={i} className="flex items-start justify-between gap-4 px-4 py-3">
-                      <span className={p.validation && p.validation.status !== "rejected" ? "" : "text-mute"}>{p.then_text}</span>
+                      <span className={p.validation && p.validation.status !== "rejected" ? "" : "text-mute"}>
+                      {p.then_text}
+                      {p.bonus ? <span className="mt-0.5 block text-[13px] text-mute">{fmt(p.bonus.count > 1 ? c.bonusPlural : c.bonus, { n: p.bonus.count, p: signed(p.bonus.points) })}</span> : null}
+                    </span>
                       <span className={`shrink-0 tabular-nums ${p.validation && p.validation.status !== "rejected" ? "text-ok" : p.miss ? "text-ko" : "text-mute"}`}>
                         {p.validation ? (p.validation.status === "rejected" ? c.refused : signed(p.validation.points)) : p.miss ? signed(p.miss.points) : "—"}
                       </span>

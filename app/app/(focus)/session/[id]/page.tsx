@@ -5,6 +5,7 @@ import { FocusTimer } from "@/components/FocusTimer";
 import { requireUser } from "@/lib/auth";
 import { bareThen } from "@/lib/i18n/labels";
 import { getI18n } from "@/lib/i18n/server";
+import { todayParis } from "@/lib/dates";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
@@ -41,5 +42,11 @@ export default async function SessionPage({ params, searchParams }: PageProps<"/
   if (!principle) notFound();
   if (principle.proof_type !== "session") redirect("/app");
   const minutes = Number((principle.target as { minutes?: number }).minutes ?? 50);
-  return <FocusTimer mode="principle" principleId={id} label={(() => { const x = bareThen(principle.then_text); return x.charAt(0).toUpperCase() + x.slice(1); })()} minutes={minutes} orphan={orphan} />;
+  // Déjà validé aujourd'hui : la session est une session bonus (v14), on dit combien il en reste.
+  const today = todayParis();
+  const [{ data: validated }, { count: bonusUsed }] = await Promise.all([
+    supabase.from("validations").select("id").eq("principle_id", id).eq("day", today).neq("status", "rejected").maybeSingle(),
+    supabase.from("points_ledger").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("day", today).eq("reason", "session_bonus"),
+  ]);
+  return <FocusTimer mode="principle" principleId={id} label={(() => { const x = bareThen(principle.then_text); return x.charAt(0).toUpperCase() + x.slice(1); })()} minutes={minutes} orphan={orphan} bonusUsed={validated ? (bonusUsed ?? 0) : null} />;
 }
