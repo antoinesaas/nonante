@@ -852,6 +852,8 @@ export type Database = {
           is_public: boolean;
           locale: string;
           loyalty_pending: boolean;
+          math_level: number | null;
+          math_mode: string;
           plan: string | null;
           plan_interval: string | null;
           plan_status: string | null;
@@ -884,6 +886,8 @@ export type Database = {
           is_public?: boolean;
           locale?: string;
           loyalty_pending?: boolean;
+          math_level?: number | null;
+          math_mode?: string;
           plan?: string | null;
           plan_interval?: string | null;
           plan_status?: string | null;
@@ -916,6 +920,8 @@ export type Database = {
           is_public?: boolean;
           locale?: string;
           loyalty_pending?: boolean;
+          math_level?: number | null;
+          math_mode?: string;
           plan?: string | null;
           plan_interval?: string | null;
           plan_status?: string | null;
@@ -1435,6 +1441,7 @@ export type Database = {
       set_arc_photo: { Args: { p_user: string | null; p_which: string | null; p_path: string | null }; Returns: string };
       set_audit_rate: { Args: { p_rate: number | null }; Returns: undefined };
       set_avatar: { Args: { p_user: string | null; p_path: string | null }; Returns: string };
+      set_math_mode: { Args: { p_mode: string | null }; Returns: number };
       set_my_country: { Args: { p_country: string | null }; Returns: undefined };
       set_my_locale: { Args: { p_locale: string | null }; Returns: undefined };
       set_referral_promo: { Args: { p_user: string | null; p_promotion_code_id: string | null }; Returns: undefined };

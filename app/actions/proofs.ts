@@ -263,7 +263,7 @@ export async function completeWakeQuiz(
   sessionId: string,
   nonce: string,
   answers: number[],
-): Promise<SessionStatus & { points?: number; correct?: number; total?: number; bonus?: number; questions?: MathChecked[]; duration_ms?: number }> {
+): Promise<SessionStatus & { points?: number; correct?: number; total?: number; bonus?: number; questions?: MathChecked[]; duration_ms?: number; level?: number; next_level?: number }> {
   if (!Id.safeParse(sessionId).success || !Nonce.safeParse(nonce).success) return { status: "error", message: await invalid() };
   const parsed = z.array(z.number().int().min(-1_000_000).max(1_000_000)).min(1).max(5).safeParse(answers);
   if (!parsed.success) return { status: "error", message: await invalid() };
@@ -281,6 +281,8 @@ export async function completeWakeQuiz(
     bonus?: number;
     questions?: MathChecked[];
     duration_ms?: number;
+    level?: number;
+    next_level?: number;
   };
   return {
     ...localized({ status: r.status, reason: r.reason, points: r.validation?.points }, ctx.i18n),
@@ -289,6 +291,8 @@ export async function completeWakeQuiz(
     bonus: r.bonus,
     questions: r.questions,
     duration_ms: r.duration_ms,
+    level: r.level,
+    next_level: r.next_level,
   };
 }
 

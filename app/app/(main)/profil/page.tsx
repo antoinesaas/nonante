@@ -1,3 +1,4 @@
+import type { MathMode } from "@/lib/math";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -54,6 +55,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
   const { data } = await supabase.rpc("my_profile");
   const profile = data as MyProfile | null;
   if (!profile) redirect("/onboarding");
+  const { data: math } = await supabase.from("profiles").select("math_mode").eq("id", user.id).maybeSingle();
 
   // Code de parrainage pas encore créé chez Stripe (Stripe indisponible à l'onboarding) : on réessaie.
   if (profile.referral_code && !profile.referral_ready && process.env.STRIPE_SECRET_KEY) {
@@ -91,7 +93,7 @@ export default async function ProfilePage({ searchParams }: PageProps<"/app/prof
       <Aura tone="violet" />
       <div className="mb-5 flex items-center justify-between gap-4 pt-2">
         <h1 className={largeTitle}>{t.title}</h1>
-        <SettingsSheet isPublic={profile.is_public} walletPublic={profile.wallet_public} bio={profile.bio} email={profile.email} isAdmin={profile.is_admin} pseudo={profile.pseudo} />
+        <SettingsSheet isPublic={profile.is_public} walletPublic={profile.wallet_public} bio={profile.bio} email={profile.email} isAdmin={profile.is_admin} pseudo={profile.pseudo} mathMode={(math?.math_mode ?? "auto") as MathMode} />
       </div>
       <div className="animate-in">
         <ProfileCard

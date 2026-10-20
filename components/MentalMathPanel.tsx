@@ -3,7 +3,7 @@ import { addDays } from "@/lib/answers";
 import type { Locale } from "@/lib/i18n/config";
 import { fmt, formatDay, formatNumber } from "@/lib/i18n/format";
 import type { Messages } from "@/lib/i18n/messages";
-import { formatDuration, mathText } from "@/lib/math";
+import { formatDuration, mathLevelName, mathText } from "@/lib/math";
 import type { MentalMath } from "@/lib/types";
 
 const DAYS = 14;
@@ -70,7 +70,7 @@ export function MentalMathPanel({ data, today, m, locale }: { data: MentalMath; 
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="font-display text-[20px]">{t.section}</h2>
-          <p className="text-[12px] text-mute">{t.levels[String(data.level) as "1" | "2" | "3"]}</p>
+          <p className="text-[12px] text-mute">{fmt(t.level, { n: data.level, name: t.levelNames[mathLevelName(data.level)] })}</p>
         </div>
         <ActivityRings rings={[{ value: data.correct, max: Math.max(1, data.total), tone: "sky" }]} size={52} stroke={7} label="" />
       </div>
@@ -93,6 +93,7 @@ export function MentalMathPanel({ data, today, m, locale }: { data: MentalMath; 
       <p className="mt-3 text-[12px] text-mute">
         {rate === null ? t.empty : fmt(t.summary, { quizzes: data.quizzes, correct: data.correct, total: data.total, points: data.points }, locale)}
       </p>
+      <p className="mt-1 text-[12px] text-mute">{t.progress}</p>
 
       {data.entries.length ? (
         <>

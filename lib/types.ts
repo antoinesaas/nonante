@@ -355,7 +355,11 @@ export type MathQuestion = { a: number; op: "+" | "-" | "x" | "/" | "%" | "sq"; 
 export type MathChecked = MathQuestion & { answer: number; given: number; correct: boolean };
 
 export type MentalMath = {
-  level: 1 | 2 | 3;
+  /** Niveau du prochain calcul, de 1 à 10 (v15). */
+  level: number;
+  mode: "auto" | "debutant" | "intermediaire" | "avance" | "expert";
+  /** Point de départ (réglage ou études). */
+  start: number | null;
   quizzes: number;
   correct: number;
   total: number;

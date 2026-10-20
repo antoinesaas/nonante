@@ -424,7 +424,8 @@ if (await val("select public.paris_now()::time > '22:59'")) {
   const w = await as(B, () => rpc("start_proof_session", { p_principle_id: reveilB.id }));
   check("cinq questions de calcul, sans les réponses", w.code === null && w.questions.length === 5 && w.questions.every((x) => !("answer" in x)), JSON.stringify(w.questions));
   const answers = (await val("select data -> 'questions' from public.proof_sessions where id = $1", [w.id])).map((x) => x.answer);
-  check("niveau 2 : ×, ÷, %, + et carré", w.questions.map((x) => x.op).sort().join() === ["x", "/", "%", "+", "sq"].sort().join(), JSON.stringify(w.questions));
+  check("sans études, niveau 3 : +, −, ×, ÷ et %", w.questions.map((x) => x.op).sort().join() === ["+", "-", "x", "/", "%"].sort().join()
+    && (await val("select data ->> 'level' from public.proof_sessions where id = $1", [w.id])) === "3", JSON.stringify(w.questions));
   await rejects("il faut répondre à toutes", () => as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: [answers[0]] })), "toutes les questions");
   const xpBefore = Number(await val("select xp from public.player_stats where user_id = $1", [B]));
   const given = answers.map((a, i) => (i === 2 ? a + 1 : a));
@@ -439,8 +440,16 @@ if (await val("select public.paris_now()::time > '22:59'")) {
     && Number.isInteger(mm.avg_ms) && mm.best_ms === null && Number.isInteger(mm.entries[0].duration_ms), JSON.stringify(mm));
   check("rien à rejouer ensuite", (await as(B, () => rpc("complete_wake_quiz", { p_session_id: w.id, p_nonce: w.nonce, p_answers: answers }))).status === "completed"
     && Number(await val("select count(*) from public.mental_math where user_id = $1", [B])) === 1);
-  check("niveaux : lycée 1, prépa 3, sinon 2", (await val("select array[public._math_level('lycee'), public._math_level('prepa'), public._math_level('ingenieur'), public._math_level(null)]")).join() === "1,3,3,2");
-  for (const level of [1, 2, 3]) {
+  // V15 : 10 niveaux, point de départ selon les études ou le réglage, un cran par jour selon les résultats.
+  check("4 bonnes réponses : le niveau monte (3 → 4)", ok.level === 3 && ok.next_level === 4
+    && (await val("select math_level from public.profiles where id = $1", [B])) === 4, JSON.stringify({ level: ok.level, next: ok.next_level }));
+  check("suivi : niveau actuel, réglage, point de départ", mm.level === 4 && mm.mode === "auto" && mm.start === 3, JSON.stringify({ level: mm.level, mode: mm.mode, start: mm.start }));
+  check("réglage « avancé » : repart du niveau 5", (await as(B, () => rpc("set_math_mode", { p_mode: "avance" }))) === 5);
+  check("réglage « débutant » : niveau 1", (await as(B, () => rpc("set_math_mode", { p_mode: "debutant" }))) === 1);
+  check("réglage « auto » : selon les études (sans études : 3)", (await as(B, () => rpc("set_math_mode", { p_mode: "auto" }))) === 3);
+  await rejects("réglage inconnu refusé", () => as(B, () => rpc("set_math_mode", { p_mode: "génie" })), "invalide");
+  check("historique : anciens niveaux convertis (1 à 3 → 2, 4, 6)", (await val("select count(*)::int from public.mental_math where level not between 1 and 10")) === 0);
+  for (let level = 1; level <= 10; level++) {
     for (let round = 0; round < 20; round++) {
       const qs = await val("select public._math_questions($1)", [level]);
       const good = qs.every((x) => Number.isInteger(x.answer) && x.answer > 0 && x.answer === ({ "+": x.a + x.b, "-": x.a - x.b, x: x.a * x.b, "/": x.a / x.b, "%": (x.a * x.b) / 100, sq: x.a * x.a })[x.op]);

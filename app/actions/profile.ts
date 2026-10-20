@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth";
 import { type ActionResult, userMessage } from "@/lib/errors";
 import { getI18n } from "@/lib/i18n/server";
+import { MATH_MODES } from "@/lib/math";
 import { removeAvatars, removeProofPhotos, storeAvatar } from "@/lib/photos";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -23,7 +24,14 @@ export async function updateSettings(_prev: ActionResult, formData: FormData): P
     p_bio: String(formData.get("bio") ?? "").slice(0, 200),
   });
   if (error) return { ok: false, message: userMessage(error, i18n) };
+  // Niveau de départ du calcul mental (v15) : Postgres ne change rien si le réglage est le même.
+  const mathMode = formData.get("mathMode");
+  if (typeof mathMode === "string" && (MATH_MODES as readonly string[]).includes(mathMode)) {
+    const { error: mathError } = await supabase.rpc("set_math_mode", { p_mode: mathMode });
+    if (mathError) return { ok: false, message: userMessage(mathError, i18n) };
+  }
   revalidatePath("/app/profil");
+  revalidatePath("/app/notes");
   return { ok: true, message: a.profile.saved };
 }
 

@@ -6,9 +6,10 @@ import { useI18n } from "@/components/I18nProvider";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { idle } from "@/lib/errors";
+import { MATH_MODES, type MathMode } from "@/lib/math";
 import { btnPrimary, input, label } from "@/lib/ui";
 
-export function SettingsForm({ isPublic, walletPublic, bio }: { isPublic: boolean; walletPublic: boolean; bio: string | null }) {
+export function SettingsForm({ isPublic, walletPublic, bio, mathMode }: { isPublic: boolean; walletPublic: boolean; bio: string | null; mathMode: MathMode }) {
   const { m } = useI18n();
   const t = m.app.profile;
   const [state, action] = useActionState(updateSettings, idle);
@@ -37,6 +38,17 @@ export function SettingsForm({ isPublic, walletPublic, bio }: { isPublic: boolea
             <span className="block text-xs text-mute">{t.walletPublicHint}</span>
           </span>
           <input type="checkbox" name="walletPublic" defaultChecked={walletPublic} className="size-5 shrink-0 accent-white" />
+        </label>
+        <label className="block">
+          <span className={label}>{t.mathMode}</span>
+          <select name="mathMode" defaultValue={mathMode} className={`${input} mt-2`}>
+            {MATH_MODES.map((mode) => (
+              <option key={mode} value={mode}>
+                {t.mathModes[mode]}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1.5 block text-xs text-mute">{t.mathModeHint}</span>
         </label>
         <SubmitButton className={btnPrimary} pendingLabel={m.common.actions.saving}>
           {m.common.actions.save}

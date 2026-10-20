@@ -8,12 +8,13 @@ import { SettingsForm } from "@/app/app/(main)/profil/SettingsForm";
 import { useI18n } from "@/components/I18nProvider";
 import { Sheet } from "@/components/Sheet";
 import { fmt } from "@/lib/i18n/format";
+import type { MathMode } from "@/lib/math";
 import { btnSecondary, label } from "@/lib/ui";
 
-type Props = { isPublic: boolean; walletPublic: boolean; bio: string | null; email: string; isAdmin: boolean; pseudo: string };
+type Props = { isPublic: boolean; walletPublic: boolean; bio: string | null; email: string; isAdmin: boolean; pseudo: string; mathMode: MathMode };
 
 /** Roue dentée du profil : réglages, données (export, déconnexion, suppression) et installation, dans une feuille. */
-export function SettingsSheet({ isPublic, walletPublic, bio, email, isAdmin, pseudo }: Props) {
+export function SettingsSheet({ isPublic, walletPublic, bio, email, isAdmin, pseudo, mathMode }: Props) {
   const { m } = useI18n();
   const t = m.app.profile;
   const [open, setOpen] = useState(false);
@@ -34,7 +35,7 @@ export function SettingsSheet({ isPublic, walletPublic, bio, email, isAdmin, pse
       <Sheet open={open} onClose={() => setOpen(false)} title={t.settings}>
         {open ? (
           <>
-            <SettingsForm isPublic={isPublic} walletPublic={walletPublic} bio={bio} />
+            <SettingsForm isPublic={isPublic} walletPublic={walletPublic} bio={bio} mathMode={mathMode} />
             <section className="mt-8 border-t border-line pt-6 pb-4">
               <p className={label}>{t.data}</p>
               <p className="mt-3 text-sm text-mute">{fmt(t.connectedAs, { email })}</p>

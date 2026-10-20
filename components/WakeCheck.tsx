@@ -13,7 +13,7 @@ type Props =
   | { mode: "principle"; principleId: string; label: string; window: { from: string; to: string } }
   | { mode: "challenge"; assignmentId: string; label: string; window: { from: string; to: string } };
 
-type Result = { ok: boolean; questions?: MathChecked[]; correct?: number; total?: number; bonus?: number; points?: number; ms?: number };
+type Result = { ok: boolean; questions?: MathChecked[]; correct?: number; total?: number; bonus?: number; points?: number; ms?: number; level?: number; next?: number };
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "del", "0", "ok"] as const;
 
@@ -75,7 +75,7 @@ export function WakeCheck(props: Props) {
       setBusy(false);
       if (r.status === "completed") {
         navigator.vibrate?.([12, 40, 12]);
-        setResult({ ok: true, questions: r.questions, correct: r.correct, total: r.total, bonus: r.bonus, points: r.points, ms: r.duration_ms });
+        setResult({ ok: true, questions: r.questions, correct: r.correct, total: r.total, bonus: r.bonus, points: r.points, ms: r.duration_ms, level: r.level, next: r.next_level });
       } else if (r.status === "error") {
         setMessage(r.message ?? t.startFailed);
       } else {
@@ -140,6 +140,11 @@ export function WakeCheck(props: Props) {
                   </div>
                 </div>
                 <p className={`mt-3 text-sm font-semibold ${result.bonus ? "text-paper" : "text-paper/70"}`}>{result.bonus ? fmt(tm.bonus, { n: result.bonus }) : tm.noBonus}</p>
+                {result.next !== undefined && result.level !== undefined ? (
+                  <p className="mt-1 text-[13px] text-paper/75">
+                    {fmt(result.next > result.level ? tm.levelUp : result.next < result.level ? tm.levelDown : tm.levelSame, { n: result.next })}
+                  </p>
+                ) : null}
                 <ul className="mt-3 space-y-1.5 rounded-2xl bg-black/35 p-3 text-sm">
                   {(result.questions ?? []).map((q, i) => (
                     <li key={i} className="flex items-baseline justify-between gap-4 tabular-nums">
