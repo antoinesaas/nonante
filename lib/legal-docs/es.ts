@@ -236,7 +236,7 @@ export const es: LegalSet = {
       },
       { h2: "Cookies" },
       {
-        p: "Nonante no usa publicidad ni seguimiento de terceros. Solo cookies necesarias, propias de Nonante y nunca compartidas: tu sesión de conexión; tu idioma, si lo eliges; el origen de tu visita, durante 30 días; y, como máximo una hora, tus respuestas al cuestionario mientras te conectas con Google. La medición de audiencia no deposita ninguna cookie y no te sigue de un sitio a otro.",
+        p: "Nonante no usa publicidad ni seguimiento de terceros. Solo cookies necesarias, propias de Nonante y nunca compartidas: tu sesión de conexión; tu idioma, si lo eliges; el origen de tu visita, durante 30 días; y, como máximo una hora, tus respuestas al cuestionario mientras te conectas con Google. La medición de audiencia no deposita ninguna cookie y no te sigue de un sitio a otro. Nonante también cuenta, en sus propios servidores, los pasos realizados (pantallas del cuestionario, plan elegido, sesiones del temporizador), de forma anónima: sin cuenta ni dirección IP, borrados a los 180 días.",
       },
       { h2: "Tus derechos" },
       {

@@ -6,6 +6,7 @@ export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 
 const LINKS = [
   { href: "/admin", label: "Vue d'ensemble" },
+  { href: "/admin/entonnoir", label: "Entonnoir" },
   { href: "/admin/controles", label: "Contrôles" },
   { href: "/admin/signalements", label: "Signalements" },
   { href: "/admin/escouades", label: "Escouades" },

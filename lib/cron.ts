@@ -35,7 +35,8 @@ export async function taskCleanup(admin = createAdminClient()) {
   await removeProofPhotos(paths);
   if (paths.length) await call(admin, "mark_photos_deleted", { p_paths: paths });
   await call(admin, "cleanup_rate_limits");
-  return { sessions_broken: broken, photos_deleted: paths.length };
+  const events = await call<number>(admin, "cron_analytics_cleanup");
+  return { sessions_broken: broken, photos_deleted: paths.length, analytics_deleted: events };
 }
 
 /** Arcs tenus : −50 % sur la prochaine facture Pro ou le prochain Arc 90 jours (une fois). Arcs terminés : email de bilan (une fois). */

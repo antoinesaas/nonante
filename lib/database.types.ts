@@ -42,6 +42,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      analytics_events: {
+        Row: {
+          created_at: string;
+          day: string;
+          device: string | null;
+          id: number;
+          name: string;
+          path: string | null;
+          props: Json;
+          visit: string;
+        };
+        Insert: {
+          created_at?: string;
+          day?: string;
+          device?: string | null;
+          id?: number;
+          name: string;
+          path?: string | null;
+          props?: Json;
+          visit: string;
+        };
+        Update: {
+          created_at?: string;
+          day?: string;
+          device?: string | null;
+          id?: number;
+          name?: string;
+          path?: string | null;
+          props?: Json;
+          visit?: string;
+        };
+        Relationships: [];
+      };
       app_opens: {
         Row: {
           day: string;
@@ -1358,6 +1391,7 @@ export type Database = {
       add_template_principle: { Args: { p_code: string | null }; Returns: string };
       add_wallet_entry: { Args: { p_user: string | null; p_amount_cents: number | null; p_source: string | null; p_label: string | null; p_day: string | null; p_proof_path: string | null }; Returns: Json };
       admin_audit_queue: { Args: never; Returns: Json };
+      admin_funnel: { Args: { p_days?: number | null }; Returns: Json };
       admin_grant_comp: { Args: { p_pseudo: string | null; p_plan: string | null; p_until: string | null }; Returns: undefined };
       admin_log: { Args: { p_action: string | null; p_target: string | null; p_details: Json | null }; Returns: undefined };
       admin_overview: { Args: never; Returns: Json };
@@ -1377,6 +1411,7 @@ export type Database = {
       complete_wake_check: { Args: { p_session_id: string | null; p_nonce: string | null; p_code: string | null }; Returns: Json };
       complete_wake_quiz: { Args: { p_session_id: string | null; p_nonce: string | null; p_answers: number[] | null }; Returns: Json };
       create_squad: { Args: { p_name: string | null; p_description: string | null; p_is_public: boolean | null; p_start_date?: string | null; p_category?: string | null }; Returns: string };
+      cron_analytics_cleanup: { Args: never; Returns: number };
       cron_arc_results: { Args: never; Returns: { enrollment_id: string; user_id: string; email: string; status: string; green: number; arc_number: number }[] };
       cron_close_days: { Args: never; Returns: number };
       cron_expire_audits: { Args: never; Returns: number };
@@ -1454,6 +1489,7 @@ export type Database = {
       start_proof_session: { Args: { p_principle_id: string | null }; Returns: Json };
       submit_audit_photo: { Args: { p_user: string | null; p_audit_id: string | null; p_path: string | null }; Returns: undefined };
       sync_subscription: { Args: { p_user: string | null; p_customer: string | null; p_subscription: string | null; p_plan: string | null; p_interval: string | null; p_status: string | null; p_period_end: string | null; p_cancel_at_period_end: boolean | null }; Returns: string };
+      track_event: { Args: { p_visit: string | null; p_name: string | null; p_props: Json | null; p_path: string | null; p_device: string | null }; Returns: undefined };
       update_profile_settings: { Args: { p_is_public: boolean | null; p_art_slug: string | null; p_email_reminders: boolean | null; p_wallet_public: boolean | null; p_bio: string | null }; Returns: undefined };
       use_joker: { Args: never; Returns: Json };
       validate_challenge_declaratif: { Args: { p_assignment_id: string | null }; Returns: Json };

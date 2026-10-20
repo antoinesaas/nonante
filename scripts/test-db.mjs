@@ -847,5 +847,20 @@ check("ses points aussi", Number(await val("select count(*) from public.points_l
 check("les paiements restent, détachés", (await val("select user_id from public.payments where stripe_object_id = 'in_1'")) === null);
 await rejects("le drapeau ne fuit pas hors de la transaction", () => q("delete from public.points_ledger"), "ajout seul");
 
+console.log("\nEntonnoir (v16)");
+await rejects("un joueur n'écrit pas d'évènement", () => as(A, () => rpc("track_event", { p_visit: "abcdefgh12", p_name: "questionnaire", p_props: {}, p_path: "/onboarding", p_device: "mobile" })), "denied");
+await rejects("un visiteur ne lit pas les évènements", () => as(null, () => q("select * from public.analytics_events"), { role: "anon" }), "denied");
+for (const [visit, screens] of [["visite0001", ["intro", "1-situation", "2-objectif", "result"]], ["visite0002", ["intro", "1-situation"]], ["visite0003", ["intro"]]]) {
+  for (const ecran of screens) await as(null, () => rpc("track_event", { p_visit: visit, p_name: "questionnaire", p_props: { ecran }, p_path: "/onboarding", p_device: "mobile" }), { role: "service_role" });
+}
+await as(null, () => rpc("track_event", { p_visit: "visite0001", p_name: "plan_choisi", p_props: { plan: "pro", interval: "year" }, p_path: "/onboarding", p_device: "mobile" }), { role: "service_role" });
+await as(null, () => rpc("track_event", { p_visit: "visite0001", p_name: "session", p_props: { etat: "tenue", minutes: 50 }, p_path: "/app/session/x", p_device: "desktop" }), { role: "service_role" });
+await rejects("évènement inconnu refusé", () => as(null, () => rpc("track_event", { p_visit: "visite0004", p_name: "clic", p_props: {}, p_path: "/", p_device: "mobile" }), { role: "service_role" }), "check");
+await rejects("entonnoir réservé à l'admin", () => as(A, () => rpc("admin_funnel", { p_days: 30 }), { aal: "aal2" }), "réservé");
+const funnel = await as(ADMIN, () => rpc("admin_funnel", { p_days: 30 }), { aal: "aal2" });
+check("entonnoir : écrans dans l'ordre, visites distinctes", funnel.quiz.map((x) => `${x.screen}:${x.visits}`).join() === "intro:3,1-situation:2,2-objectif:1,result:1", JSON.stringify(funnel.quiz));
+check("entonnoir : plan choisi, sessions", funnel.plans[0]?.plan === "pro" && funnel.plans[0].visits === 1 && funnel.sessions.tenue === 1, JSON.stringify({ plans: funnel.plans, sessions: funnel.sessions }));
+check("nettoyage : rien de récent n'est effacé", (await val("select public.cron_analytics_cleanup()")) === 0);
+
 console.log(`\n${passed} réussis, ${failed} échoués.`);
 process.exit(failed ? 1 : 0);

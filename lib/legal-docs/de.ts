@@ -236,7 +236,7 @@ export const de: LegalSet = {
       },
       { h2: "Cookies" },
       {
-        p: "Nonante nutzt weder Werbung noch Tracking durch Dritte. Nur notwendige Cookies von Nonante, die nie geteilt werden: deine Anmeldesitzung; deine Sprache, wenn du sie wählst; die Quelle deines Besuchs, 30 Tage lang; und höchstens eine Stunde lang deine Antworten im Fragebogen während deiner Anmeldung mit Google. Die Reichweitenmessung setzt kein Cookie und verfolgt dich nicht von Website zu Website.",
+        p: "Nonante nutzt weder Werbung noch Tracking durch Dritte. Nur notwendige Cookies von Nonante, die nie geteilt werden: deine Anmeldesitzung; deine Sprache, wenn du sie wählst; die Quelle deines Besuchs, 30 Tage lang; und höchstens eine Stunde lang deine Antworten im Fragebogen während deiner Anmeldung mit Google. Die Reichweitenmessung setzt kein Cookie und verfolgt dich nicht von Website zu Website. Nonante zählt außerdem auf eigenen Servern anonym die durchlaufenen Schritte (Fragebogen-Bildschirme, gewählter Tarif, Timer-Sessions): kein Konto, keine IP-Adresse, nach 180 Tagen gelöscht.",
       },
       { h2: "Deine Rechte" },
       {
