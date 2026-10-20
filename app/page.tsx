@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { ActivityRings } from "@/components/ActivityRings";
 import { Aura } from "@/components/Aura";
@@ -41,6 +43,9 @@ const STEP_GLOW = ["glow-rose", "glow-violet", "glow-sky", "glow-mint"];
 /** Conteneur : une colonne sur téléphone, large sur ordinateur. */
 const wrap = "mx-auto w-full max-w-xl px-5 lg:max-w-6xl lg:px-8";
 
+// Adresse de référence pour Google (la page d'accueil, pas les conditions de vente).
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 export default async function Home() {
   const [{ supabase, user }, { m, locale }] = await Promise.all([getUser(), getI18n()]);
   const [{ data: proofData }, { data: plansData }] = await Promise.all([supabase.rpc("social_proof"), supabase.rpc("plans_public")]);
@@ -49,9 +54,17 @@ export default async function Home() {
   const l = m.landing;
   const cta = user ? "/app" : "/onboarding";
   const ctaLabel = user ? m.common.actions.myArc : m.common.actions.buildArc;
+  // Données structurées : Google affiche « Nonante » comme nom du site et relie la page d'accueil à la marque.
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nonante.fr";
+  const structured = [
+    { "@context": "https://schema.org", "@type": "WebSite", name: "Nonante", alternateName: "nonante.fr", url: site, inLanguage: "fr" },
+    { "@context": "https://schema.org", "@type": "Organization", name: "Nonante", url: site, logo: `${site}/icons/icon-512.png` },
+  ];
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <>
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(structured) }} />
       <div className="relative isolate overflow-x-clip">
         <Aura tone="rose" className="h-[44rem] opacity-60" />
         <header className={`${wrap} flex items-center justify-between pt-[max(1.25rem,env(safe-area-inset-top))]`}>

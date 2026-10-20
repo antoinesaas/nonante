@@ -1,5 +1,6 @@
 "use client";
 
+import { trackEvent } from "@/lib/track";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { completeWakeQuiz, startChallengeSession, startSession } from "@/app/actions/proofs";
@@ -75,6 +76,7 @@ export function WakeCheck(props: Props) {
       setBusy(false);
       if (r.status === "completed") {
         navigator.vibrate?.([12, 40, 12]);
+        trackEvent("calcul_mental", { justes: r.correct ?? 0, niveau: r.level ?? 0 });
         setResult({ ok: true, questions: r.questions, correct: r.correct, total: r.total, bonus: r.bonus, points: r.points, ms: r.duration_ms, level: r.level, next: r.next_level });
       } else if (r.status === "error") {
         setMessage(r.message ?? t.startFailed);

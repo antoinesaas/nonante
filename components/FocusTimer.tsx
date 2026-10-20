@@ -16,6 +16,7 @@ import { fmt } from "@/lib/i18n/format";
 import type { StartedSession } from "@/lib/types";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
 import { SESSION_BONUS_MAX, sessionDifficulty } from "@/lib/rules";
+import { trackEvent } from "@/lib/track";
 
 type Phase = "ready" | "starting" | "running" | "finishing" | "completed" | "broken" | "abandoned";
 
@@ -205,9 +206,11 @@ export function FocusTimer(props: Props) {
       setConfirmStop(false);
       if (status === "broken") {
         setPhase("broken");
+        trackEvent("session", { etat: "cassee", minutes: session.current?.minutes ?? null });
         setMessage(reasonText(reason, t));
       } else if (status === "abandoned") {
         setPhase("abandoned");
+        trackEvent("session", { etat: "arretee", minutes: session.current?.minutes ?? null });
       }
       void wakeLock.current?.release().catch(() => {});
     },
@@ -240,6 +243,7 @@ export function FocusTimer(props: Props) {
     const r = await completeSession(s.id, s.nonce);
     if (r.status === "completed") {
       setPhase("completed");
+      trackEvent("session", { etat: "tenue", minutes: session.current?.minutes ?? null, bonus: Boolean(r.bonus) });
       setPoints(r.points ?? null);
       if (r.bonus) {
         setBonusDone({ capped: Boolean(r.capped) });
@@ -287,6 +291,7 @@ export function FocusTimer(props: Props) {
     setRemaining((r.session.minutes ?? minutes) * 60);
     // Le geste « retour » ouvre la confirmation au lieu de quitter la page.
     window.history.pushState({ ...window.history.state, nonanteSession: true }, "", window.location.href);
+    trackEvent("session", { etat: "lancee", minutes: r.session.minutes ?? minutes, son: sound });
     setPhase("running");
     await requestWakeLock();
     void beat(true, 0);

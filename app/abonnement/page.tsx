@@ -14,7 +14,7 @@ import { btnLink, label } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
-  return { title: m.pages.plans.metaTitle, description: m.pages.plans.metaDescription };
+  return { title: m.pages.plans.metaTitle, description: m.pages.plans.metaDescription, alternates: { canonical: "/abonnement" } };
 }
 
 export default async function SubscriptionPage({ searchParams }: PageProps<"/abonnement">) {

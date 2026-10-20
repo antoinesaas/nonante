@@ -195,8 +195,8 @@ Français (source), anglais, allemand, espagnol : toute l'app, les emails et les
 ## 6. Stack et sécurité
 
 Next.js 16 (App Router, `proxy.ts`, Server Actions), TypeScript strict, Tailwind v4, Supabase (Auth, Postgres,
-RLS partout, Storage), Stripe, Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron, Web Analytics sans cookie,
-fonctions à Dublin `dub1`, à côté de Supabase eu-west-1). Domaine : nonante.fr (Search Console : propriété de domaine)
+RLS partout, Storage), Stripe, Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron, Web Analytics sans cookie, évènements de parcours via `lib/track.ts` : questionnaire écran par écran, plan choisi, paiement lancé, sessions du minuteur, calcul mental — visibles avec un compte Vercel Pro,
+fonctions à Dublin `dub1`, à côté de Supabase eu-west-1). Domaine : nonante.fr (Search Console : propriété de domaine ; robots d'indexation toujours servis en français, adresses canoniques sur les pages publiques, données structurées WebSite + Organization sur l'accueil)
 (Hostinger, A vers Vercel ; www redirige). Pas de notifications ni de rappels (retirés le 9 octobre 2026).
 
 - Le client ne décide jamais : toutes les écritures de jeu passent par des fonctions `security definer` qui

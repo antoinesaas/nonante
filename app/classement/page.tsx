@@ -16,7 +16,7 @@ import { btnPrimary, label, largeTitle } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
-  return { title: m.pages.leaderboard.metaTitle, description: m.pages.leaderboard.metaDescription };
+  return { title: m.pages.leaderboard.metaTitle, description: m.pages.leaderboard.metaDescription, alternates: { canonical: "/classement" } };
 }
 
 type Stats = { joueurs: number; arcs_en_cours: number; verts_aujourdhui: number; ont_lache: number; arcs_tenus: number };

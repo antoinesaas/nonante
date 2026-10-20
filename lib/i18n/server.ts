@@ -8,8 +8,13 @@ export async function getLocale(): Promise<Locale> {
   const chosen = (await cookies()).get(LOCALE_COOKIE)?.value;
   if (isLocale(chosen)) return chosen;
   const h = await headers();
+  // Robots d'indexation et d'aperçu : toujours le français, la langue de référence du site. Sinon Google, qui
+  // explore depuis les États-Unis, indexait la version anglaise (« Terms of sale » en tête des résultats).
+  if (CRAWLER.test(h.get("user-agent") ?? "")) return "fr";
   return detectLocale(h.get("accept-language"), h.get("x-vercel-ip-country"));
 }
+
+const CRAWLER = /bot\b|crawler|spider|slurp|googlebot|google-inspectiontool|bingbot|duckduckbot|yandex|baiduspider|applebot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot|discordbot/i;
 
 /** Pays de la requête (en-tête de Vercel), ou null en local. */
 export async function getCountry(): Promise<string | null> {

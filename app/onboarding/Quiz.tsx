@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { flushSync } from "react-dom";
+import { trackEvent } from "@/lib/track";
 import { continueWithGoogle, continueWithPlan, previewArc } from "@/app/actions/onboarding";
 import { ActivityRings, type RingTone } from "@/components/ActivityRings";
 import { Aura, type AuraTone } from "@/components/Aura";
@@ -517,6 +518,12 @@ export function Quiz({
 
   const step = steps[index];
   const answers = toAnswers(d);
+
+  // Entonnoir du questionnaire dans Vercel Analytics : chaque écran vu (accueil, question, construction, résultat…).
+  const screen = stage === "questions" ? `${index + 1}-${step}` : stage;
+  useEffect(() => {
+    trackEvent("questionnaire", { ecran: screen });
+  }, [screen]);
   const answersJson = JSON.stringify(answers);
   const startDate =
     answers.start === "today"
@@ -665,6 +672,7 @@ export function Quiz({
 
   function choose(plan: PlanId, interval: Interval) {
     setChoice({ plan, interval });
+    trackEvent("plan_choisi", { plan, interval, connecte: loggedIn });
     if (!loggedIn) {
       withTransition("forward", () => setStage("account"));
       remember("account");

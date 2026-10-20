@@ -11,7 +11,7 @@ async function pick(lang?: string | string[]) {
 
 export async function generateMetadata({ searchParams }: PageProps<"/legal/cgu">): Promise<Metadata> {
   const docs = await pick((await searchParams).lang);
-  return { title: docs.cgu.title };
+  return { title: docs.cgu.title, alternates: { canonical: "/legal/cgu" } };
 }
 
 export default async function CguPage({ searchParams }: PageProps<"/legal/cgu">) {

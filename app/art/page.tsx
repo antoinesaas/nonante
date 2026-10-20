@@ -9,7 +9,7 @@ import { getI18n } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
-  return { title: m.pages.credits.title, description: m.pages.credits.description };
+  return { title: m.pages.credits.title, description: m.pages.credits.description, alternates: { canonical: "/art" } };
 }
 
 function Figure({ art, variant, caption, square = false }: { art: Artwork; variant: "couleur" | "nb"; caption: React.ReactNode; square?: boolean }) {

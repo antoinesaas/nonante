@@ -10,7 +10,7 @@ import { btnPrimary, label } from "@/lib/ui";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { m } = await getI18n();
-  return { title: m.faq.metaTitle, description: m.faq.metaDescription };
+  return { title: m.faq.metaTitle, description: m.faq.metaDescription, alternates: { canonical: "/faq" } };
 }
 
 const DELAYS = ["[animation-delay:120ms]", "[animation-delay:180ms]", "[animation-delay:240ms]", "[animation-delay:300ms]"];

@@ -11,7 +11,7 @@ async function pick(lang?: string | string[]) {
 
 export async function generateMetadata({ searchParams }: PageProps<"/legal/mentions">): Promise<Metadata> {
   const docs = await pick((await searchParams).lang);
-  return { title: docs.mentions.title };
+  return { title: docs.mentions.title, alternates: { canonical: "/legal/mentions" } };
 }
 
 export default async function MentionsPage({ searchParams }: PageProps<"/legal/mentions">) {

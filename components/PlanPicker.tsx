@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { type CheckoutState, startCheckout } from "@/app/actions/checkout";
+import { trackEvent } from "@/lib/track";
 import { useI18n } from "@/components/I18nProvider";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
 import { fmt, formatMoney } from "@/lib/i18n/format";
@@ -34,7 +35,7 @@ function CheckoutForm({ plan, interval, cta, primary }: { plan: PlanId; interval
   const { m } = useI18n();
   const [state, formAction] = useActionState(startCheckout, initial);
   return (
-    <form action={formAction} className="mt-6">
+    <form action={formAction} onSubmit={() => trackEvent("paiement_lance", { plan, interval })} className="mt-6">
       <input type="hidden" name="plan" value={plan} />
       <input type="hidden" name="interval" value={interval} />
       <SubmitButton className={primary ? btnPrimary : `${btnSecondary} w-full`} pendingLabel={m.common.actions.redirecting}>
