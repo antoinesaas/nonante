@@ -5,10 +5,13 @@ import Link from "next/link";
 import { Aura } from "@/components/Aura";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { completeReps, startChallengeSession, startSession, validateDeclaratif } from "@/app/actions/proofs";
+import { changeReps, completeReps, startChallengeSession, startSession, validateDeclaratif } from "@/app/actions/proofs";
+import { DurationPicker } from "@/components/DurationPicker";
+import { Sheet } from "@/components/Sheet";
 import { useI18n } from "@/components/I18nProvider";
 import { fmt } from "@/lib/i18n/format";
-import { type Exercise, jointAngle, RepTracker } from "@/lib/reps";
+import { type Exercise, measure, type Measure, RepTracker } from "@/lib/reps";
+import { repsDifficulty } from "@/lib/rules";
 import type { StartedSession } from "@/lib/types";
 import { btnLink, btnPrimary, btnSecondary } from "@/lib/ui";
 
@@ -31,6 +34,10 @@ function loadModel(delegate: "GPU" | "CPU" = "GPU"): Promise<PoseLandmarker> {
       baseOptions: { modelAssetPath: "/models/pose_landmarker_lite.task", delegate: d },
       runningMode: "VIDEO" as const,
       numPoses: 1,
+      // Plus exigeant que les valeurs par défaut (0,5) : moins de points fantômes, donc moins de faux comptages.
+      minPoseDetectionConfidence: 0.6,
+      minPosePresenceConfidence: 0.6,
+      minTrackingConfidence: 0.6,
     });
     // GPU si possible, sinon processeur (plus lent mais disponible partout).
     if (delegate === "CPU") return PoseLandmarker.createFromOptions(vision, options("CPU"));
@@ -41,6 +48,16 @@ function loadModel(delegate: "GPU" | "CPU" = "GPU"): Promise<PoseLandmarker> {
   });
   return model;
 }
+
+// Nombres de répétitions proposés : de 5 en 5 jusqu'à 100, puis de 10 en 10, puis de 25 en 25 jusqu'à 300.
+const REP_VALUES = [
+  ...Array.from({ length: 20 }, (_, i) => 5 + i * 5),
+  ...Array.from({ length: 10 }, (_, i) => 110 + i * 10),
+  225,
+  250,
+  275,
+  300,
+];
 
 type VideoWithFrames = HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number; cancelVideoFrameCallback?: (id: number) => void };
 
@@ -56,6 +73,11 @@ export function RepCounter(props: Props) {
   const [count, setCount] = useState(0);
   const [status, setStatus] = useState<string>(t.frame);
   const [message, setMessage] = useState<string | null>(null);
+  const [exercise, setExercise] = useState<Exercise>(props.exercise);
+  const [target, setTarget] = useState<number | null>(props.target);
+  const [editing, setEditing] = useState(false);
+  const principleId = useRef(props.mode === "principle" ? props.principleId : null);
+  const depthBar = useRef<SVGRectElement>(null);
 
   const video = useRef<VideoWithFrames>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -68,7 +90,8 @@ export function RepCounter(props: Props) {
   const shown = useRef(t.frame);
   const gpuFailed = useRef(false);
 
-  const name = t.names[props.exercise];
+  const name = t.names[exercise];
+  const repValues = target !== null && !REP_VALUES.includes(target) ? [...REP_VALUES, target].sort((a, b) => a - b) : REP_VALUES;
 
   /** Texte d'aide : un rendu seulement quand il change (pas 30 fois par seconde). */
   function say(text: string) {
@@ -121,11 +144,12 @@ export function RepCounter(props: Props) {
   }
 
   /** Détection sur l'image courante ; si le GPU plante en cours de route, on repasse sur le processeur. */
-  function detect(v: HTMLVideoElement, now: number): number | null | undefined {
+  function detect(v: HTMLVideoElement, now: number): Measure | null | undefined {
     const lm = landmarker.current;
     if (!lm) return undefined;
     try {
-      return jointAngle(lm.detectForVideo(v, now).landmarks[0], props.exercise);
+      const r = lm.detectForVideo(v, now);
+      return measure(r.landmarks[0], r.worldLandmarks?.[0], exercise);
     } catch {
       if (!gpuFailed.current) {
         gpuFailed.current = true;
@@ -172,19 +196,31 @@ export function RepCounter(props: Props) {
     everyFrame(() => {
       if (tracker.current) return false;
       const a = detect(v, performance.now());
-      if (a !== undefined) say(a === null ? t.frame : t.framed);
+      if (a !== undefined) say(a === null ? t.frames[exercise] : t.framed);
       return true;
     });
   }
 
   async function begin() {
-    const r = props.mode === "principle" ? await startSession(props.principleId) : await startChallengeSession(props.assignmentId, null);
+    // Exercice ou nombre changés : le principe suit d'abord (comme la durée du minuteur).
+    if (props.mode === "principle" && principleId.current && (exercise !== props.exercise || target !== props.target) && target !== null) {
+      const c = await changeReps(principleId.current, exercise, target);
+      if (!c.principleId) {
+        setMessage(c.message ?? t.startFailed);
+        return;
+      }
+      if (c.principleId !== principleId.current) {
+        principleId.current = c.principleId;
+        window.history.replaceState(window.history.state, "", `/app/reps/${c.principleId}`);
+      }
+    }
+    const r = props.mode === "principle" ? await startSession(principleId.current!) : await startChallengeSession(props.assignmentId, null);
     if (!r.session) {
       setMessage(r.message ?? t.startFailed);
       return;
     }
     session.current = r.session;
-    const tr = new RepTracker(props.exercise);
+    const tr = new RepTracker(exercise);
     tracker.current = tr;
     t0.current = performance.now();
     setCount(0);
@@ -196,19 +232,35 @@ export function RepCounter(props: Props) {
       const a = detect(v, now);
       if (a === undefined) return true;
       if (a === null) {
-        say(t.frame);
+        tr.lost(now - t0.current);
+        say(t.frames[exercise]);
         return true;
       }
       const event = tr.update(a, now - t0.current);
+      depthBar.current?.setAttribute("y", String(100 - 100 * tr.depth));
       if (event === "rep") {
         setCount(tr.reps.length);
         if (navigator.vibrate) navigator.vibrate(30);
-        if (props.target !== null && tr.reps.length >= props.target) {
+        if (target !== null && tr.reps.length >= target) {
           void submit();
           return false;
         }
       }
-      say(event === "too_fast" ? t.tooFast : event === "too_slow" ? t.tooSlow : tr.phase === "down" || tr.phase === "descending" ? t.up : t.down);
+      say(
+        event === "too_fast"
+          ? t.tooFast
+          : event === "too_slow"
+            ? t.tooSlow
+            : event === "partial"
+              ? t.deeper[exercise]
+              : event === "posture"
+                ? t.posture[exercise]
+                : event === null && shown.current === t.deeper[exercise] && tr.phase === "up"
+                  ? t.deeper[exercise]
+                  : tr.phase === "down"
+                    ? t.up
+                    : t.down,
+      );
       return true;
     });
   }
@@ -233,12 +285,15 @@ export function RepCounter(props: Props) {
   async function withoutCamera() {
     if (props.mode !== "principle") return;
     stopCamera();
-    const r = await validateDeclaratif(props.principleId);
+    const r = await validateDeclaratif(principleId.current!);
     setPhase(r.ok ? "done" : "error");
     setMessage(r.message);
   }
 
-  const goal = props.target !== null ? `${props.target} ${name}` : name;
+  const goal = target !== null ? `${target} ${name}` : name;
+  const changed = exercise !== props.exercise || target !== props.target;
+  // Points sans caméra (preuve faible, la moitié), recalculés si l'objectif change.
+  const weak = props.mode === "principle" && changed && target !== null ? repsDifficulty(exercise, target) * 5 : props.weakPoints;
   const cameraVisible = phase === "loading" || phase === "ready" || phase === "counting";
 
   return (
@@ -251,7 +306,7 @@ export function RepCounter(props: Props) {
           </svg>
         </Link>
       </div>
-      <p className="relative z-10 mt-3 text-center text-sm text-mute">{props.label}</p>
+      {changed ? null : <p className="relative z-10 mt-3 text-center text-sm text-mute">{props.label}</p>}
 
       <div className={`relative z-10 mt-5 aspect-[3/4] w-full overflow-hidden rounded-[2rem] bg-surface shadow-[inset_0_0_0_1px_rgb(255_255_255/0.08)] ${cameraVisible ? "animate-in" : "hidden"}`}>
         <video ref={video} playsInline muted autoPlay className="h-full w-full -scale-x-100 object-cover" />
@@ -265,13 +320,18 @@ export function RepCounter(props: Props) {
         ) : null}
         {phase === "counting" ? (
           <>
+            {/* Profondeur de la répétition en cours : pleine = assez bas pour compter. */}
+            <svg viewBox="0 0 10 100" preserveAspectRatio="none" className="absolute top-16 right-3 h-[45%] w-2.5" role="img" aria-label={t.depth}>
+              <rect width="10" height="100" rx="5" className="fill-white/15" />
+              <rect ref={depthBar} y="100" width="10" height="100" rx="5" className="fill-[#ffb340] transition-[y] duration-75" />
+            </svg>
             <p className="glass absolute inset-x-3 top-3 rounded-full px-4 py-2 text-center text-sm">{status}</p>
             <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-ink/90 to-transparent p-5 pt-12 text-center">
               <p className="font-dot text-[88px] leading-none">
                 <span key={count} className="inline-block animate-pop">
                   {count}
                 </span>
-                {props.target !== null ? <span className="text-3xl text-mute"> / {props.target}</span> : null}
+                {target !== null ? <span className="text-3xl text-mute"> / {target}</span> : null}
               </p>
             </div>
           </>
@@ -282,16 +342,21 @@ export function RepCounter(props: Props) {
         {phase === "intro" ? (
           <>
             <div className="glow-amber grid size-36 place-items-center rounded-full">
-              <span className="font-dot text-[48px] leading-none">{props.target ?? "∞"}</span>
+              <span className="font-dot text-[48px] leading-none">{target ?? "∞"}</span>
             </div>
             <h1 className="font-display text-[30px] leading-tight">{fmt(t.goal, { goal })}</h1>
-            <p className="text-sm leading-relaxed text-mute">{t.setup}</p>
+            {props.mode === "principle" ? (
+              <button type="button" onClick={() => setEditing(true)} className="liquid press -mt-1 h-9 rounded-full px-4 text-[13px] font-medium">
+                {t.change}
+              </button>
+            ) : null}
+            <p className="text-sm leading-relaxed text-mute">{t.setups[exercise]}</p>
             <button type="button" onClick={enableCamera} className={btnPrimary}>
               {t.enable}
             </button>
             {props.mode === "principle" ? (
               <button type="button" onClick={withoutCamera} className={btnLink}>
-                {fmt(t.without, { n: props.weakPoints, full: props.weakPoints * 2 })}
+                {fmt(t.without, { n: weak ?? 0, full: (weak ?? 0) * 2 })}
               </button>
             ) : null}
           </>
@@ -323,7 +388,7 @@ export function RepCounter(props: Props) {
             </button>
             {props.mode === "principle" ? (
               <button type="button" onClick={withoutCamera} className={btnLink}>
-                {fmt(t.withoutShort, { n: props.weakPoints })}
+                {fmt(t.withoutShort, { n: weak ?? 0 })}
               </button>
             ) : null}
           </>
@@ -338,7 +403,7 @@ export function RepCounter(props: Props) {
             </button>
             {props.mode === "principle" ? (
               <button type="button" onClick={withoutCamera} className={btnLink}>
-                {fmt(t.withoutShort, { n: props.weakPoints })}
+                {fmt(t.withoutShort, { n: weak ?? 0 })}
               </button>
             ) : null}
           </>
@@ -360,6 +425,31 @@ export function RepCounter(props: Props) {
           </p>
         ) : null}
       </div>
+
+      {props.mode === "principle" && target !== null ? (
+        <Sheet open={editing && phase === "intro"} onClose={() => setEditing(false)} title={t.changeTitle}>
+          <p className="text-[13px] font-medium text-mute">{t.exercise}</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {(["pushup", "squat"] as const).map((x) => (
+              <button
+                key={x}
+                type="button"
+                onClick={() => setExercise(x)}
+                aria-pressed={exercise === x}
+                className={`press h-11 rounded-full text-sm font-semibold capitalize ${exercise === x ? "pearl" : "liquid text-paper/85"}`}
+              >
+                {t.names[x]}
+              </button>
+            ))}
+          </div>
+          <p className="mt-6 mb-2 text-[13px] font-medium text-mute">{t.count}</p>
+          <DurationPicker value={target} onChange={setTarget} label={t.count} unit={t.names[exercise]} values={repValues} />
+          <p className="mt-3 text-xs text-mute">{t.changeHint}</p>
+          <button type="button" onClick={() => setEditing(false)} className={`${btnPrimary} mt-6 mb-2`}>
+            {t.apply}
+          </button>
+        </Sheet>
+      ) : null}
     </main>
   );
 }

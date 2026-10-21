@@ -1512,6 +1512,7 @@ export type Database = {
       set_my_country: { Args: { p_country: string | null }; Returns: undefined };
       set_my_locale: { Args: { p_locale: string | null }; Returns: undefined };
       set_referral_promo: { Args: { p_user: string | null; p_promotion_code_id: string | null }; Returns: undefined };
+      set_reps_target: { Args: { p_id: string | null; p_exercise: string | null; p_reps: number | null }; Returns: string };
       set_session_minutes: { Args: { p_id: string | null; p_minutes: number | null }; Returns: string };
       set_start_date: { Args: { p_date: string | null }; Returns: undefined };
       set_stripe_customer: { Args: { p_user: string | null; p_customer: string | null }; Returns: undefined };

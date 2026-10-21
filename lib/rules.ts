@@ -21,6 +21,10 @@ export const SESSION_BONUS_MAX = 3;
 /** Difficulté d'une session selon sa durée (comme `_difficulty` en SQL). */
 export const sessionDifficulty = (minutes: number) => (minutes <= 25 ? 1 : minutes <= 50 ? 2 : 3);
 
+/** Difficulté des répétitions (comme `_difficulty` en SQL) : pompes ≤ 15/≤ 40/plus, squats ≤ 25/≤ 60/plus. */
+export const repsDifficulty = (exercise: "pushup" | "squat", reps: number) =>
+  exercise === "squat" ? (reps <= 25 ? 1 : reps <= 60 ? 2 : 3) : reps <= 15 ? 1 : reps <= 40 ? 2 : 3;
+
 export const MENTAL_MATH = { questions: 5, pointsPerRight: 5 } as const;
 export const BROKEN_SESSION_PENALTY = -5;
 /** Contrôle refusé ou non envoyé : − 3 × valeur ; revenu refusé : − 30. */

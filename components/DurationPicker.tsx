@@ -10,19 +10,34 @@ const ITEM = 64;
  * Sélecteur de durée qu'on fait glisser (roue horizontale façon iOS) : la valeur au centre est choisie.
  * Défilement natif avec aimantation (fluide, avec l'élan du doigt) ; un toucher sur une valeur y va aussi.
  */
-export function DurationPicker({ value, onChange, label, unit }: { value: number; onChange: (n: number) => void; label: string; unit: string }) {
+export function DurationPicker({
+  value,
+  onChange,
+  label,
+  unit,
+  values = DURATIONS,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  label: string;
+  unit: string;
+  /** Valeurs proposées (durées par défaut ; aussi le nombre de répétitions). */
+  values?: number[];
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const current = useRef(value);
 
   // Position de départ : la durée du principe au centre, sans animation.
   useEffect(() => {
     const el = ref.current;
-    const i = DURATIONS.indexOf(current.current);
+    const i = values.indexOf(current.current);
     if (el && i >= 0) el.scrollLeft = i * ITEM;
+    // Position de départ seulement : la suite vient du doigt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function go(n: number, smooth = true) {
-    const i = DURATIONS.indexOf(n);
+    const i = values.indexOf(n);
     if (i >= 0) ref.current?.scrollTo({ left: i * ITEM, behavior: smooth ? "smooth" : "instant" });
   }
 
@@ -34,28 +49,28 @@ export function DurationPicker({ value, onChange, label, unit }: { value: number
         role="slider"
         tabIndex={0}
         aria-label={label}
-        aria-valuemin={DURATIONS[0]}
-        aria-valuemax={DURATIONS[DURATIONS.length - 1]}
+        aria-valuemin={values[0]}
+        aria-valuemax={values[values.length - 1]}
         aria-valuenow={value}
         aria-valuetext={`${value} ${unit}`}
         onScroll={(e) => {
-          const i = Math.max(0, Math.min(DURATIONS.length - 1, Math.round(e.currentTarget.scrollLeft / ITEM)));
-          const n = DURATIONS[i];
+          const i = Math.max(0, Math.min(values.length - 1, Math.round(e.currentTarget.scrollLeft / ITEM)));
+          const n = values[i];
           if (n !== current.current) {
             current.current = n;
             onChange(n);
           }
         }}
         onKeyDown={(e) => {
-          const i = DURATIONS.indexOf(value);
-          if (e.key === "ArrowRight" || e.key === "ArrowUp") go(DURATIONS[Math.min(DURATIONS.length - 1, i + 1)]);
-          else if (e.key === "ArrowLeft" || e.key === "ArrowDown") go(DURATIONS[Math.max(0, i - 1)]);
+          const i = values.indexOf(value);
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") go(values[Math.min(values.length - 1, i + 1)]);
+          else if (e.key === "ArrowLeft" || e.key === "ArrowDown") go(values[Math.max(0, i - 1)]);
           else return;
           e.preventDefault();
         }}
         className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-[calc(50%-32px)] outline-none [mask-image:linear-gradient(to_right,transparent,#000_30%,#000_70%,transparent)] [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-white/50 [&::-webkit-scrollbar]:hidden"
       >
-        {DURATIONS.map((n) => {
+        {values.map((n) => {
           const on = n === value;
           return (
             <button

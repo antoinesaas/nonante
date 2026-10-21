@@ -466,6 +466,24 @@ if (await val("select public.paris_now()::time > '22:59'")) {
   check("historique de l'arc : du jour 1 à aujourd'hui", hist.days.length >= 1 && hist.days.at(-1).day === today && hist.days[0].day === hist.start, JSON.stringify({ start: hist.start, n: hist.days.length }));
 }
 
+console.log("\nRépétitions : exercice et nombre changés (v18)");
+const repsA = await as(B, () => rpc("save_principle", {
+  p_id: null, p_pillar: "corps", p_if: "je sors du lit", p_then: "20 pompes", p_proof_type: "reps",
+  p_target: JSON.stringify({ exercise: "pushup", reps: 20 }), p_days: [1, 2, 3, 4, 5, 6, 7], p_difficulty: 1,
+}));
+await q("update public.principles set active_from = public.paris_today() - 1 where id = $1", [repsA]);
+const squatsA = await as(B, () => rpc("set_reps_target", { p_id: repsA, p_exercise: "squat", p_reps: 30 }));
+const sq = await one("select * from public.principles where id = $1", [squatsA]);
+check("pompes → 30 squats : cible, texte, difficulté", sq.target.exercise === "squat" && sq.target.reps === 30 && sq.then_text === "alors 30 squats." && sq.difficulty === 2, JSON.stringify(sq));
+const backA = await as(B, () => rpc("set_reps_target", { p_id: squatsA, p_exercise: "pushup", p_reps: 50 }));
+const pu = await one("select * from public.principles where id = $1", [backA]);
+check("squats → 50 pompes (difficulté 3)", pu.then_text === "alors 50 pompes." && pu.difficulty === 3, JSON.stringify(pu));
+await rejects("moins de 5 répétitions refusé", () => as(B, () => rpc("set_reps_target", { p_id: backA, p_exercise: "pushup", p_reps: 4 })), "de 5 à 300");
+await rejects("exercice inconnu refusé", () => as(B, () => rpc("set_reps_target", { p_id: backA, p_exercise: "burpee", p_reps: 10 })), "pompes ou squats");
+check("traduction du texte (anglais, allemand)", (await val("select public._reps_text('then 20 push-ups', 'squat', 25, 'en')")) === "then 25 squats"
+  && (await val("select public._reps_text('dann 20 Kniebeugen', 'pushup', 15, 'de')")) === "dann 15 Liegestütze");
+await as(B, () => rpc("remove_principle", { p_id: backA }));
+
 // ---------------------------------------------------------------------------
 console.log("\nJokers");
 const j1 = await as(A, () => rpc("use_joker"));

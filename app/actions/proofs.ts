@@ -176,6 +176,21 @@ export async function startSession(principleId: string, minutes?: number): Promi
   return { session: data as StartedSession, principleId: id };
 }
 
+/**
+ * Répétitions : exercice (pompes ou squats) et nombre changés juste avant de commencer. Le principe suit (il peut
+ * changer d'identifiant s'il était déjà en vigueur) : v18, set_reps_target.
+ */
+export async function changeReps(principleId: string, exercise: string, reps: number): Promise<{ principleId?: string; message?: string }> {
+  if (!Id.safeParse(principleId).success || (exercise !== "pushup" && exercise !== "squat") || !Number.isInteger(reps) || reps < 5 || reps > 300) {
+    return { message: await invalid() };
+  }
+  const ctx = await context("session", 20);
+  if ("error" in ctx) return { message: ctx.error!.message ?? undefined };
+  const { data, error } = await ctx.supabase.rpc("set_reps_target", { p_id: principleId, p_exercise: exercise, p_reps: reps });
+  if (error) return { message: userMessage(error, ctx.i18n) };
+  return { principleId: data as string };
+}
+
 export async function startChallengeSession(
   assignmentId: string,
   minutes: number | null,
