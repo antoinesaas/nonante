@@ -213,6 +213,17 @@ export const quiz = {
     privacy: "Nonante reçoit seulement ton email, ton nom et ta photo Google. Rien n'est publié en ton nom.",
     backToPlans: "Revenir aux plans",
   },
+  exit: {
+    title: "Avant de partir…",
+    text: "Qu'est-ce qui te retient ? Ta réponse arrive directement chez nous, et elle nous aide à améliorer Nonante.",
+    reasons: { prix: "C'est trop cher", moment: "Ce n'est pas le bon moment", doute: "Je doute que ça marche pour moi", essai: "Je voudrais essayer avant de payer", confiance: "Je ne connais pas encore Nonante", autre: "Autre chose" },
+    placeholder: "Dis-nous en plus (facultatif)",
+    send: "Envoyer",
+    sending: "Envoi…",
+    stay: "Revenir à mon arc",
+    thanksTitle: "Merci.",
+    thanks: "Ta réponse est bien arrivée. Ton arc reste prêt si tu changes d'avis.",
+  },
   suite: {
     title: "Dernière étape",
     hand: "presque fini",

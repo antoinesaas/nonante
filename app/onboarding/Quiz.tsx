@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { flushSync } from "react-dom";
 import { trackEvent } from "@/lib/track";
+import { ExitSurvey } from "@/components/ExitSurvey";
 import { continueWithGoogle, continueWithPlan, previewArc } from "@/app/actions/onboarding";
 import { ActivityRings, type RingTone } from "@/components/ActivityRings";
 import { Aura, type AuraTone } from "@/components/Aura";
@@ -776,6 +777,8 @@ export function Quiz({
         <Aura tone="violet" className="h-[34rem]" />
         <main className="mx-auto w-full max-w-xl px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-32 lg:max-w-5xl">
           <Logo size="sm" />
+          {/* Demi-tour sur l'arc prêt : « Avant de partir… » (une fois par visite). */}
+          <ExitSurvey place="resultat" />
 
           <div className="lg:grid lg:grid-cols-[1fr_1fr] lg:gap-16">
             <div>

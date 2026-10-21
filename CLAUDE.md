@@ -195,7 +195,7 @@ Français (source), anglais, allemand, espagnol : toute l'app, les emails et les
 ## 6. Stack et sécurité
 
 Next.js 16 (App Router, `proxy.ts`, Server Actions), TypeScript strict, Tailwind v4, Supabase (Auth, Postgres,
-RLS partout, Storage), Stripe, Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron, Web Analytics sans cookie, évènements de parcours via `lib/track.ts` : questionnaire écran par écran, plan choisi, paiement lancé, sessions du minuteur, calcul mental — envoyés à Vercel (visibles en Pro seulement) et enregistrés chez nous, anonymes, par `/api/track` dans `analytics_events` (v16, effacés après 180 jours), lus dans `/admin/entonnoir`,
+RLS partout, Storage), Stripe, Resend facultatif, MediaPipe, sharp, Zod, Vercel (+ Cron, Web Analytics sans cookie, évènements de parcours via `lib/track.ts` : questionnaire écran par écran, plan choisi, paiement lancé, sessions du minuteur, calcul mental — envoyés à Vercel (visibles en Pro seulement) et enregistrés chez nous, anonymes, par `/api/track` dans `analytics_events` (v16, effacés après 180 jours), lus dans `/admin/entonnoir` ; « Avant de partir… » (`ExitSurvey`) quand on fait demi-tour sur l'arc prêt ou la dernière étape avant paiement, réponses dans `exit_feedback` (v17, un an),
 fonctions à Dublin `dub1`, à côté de Supabase eu-west-1). Domaine : nonante.fr (Search Console : propriété de domaine ; robots d'indexation toujours servis en français, adresses canoniques sur les pages publiques, données structurées WebSite + Organization sur l'accueil)
 (Hostinger, A vers Vercel ; www redirige). Pas de notifications ni de rappels (retirés le 9 octobre 2026).
 

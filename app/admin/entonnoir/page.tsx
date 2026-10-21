@@ -6,6 +6,14 @@ import { getMessages } from "@/lib/i18n/messages";
 // L'administration reste en français.
 const PLAN_NAME: Record<string, string> = getMessages("fr").game.plans.name;
 
+type Exits = {
+  reasons: { reason: string; count: number }[];
+  latest: { at: string; place: string; reason: string; message: string | null; pseudo: string | null }[];
+};
+
+const REASON: Record<string, string> = getMessages("fr").quiz.exit.reasons;
+const PLACE: Record<string, string> = { resultat: "arc prêt", suite: "dernière étape" };
+
 type Funnel = {
   from: string;
   days: { day: string; visits: number }[];
@@ -68,9 +76,13 @@ export default async function FunnelPage({ searchParams }: PageProps<"/admin/ent
   const { supabase } = await requireAdmin();
   const asked = Number((await searchParams).jours);
   const days = (PERIODS as readonly number[]).includes(asked) ? asked : 30;
-  const { data, error } = await supabase.rpc("admin_funnel", { p_days: days });
+  const [{ data, error }, { data: exitData }] = await Promise.all([
+    supabase.rpc("admin_funnel", { p_days: days }),
+    supabase.rpc("admin_exit_feedback", { p_days: days }),
+  ]);
   if (error) return <p role="alert">{error.message}</p>;
   const f = data as Funnel;
+  const exits = (exitData as Exits | null) ?? { reasons: [], latest: [] };
   const top = f.quiz[0]?.visits ?? 0;
   const max = Math.max(1, ...f.quiz.map((q) => q.visits));
   const chosen = f.plans.reduce((n, p) => n + p.visits, 0);
@@ -130,6 +142,38 @@ export default async function FunnelPage({ searchParams }: PageProps<"/admin/ent
           <p className="mt-4 text-sm text-mute">Pas encore de données sur cette période.</p>
         )}
         <p className="mt-2 text-xs text-mute">En rouge : part des visiteurs de l&apos;écran précédent qui s&apos;arrêtent là.</p>
+      </section>
+
+      <section>
+        <h2 className="font-display text-3xl">Pourquoi ils partent</h2>
+        <p className="mt-1 text-sm text-mute">Réponses à « Avant de partir… », sur l&apos;arc prêt et la dernière étape avant le paiement.</p>
+        <ul className="mt-4 divide-y divide-line border-y border-line text-sm">
+          {exits.reasons.length ? (
+            exits.reasons.map((r) => (
+              <li key={r.reason} className="flex justify-between py-2">
+                <span>{REASON[r.reason] ?? r.reason}</span>
+                <span className="tabular-nums">{r.count}</span>
+              </li>
+            ))
+          ) : (
+            <li className="py-2 text-mute">Aucune réponse sur cette période.</li>
+          )}
+        </ul>
+        {exits.latest.some((x) => x.message) ? (
+          <ul className="mt-6 space-y-3 text-sm">
+            {exits.latest
+              .filter((x) => x.message)
+              .map((x) => (
+                <li key={x.at} className="border border-line p-3">
+                  <p className="whitespace-pre-line">{x.message}</p>
+                  <p className="mt-2 text-xs text-mute">
+                    {formatDayFr(x.at.slice(0, 10))} · {REASON[x.reason] ?? x.reason} · {PLACE[x.place] ?? x.place}
+                    {x.pseudo ? ` · ${x.pseudo}` : ""}
+                  </p>
+                </li>
+              ))}
+          </ul>
+        ) : null}
       </section>
 
       <section>

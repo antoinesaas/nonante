@@ -214,6 +214,17 @@ export const quiz: typeof fr = {
     privacy: "Nonante erhält nur deine Google-E-Mail, deinen Namen und dein Foto. Nichts wird in deinem Namen gepostet.",
     backToPlans: "Zurück zu den Plänen",
   },
+  exit: {
+    title: "Bevor du gehst…",
+    text: "Was hält dich zurück? Deine Antwort kommt direkt bei uns an und hilft uns, Nonante zu verbessern.",
+    reasons: { prix: "Es ist zu teuer", moment: "Gerade passt es nicht", doute: "Ich zweifle, dass es bei mir klappt", essai: "Ich möchte es erst ausprobieren", confiance: "Ich kenne Nonante noch nicht", autre: "Etwas anderes" },
+    placeholder: "Erzähl uns mehr (optional)",
+    send: "Senden",
+    sending: "Wird gesendet…",
+    stay: "Zurück zu meinem Arc",
+    thanksTitle: "Danke.",
+    thanks: "Deine Antwort ist angekommen. Dein Arc bleibt bereit, falls du es dir anders überlegst.",
+  },
   suite: {
     title: "Letzter Schritt",
     hand: "fast fertig",

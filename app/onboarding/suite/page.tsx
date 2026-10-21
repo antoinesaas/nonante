@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SuiteForm } from "@/app/onboarding/suite/SuiteForm";
+import { ExitSurvey } from "@/components/ExitSurvey";
 import { Aura } from "@/components/Aura";
 import { Logo } from "@/components/Logo";
 import { Answers, startDateOf } from "@/lib/answers";
@@ -92,6 +93,7 @@ export default async function SuitePage() {
           ) : null}
         </dl>
 
+        {!covered ? <ExitSurvey place="suite" /> : null}
         <div className="mt-7 animate-in [animation-delay:240ms]">
           <SuiteForm
             needsProfile={!profile}

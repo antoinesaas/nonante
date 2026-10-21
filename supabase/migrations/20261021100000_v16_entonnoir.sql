@@ -9,7 +9,7 @@ create table if not exists public.analytics_events (
   created_at timestamptz not null default now(),
   day date not null default public.paris_today(),
   visit text not null check (visit ~ '^[a-z0-9]{8,32}$'),
-  name text not null check (name in ('questionnaire', 'plan_choisi', 'paiement_lance', 'session', 'calcul_mental')),
+  name text not null check (name in ('questionnaire', 'plan_choisi', 'paiement_lance', 'session', 'calcul_mental', 'depart')),
   props jsonb not null default '{}' check (jsonb_typeof(props) = 'object' and pg_column_size(props) <= 1000),
   path text check (length(path) <= 200),
   device text check (device in ('mobile', 'desktop'))

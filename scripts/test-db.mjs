@@ -862,5 +862,17 @@ check("entonnoir : écrans dans l'ordre, visites distinctes", funnel.quiz.map((x
 check("entonnoir : plan choisi, sessions", funnel.plans[0]?.plan === "pro" && funnel.plans[0].visits === 1 && funnel.sessions.tenue === 1, JSON.stringify({ plans: funnel.plans, sessions: funnel.sessions }));
 check("nettoyage : rien de récent n'est effacé", (await val("select public.cron_analytics_cleanup()")) === 0);
 
+console.log("\nPourquoi tu pars (v17)");
+await rejects("un joueur n'écrit pas de raison de départ", () => as(A, () => rpc("save_exit_feedback", { p_place: "suite", p_reason: "prix", p_message: "x", p_user: A, p_locale: "fr" })), "denied");
+await as(null, () => rpc("save_exit_feedback", { p_place: "resultat", p_reason: "prix", p_message: "  Trop cher pour un étudiant  ", p_user: null, p_locale: "fr" }), { role: "service_role" });
+await as(null, () => rpc("save_exit_feedback", { p_place: "suite", p_reason: "prix", p_message: "", p_user: A, p_locale: "fr" }), { role: "service_role" });
+await as(null, () => rpc("save_exit_feedback", { p_place: "suite", p_reason: "essai", p_message: null, p_user: null, p_locale: "en" }), { role: "service_role" });
+await rejects("raison inconnue refusée", () => as(null, () => rpc("save_exit_feedback", { p_place: "suite", p_reason: "spam", p_message: "", p_user: null, p_locale: "fr" }), { role: "service_role" }), "check");
+await rejects("raisons réservées à l'admin", () => as(A, () => rpc("admin_exit_feedback", { p_days: 30 }), { aal: "aal2" }), "réservé");
+const exits = await as(ADMIN, () => rpc("admin_exit_feedback", { p_days: 30 }), { aal: "aal2" });
+check("raisons comptées (prix 2, essai 1)", exits.reasons.map((r) => `${r.reason}:${r.count}`).join() === "prix:2,essai:1", JSON.stringify(exits.reasons));
+check("message nettoyé, vide gardé nul, pseudo du joueur connecté", exits.latest.some((x) => x.message === "Trop cher pour un étudiant" && x.pseudo === null)
+  && exits.latest.some((x) => x.place === "suite" && x.reason === "prix" && x.message === null && x.pseudo), JSON.stringify(exits.latest));
+
 console.log(`\n${passed} réussis, ${failed} échoués.`);
 process.exit(failed ? 1 : 0);

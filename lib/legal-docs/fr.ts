@@ -238,7 +238,7 @@ export const fr: LegalSet = {
       },
       { h2: "Cookies" },
       {
-        p: "Nonante n'utilise ni publicité ni pistage tiers. Seulement des cookies nécessaires, propres à Nonante et jamais partagés : ta session de connexion ; ta langue, si tu la choisis ; la source de ta visite, pendant 30 jours ; et, pendant une heure au plus, tes réponses au questionnaire le temps de ta connexion avec Google. La mesure d'audience ne dépose aucun cookie et ne te suit pas d'un site à l'autre. Nonante compte aussi, chez lui, les étapes franchies (écrans du questionnaire, plan choisi, sessions du minuteur), de façon anonyme : ni compte, ni adresse IP, effacées après 180 jours.",
+        p: "Nonante n'utilise ni publicité ni pistage tiers. Seulement des cookies nécessaires, propres à Nonante et jamais partagés : ta session de connexion ; ta langue, si tu la choisis ; la source de ta visite, pendant 30 jours ; et, pendant une heure au plus, tes réponses au questionnaire le temps de ta connexion avec Google. La mesure d'audience ne dépose aucun cookie et ne te suit pas d'un site à l'autre. Nonante compte aussi, chez lui, les étapes franchies (écrans du questionnaire, plan choisi, sessions du minuteur), de façon anonyme : ni compte, ni adresse IP, effacées après 180 jours. Si tu réponds à « Avant de partir… », ta réponse (et ton compte si tu es connecté) est gardée un an pour améliorer le service.",
       },
       { h2: "Tes droits" },
       {

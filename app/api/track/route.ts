@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // un nom d'évènement connu, quelques valeurs courtes, la page et le type d'appareil.
 const Event = z.object({
   visit: z.string().regex(/^[a-z0-9]{8,32}$/),
-  name: z.enum(["questionnaire", "plan_choisi", "paiement_lance", "session", "calcul_mental"]),
+  name: z.enum(["questionnaire", "plan_choisi", "paiement_lance", "session", "calcul_mental", "depart"]),
   props: z
     .record(z.string().max(30), z.union([z.string().max(60), z.number().finite(), z.boolean(), z.null()]))
     .refine((p) => Object.keys(p).length <= 8)

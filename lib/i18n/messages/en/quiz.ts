@@ -214,6 +214,17 @@ export const quiz: typeof fr = {
     privacy: "Nonante only receives your Google email, name and photo. Nothing is ever posted on your behalf.",
     backToPlans: "Back to the plans",
   },
+  exit: {
+    title: "Before you go…",
+    text: "What's holding you back? Your answer comes straight to us and helps us improve Nonante.",
+    reasons: { prix: "It's too expensive", moment: "It's not the right time", doute: "I doubt it will work for me", essai: "I'd like to try before paying", confiance: "I don't know Nonante yet", autre: "Something else" },
+    placeholder: "Tell us more (optional)",
+    send: "Send",
+    sending: "Sending…",
+    stay: "Back to my arc",
+    thanksTitle: "Thank you.",
+    thanks: "Your answer has arrived. Your arc stays ready if you change your mind.",
+  },
   suite: {
     title: "Last step",
     hand: "almost done",

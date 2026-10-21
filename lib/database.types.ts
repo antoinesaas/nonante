@@ -441,6 +441,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      exit_feedback: {
+        Row: {
+          created_at: string;
+          id: string;
+          locale: string | null;
+          message: string | null;
+          place: string;
+          reason: string;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          locale?: string | null;
+          message?: string | null;
+          place: string;
+          reason: string;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          locale?: string | null;
+          message?: string | null;
+          place?: string;
+          reason?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
       grades: {
         Row: {
           coefficient: number;
@@ -1391,6 +1421,7 @@ export type Database = {
       add_template_principle: { Args: { p_code: string | null }; Returns: string };
       add_wallet_entry: { Args: { p_user: string | null; p_amount_cents: number | null; p_source: string | null; p_label: string | null; p_day: string | null; p_proof_path: string | null }; Returns: Json };
       admin_audit_queue: { Args: never; Returns: Json };
+      admin_exit_feedback: { Args: { p_days?: number | null }; Returns: Json };
       admin_funnel: { Args: { p_days?: number | null }; Returns: Json };
       admin_grant_comp: { Args: { p_pseudo: string | null; p_plan: string | null; p_until: string | null }; Returns: undefined };
       admin_log: { Args: { p_action: string | null; p_target: string | null; p_details: Json | null }; Returns: undefined };
@@ -1470,6 +1501,7 @@ export type Database = {
       remove_principle: { Args: { p_id: string | null }; Returns: undefined };
       report_user: { Args: { p_pseudo: string | null; p_reason: string | null }; Returns: undefined };
       save_arc: { Args: { p_category: string | null; p_goal_type: string | null; p_goal_title: string | null; p_goal_target: number | null; p_goal_unit: string | null; p_goal_public: boolean | null; p_weak_points: string[] | null; p_wake_time: string | null; p_pushups: string | null; p_focus_minutes: number | null; p_start_date: string | null; p_squad_id?: string | null; p_locale?: string | null; p_business_types?: string[] | null; p_business_other?: string | null; p_school?: string | null; p_school_other?: string | null }; Returns: string };
+      save_exit_feedback: { Args: { p_place: string | null; p_reason: string | null; p_message: string | null; p_user: string | null; p_locale: string | null }; Returns: undefined };
       save_principle: { Args: { p_id: string | null; p_pillar: string | null; p_if: string | null; p_then: string | null; p_proof_type: string | null; p_target: Json | null; p_days: number[] | null; p_difficulty?: number | null }; Returns: string };
       save_profile: { Args: { p_pseudo: string | null; p_birth_year: number | null; p_adult: boolean | null; p_is_public: boolean | null; p_utm_source?: string | null; p_utm_campaign?: string | null; p_locale?: string | null; p_country?: string | null }; Returns: undefined };
       save_push_subscription: { Args: { p_endpoint: string | null; p_p256dh: string | null; p_auth: string | null }; Returns: undefined };
