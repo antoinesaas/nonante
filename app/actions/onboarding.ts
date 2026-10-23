@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -132,7 +133,9 @@ export async function finishArc(_prev: FinishState, formData: FormData): Promise
     b?.effective_plan === "fondateur" ||
     (choice.plan === "arc" && (b?.effective_plan === "pro" || Boolean(b?.arc_credits))) ||
     (choice.plan === "pro" && b?.effective_plan === "pro");
-  if (!covered && formData.get("waiver") !== "on") return { message: m.actions.onboarding.waiver };
+  // Essai gratuit de 7 jours (v19) : pas de paiement, donc pas de demande d'accès immédiat.
+  const trial = !covered && formData.get("trial") === "1";
+  if (!covered && !trial && formData.get("waiver") !== "on") return { message: m.actions.onboarding.waiver };
 
   // L'arc, construit par Postgres avec les réponses du questionnaire.
   const { data: before } = await supabase.from("enrollments").select("id").eq("user_id", user.id).in("status", ["draft", "active"]).maybeSingle();
@@ -172,8 +175,24 @@ export async function finishArc(_prev: FinishState, formData: FormData): Promise
   }
 
   if (covered) redirect("/app?nouveau=1");
+  if (trial) {
+    const { error: trialError } = await supabase.rpc("start_trial");
+    if (trialError) return { message: userMessage(trialError, i18n) };
+    redirect("/app?essai=1");
+  }
   const result = await checkoutDestination(user.id, choice, locale);
   if ("covered" in result) redirect("/app?nouveau=1");
   if ("error" in result) return { message: fmt(m.actions.onboarding.arcSaved, { error: m.actions.checkout[result.error] }) };
   redirect(result.url);
+}
+
+/** Essai gratuit de 7 jours (v19), depuis Aujourd'hui ou la page des plans : lance l'arc en construction. */
+export async function startTrial(): Promise<{ message: string | null }> {
+  const i18n = await getI18n();
+  const { supabase, user } = await getUser();
+  if (!user) return { message: i18n.m.actions.loginFirst };
+  const { error } = await supabase.rpc("start_trial");
+  if (error) return { message: userMessage(error, i18n) };
+  revalidatePath("/app");
+  redirect("/app?essai=1");
 }

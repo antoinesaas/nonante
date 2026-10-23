@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TrialButton } from "@/components/TrialButton";
 import { Aura } from "@/components/Aura";
 import { Faq } from "@/components/Faq";
 import { Logo } from "@/components/Logo";
@@ -28,13 +29,17 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/abo
   ]);
   let current: PlanId | null = null;
   let hasArc = false;
+  let draftTrial = false;
   if (user && profile.data) {
     const [{ data }, { data: open }] = await Promise.all([
       supabase.rpc("my_plan"),
-      supabase.from("enrollments").select("id").eq("user_id", user.id).in("status", ["draft", "active"]).maybeSingle(),
+      supabase.from("enrollments").select("id, status").eq("user_id", user.id).in("status", ["draft", "active"]).maybeSingle(),
     ]);
-    current = ((data as { plan: PlanId | null } | null)?.plan ?? null) as PlanId | null;
+    const planState = data as { plan: PlanId | null; trial_available?: boolean } | null;
+    current = (planState?.plan ?? null) as PlanId | null;
     hasArc = Boolean(open);
+    // Arc construit mais pas lancé, essai jamais utilisé : l'essai gratuit passe avant les plans (v19).
+    draftTrial = open?.status === "draft" && !current && Boolean(planState?.trial_available);
   }
   // Un plan se paie pour un arc construit ; sinon, on passe d'abord par le questionnaire.
   const mode = user && profile.data && (hasArc || current) ? ({ kind: "checkout" } as const) : ({ kind: "link" } as const);
@@ -67,6 +72,14 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/abo
             </Link>{" "}
             {t.firstEnd}
           </p>
+        ) : null}
+
+        {draftTrial ? (
+          <div className="glow-violet mt-8 rounded-[1.75rem] p-5">
+            <p className="font-display text-[22px] leading-tight">{m.app.trial.welcomeTitle}</p>
+            <p className="mt-1 mb-4 text-sm text-paper/85">{m.quiz.result.trialNote}</p>
+            <TrialButton />
+          </div>
         ) : null}
 
         <div className="mt-8">

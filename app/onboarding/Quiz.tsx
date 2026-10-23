@@ -883,6 +883,7 @@ export function Quiz({
               <p className="bg-linear-to-r from-[#b79bff] to-[#8358e8] bg-clip-text text-[15px] font-semibold text-transparent">{t.oneStep}</p>
               <h2 className="mt-1 font-display text-[38px] leading-[1.02]">{t.launchTitle}</h2>
               <p className="mt-3 text-paper/80">{t.launchText}</p>
+              <p className="glow-violet mt-4 rounded-2xl p-4 text-sm font-medium">{t.trialNote}</p>
               {invitedBy ? (
                 <p className="glow-mint mt-5 animate-in rounded-2xl p-4 text-sm">
                   <span className="font-semibold">{fmt(t.invited, { name: invitedBy })}</span>

@@ -68,8 +68,8 @@ export const faq: typeof fr = {
       items: [
         {
           id: "payant",
-          q: "Warum ist es nicht kostenlos?",
-          a: "Weil ein kostenloser Arc am ersten harten Abend aufgegeben wird. Geld auf den Tisch zu legen, ist schon eine Verpflichtung: ein Grund mehr durchzuhalten. Und so kann die App wachsen, ganz ohne Werbung.",
+          q: "Gibt es einen kostenlosen Test?",
+          a: "Ja: 7 Tage kostenlos, ohne Kreditkarte, mit dem vollen 90-Tage-Arc (6 Prinzipien, alle Beweise, die Rangliste). Am Ende wählst du deinen Tarif; sonst pausiert dein Arc und nichts wird abgebucht.",
         },
         {
           id: "choisir",

@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { finishArc, type FinishState } from "@/app/actions/onboarding";
 import { useI18n } from "@/components/I18nProvider";
 import { FormMessage, SubmitButton } from "@/components/SubmitButton";
-import { btnLink, btnPrimary, input, label } from "@/lib/ui";
+import { btnLink, btnPrimary, btnSecondary, input, label } from "@/lib/ui";
 
 const initial: FinishState = { message: null };
 
@@ -16,6 +16,7 @@ export function SuiteForm({
   needsPayment,
   cta,
   currentYear,
+  trialAvailable = false,
 }: {
   needsProfile: boolean;
   pseudo: string;
@@ -23,6 +24,8 @@ export function SuiteForm({
   needsPayment: boolean;
   cta: string;
   currentYear: number;
+  /** Essai gratuit de 7 jours possible (v19) : proposé en premier, le paiement en second. */
+  trialAvailable?: boolean;
 }) {
   const { m } = useI18n();
   const t = m.quiz.suite;
@@ -75,14 +78,25 @@ export function SuiteForm({
         </>
       ) : null}
 
+      {needsPayment && trialAvailable ? (
+        <div className="space-y-2">
+          <SubmitButton className={btnPrimary} pendingLabel={t.launching} name="trial" value="1">
+            {t.trial}
+          </SubmitButton>
+          <p className="text-center text-xs text-mute">{t.trialHint}</p>
+          <p className="pt-4 text-center text-[13px] font-medium text-mute">{t.orPay}</p>
+        </div>
+      ) : null}
+
       {needsPayment ? (
         <label className="flex items-start gap-3 text-xs text-mute">
-          <input type="checkbox" name="waiver" checked={waiver} onChange={(e) => setWaiver(e.target.checked)} required className="mt-0.5 size-4 shrink-0 accent-white" />
+          {/* Obligatoire pour payer (le serveur le vérifie), pas pour l'essai gratuit. */}
+          <input type="checkbox" name="waiver" checked={waiver} onChange={(e) => setWaiver(e.target.checked)} required={!trialAvailable} className="mt-0.5 size-4 shrink-0 accent-white" />
           <span>{m.game.plans.waiver}</span>
         </label>
       ) : null}
 
-      <SubmitButton className={btnPrimary} pendingLabel={needsPayment ? t.toPayment : t.launching}>
+      <SubmitButton className={needsPayment && trialAvailable ? `${btnSecondary} w-full` : btnPrimary} pendingLabel={needsPayment ? t.toPayment : t.launching}>
         {cta}
       </SubmitButton>
       <FormMessage message={state.message} />

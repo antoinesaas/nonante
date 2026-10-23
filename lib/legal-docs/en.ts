@@ -102,7 +102,7 @@ export const en: LegalSet = {
 
   cgv: {
     title: "Terms of sale",
-    updated: "Effective 8 October 2026.",
+    updated: "Effective 23 October 2026.",
     blocks: [
       { h2: "1. Seller" },
       { p: "{name}, {address}. Contact: {email}." },
@@ -124,6 +124,7 @@ export const en: LegalSet = {
       {
         p: "The 90-day Arc covers the arc it was paid for, until its 90th day or until it is dropped under the rules (7 blank days in a row). If paid with no arc being built, it is kept as a credit for your next arc.",
       },
+      { p: "Free trial: each account may start one arc for free for 7 days, once, without any payment method and without automatic renewal. At the end of the trial, without a purchase, the arc is paused and nothing is owed." },
       { h2: "4. Order and payment" },
       {
         p: "Payment is processed by Stripe. Nonante never has access to your card numbers. The monthly or yearly Pro subscription renews automatically at the end of each period, at the current price, until cancelled. The 90-day Arc and the Founder plan never renew. An invoice is available for each payment in your billing area (Profile, then “My invoices” or “Manage my subscription”).",

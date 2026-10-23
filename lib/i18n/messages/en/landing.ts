@@ -79,7 +79,7 @@ export const landing: typeof fr = {
   },
   price: {
     title: "Paying is already committing.",
-    text: "No free version: a free arc gets dropped on the first tough evening. Build your arc for free, see your principles, then launch it.",
+    text: "7-day free trial, no card needed. Build your arc, start it, and only pay if you keep going.",
     perDay: "That's {price} a day. No subscription, nothing renews by itself.",
     more: "See also Pro and Founder",
   },

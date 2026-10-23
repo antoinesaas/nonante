@@ -102,7 +102,7 @@ export const es: LegalSet = {
 
   cgv: {
     title: "Condiciones de venta",
-    updated: "En vigor desde el 8 de octubre de 2026.",
+    updated: "En vigor desde el 23 de octubre de 2026.",
     blocks: [
       { h2: "1. Vendedor" },
       { p: "{name}, {address}. Contacto: {email}." },
@@ -124,6 +124,7 @@ export const es: LegalSet = {
       {
         p: "El Arco 90 días cubre el arco por el que se pagó, hasta su día 90 o hasta que se abandone según las reglas (7 días en blanco seguidos). Si se paga sin un arco en construcción, se guarda como crédito para tu próximo arco.",
       },
+      { p: "Prueba gratis: cada cuenta puede empezar un arco gratis durante 7 días, una sola vez, sin medio de pago y sin renovación automática. Al final de la prueba, sin compra, el arco se pausa y no se debe nada." },
       { h2: "4. Pedido y pago" },
       {
         p: "El pago lo procesa Stripe. Nonante nunca tiene acceso a los números de tu tarjeta. La suscripción Pro mensual o anual se renueva automáticamente al final de cada periodo, al precio vigente, hasta su cancelación. El Arco 90 días y el plan Fundador nunca se renuevan. Hay una factura disponible por cada pago en tu espacio de pago (Perfil, luego «Mis facturas» o «Gestionar mi suscripción»).",

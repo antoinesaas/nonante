@@ -7,7 +7,7 @@ export const pages: typeof fr = {
     label: "Plans",
     title: "Paying is already committing.",
     cancelled: "Payment cancelled, nothing was charged. Your arc is saved: it's waiting for you.",
-    intro: "A free arc gets dropped. A paid arc gets held. The 90-day Arc is",
+    intro: "Try it free for 7 days, no card needed. After that, the 90-day Arc is",
     introHand: "one single payment",
     introEnd: "for 90 days of proofs, with no hidden subscription.",
     first: "First,",

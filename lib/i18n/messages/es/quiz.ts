@@ -176,6 +176,7 @@ export const quiz: typeof fr = {
     backToQuestions: "Volver a las preguntas",
   },
   result: {
+    trialNote: "7 días de prueba gratis, sin tarjeta. Solo pagas si continúas.",
     hello: "{name},",
     helloAnon: "Aquí está,",
     title: "tu arco está",
@@ -196,7 +197,7 @@ export const quiz: typeof fr = {
     statsHand: "te toca maximizarlas",
     oneStep: "solo queda un paso",
     launchTitle: "Lanza tu arco.",
-    launchText: "Tu arco está construido. Pagar es el primer compromiso: un arco gratis se abandona la primera noche difícil.",
+    launchText: "Tu arco está construido. Empiézalo gratis 7 días: si aguantas, eliges tu plan para seguir.",
     invited: "invitado por {name}",
     invitedText: ": −20 % en tu primer pago, aplicado automáticamente.",
     secure: "Pago seguro con Stripe. Nonante nunca ve tu tarjeta.",
@@ -226,6 +227,9 @@ export const quiz: typeof fr = {
     thanks: "Tu respuesta ha llegado. Tu arco sigue listo si cambias de opinión.",
   },
   suite: {
+    trial: "Empezar mis 7 días gratis",
+    trialHint: "Sin tarjeta, sin compromiso. Al final de la prueba, eliges tu plan para seguir.",
+    orPay: "O pagar ahora",
     title: "Último paso",
     hand: "casi listo",
     heading: "Último paso.",

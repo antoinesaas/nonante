@@ -176,6 +176,7 @@ export const quiz: typeof fr = {
     backToQuestions: "Back to the questions",
   },
   result: {
+    trialNote: "7-day free trial, no card needed. You only pay if you keep going.",
     hello: "{name},",
     helloAnon: "Here it is,",
     title: "your arc is",
@@ -196,7 +197,7 @@ export const quiz: typeof fr = {
     statsHand: "it's up to you to max them out",
     oneStep: "one step left",
     launchTitle: "Launch your arc.",
-    launchText: "Your arc is built. Paying is the first commitment: a free arc gets dropped on the first tough evening.",
+    launchText: "Your arc is built. Start it free for 7 days: if you stick with it, you choose your plan to keep going.",
     invited: "invited by {name}",
     invitedText: ": −20% on your first payment, applied automatically.",
     secure: "Secure payment by Stripe. Nonante never sees your card.",
@@ -226,6 +227,9 @@ export const quiz: typeof fr = {
     thanks: "Your answer has arrived. Your arc stays ready if you change your mind.",
   },
   suite: {
+    trial: "Start my 7 free days",
+    trialHint: "No card, no commitment. At the end of the trial, you choose your plan to keep going.",
+    orPay: "Or pay now",
     title: "Last step",
     hand: "almost done",
     heading: "Last step.",

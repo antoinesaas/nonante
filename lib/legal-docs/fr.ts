@@ -104,7 +104,7 @@ export const fr: LegalSet = {
 
   cgv: {
     title: "Conditions générales de vente",
-    updated: "En vigueur au 8 octobre 2026.",
+    updated: "En vigueur au 23 octobre 2026.",
     blocks: [
       { h2: "1. Vendeur" },
       { p: "{name}, {address}. Contact : {email}." },
@@ -126,6 +126,7 @@ export const fr: LegalSet = {
       {
         p: "L'Arc 90 jours couvre l'arc pour lequel il a été payé, jusqu'à son 90e jour ou jusqu'à ce qu'il soit lâché selon les règles du jeu (7 jours blancs d'affilée). Payé sans arc en construction, il est gardé en crédit et rattaché à ton prochain arc.",
       },
+      { p: "Essai gratuit : chaque compte peut lancer un arc gratuitement pendant 7 jours, une seule fois, sans moyen de paiement et sans reconduction automatique. À la fin de l'essai, sans achat, l'arc est mis en pause et aucune somme n'est due." },
       { h2: "4. Commande et paiement" },
       {
         p: "Le paiement est traité par Stripe. Nonante n'a jamais accès à tes numéros de carte. L'abonnement Pro mensuel ou annuel se renouvelle automatiquement à la fin de chaque période, au prix en vigueur, jusqu'à résiliation. L'Arc 90 jours et le plan Fondateur ne se renouvellent jamais. Une facture est disponible pour chaque paiement dans ton espace de paiement (Profil, puis « Mes factures » ou « Gérer mon abonnement »).",

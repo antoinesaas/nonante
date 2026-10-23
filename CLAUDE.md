@@ -149,8 +149,11 @@ affiché vient de la base.
 
 ## 5. Modèle économique
 
-Pas de plan gratuit. Le visiteur répond au questionnaire, voit son arc construit (investissement), puis paie pour le
-lancer. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jours, payé une fois par arc.
+Le visiteur répond au questionnaire, voit son arc construit (investissement), puis le lance. Modifié le 23 octobre 2026
+(v19) : **essai gratuit de 7 jours, sans carte bancaire, une fois par compte** (`profiles.trial_started` / `trial_until`,
+`start_trial`, droits de l'Arc 90 jours dans `_plan`) ; proposé en premier sur la dernière étape, sur Aujourd'hui (arc
+en construction) et sur /abonnement ; bandeau « encore N jours » pendant l'essai ; à la fin, sans paiement, l'arc
+est en pause (état `locked`). Tous les comptes inscrits sans plan au 23 octobre ont reçu leurs 7 jours. Modifié le 7 octobre 2026 : l'Essentiel est remplacé par l'Arc 90 jours, payé une fois par arc.
 
 | Plan | Prix | Contenu |
 |---|---|---|

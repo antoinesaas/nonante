@@ -78,7 +78,7 @@ export const landing = {
   },
   price: {
     title: "Payer, c'est déjà s'engager.",
-    text: "Pas de version gratuite : un arc gratuit se lâche au premier soir difficile. Tu construis ton arc gratuitement, tu vois tes principes, puis tu le lances.",
+    text: "7 jours d'essai gratuit, sans carte bancaire. Tu construis ton arc, tu le lances, et tu paies seulement si tu continues.",
     perDay: "Soit {price} par jour. Pas d'abonnement, rien ne se renouvelle tout seul.",
     more: "Voir aussi Pro et Fondateur",
   },

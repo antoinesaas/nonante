@@ -928,6 +928,8 @@ export type Database = {
           stripe_customer_id: string | null;
           stripe_promotion_code_id: string | null;
           stripe_subscription_id: string | null;
+          trial_started: string | null;
+          trial_until: string | null;
           utm_campaign: string | null;
           utm_source: string | null;
           wallet_public: boolean;
@@ -962,6 +964,8 @@ export type Database = {
           stripe_customer_id?: string | null;
           stripe_promotion_code_id?: string | null;
           stripe_subscription_id?: string | null;
+          trial_started?: string | null;
+          trial_until?: string | null;
           utm_campaign?: string | null;
           utm_source?: string | null;
           wallet_public?: boolean;
@@ -996,6 +1000,8 @@ export type Database = {
           stripe_customer_id?: string | null;
           stripe_promotion_code_id?: string | null;
           stripe_subscription_id?: string | null;
+          trial_started?: string | null;
+          trial_until?: string | null;
           utm_campaign?: string | null;
           utm_source?: string | null;
           wallet_public?: boolean;
@@ -1520,6 +1526,7 @@ export type Database = {
       squad_detail: { Args: { p_id: string | null }; Returns: Json };
       start_challenge_session: { Args: { p_assignment_id: string | null; p_minutes?: number | null }; Returns: Json };
       start_proof_session: { Args: { p_principle_id: string | null }; Returns: Json };
+      start_trial: { Args: never; Returns: boolean };
       submit_audit_photo: { Args: { p_user: string | null; p_audit_id: string | null; p_path: string | null }; Returns: undefined };
       sync_subscription: { Args: { p_user: string | null; p_customer: string | null; p_subscription: string | null; p_plan: string | null; p_interval: string | null; p_status: string | null; p_period_end: string | null; p_cancel_at_period_end: boolean | null }; Returns: string };
       track_event: { Args: { p_visit: string | null; p_name: string | null; p_props: Json | null; p_path: string | null; p_device: string | null }; Returns: undefined };

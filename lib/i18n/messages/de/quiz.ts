@@ -176,6 +176,7 @@ export const quiz: typeof fr = {
     backToQuestions: "Zurück zu den Fragen",
   },
   result: {
+    trialNote: "7 Tage kostenlos testen, ohne Kreditkarte. Du zahlst nur, wenn du weitermachst.",
     hello: "{name},",
     helloAnon: "Bitte schön,",
     title: "dein Arc ist",
@@ -196,7 +197,7 @@ export const quiz: typeof fr = {
     statsHand: "liegt es an dir, sie zu maximieren",
     oneStep: "nur noch ein Schritt",
     launchTitle: "Starte deinen Arc.",
-    launchText: "Dein Arc ist gebaut. Zahlen ist die erste Verpflichtung: Ein kostenloser Arc wird am ersten harten Abend aufgegeben.",
+    launchText: "Dein Arc steht. Starte ihn 7 Tage kostenlos: Wenn du dranbleibst, wählst du deinen Tarif.",
     invited: "eingeladen von {name}",
     invitedText: ": −20 % auf deine erste Zahlung, automatisch angewendet.",
     secure: "Sichere Zahlung über Stripe. Nonante sieht deine Karte nie.",
@@ -226,6 +227,9 @@ export const quiz: typeof fr = {
     thanks: "Deine Antwort ist angekommen. Dein Arc bleibt bereit, falls du es dir anders überlegst.",
   },
   suite: {
+    trial: "7 Tage kostenlos starten",
+    trialHint: "Ohne Kreditkarte, ohne Verpflichtung. Am Ende des Tests wählst du deinen Tarif.",
+    orPay: "Oder jetzt bezahlen",
     title: "Letzter Schritt",
     hand: "fast fertig",
     heading: "Letzter Schritt.",

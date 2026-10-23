@@ -40,7 +40,7 @@ export default async function SuitePage() {
   const interval = pending.plan_interval as Interval;
 
   const [{ data: profile }, { data: plansData }, b] = await Promise.all([
-    supabase.from("profiles").select("pseudo").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("pseudo, trial_started").eq("id", user.id).maybeSingle(),
     supabase.rpc("plans_public"),
     billing(user.id),
   ]);
@@ -102,6 +102,7 @@ export default async function SuitePage() {
             needsPayment={!covered}
             cta={covered ? t.launch : fmt(t.pay, { price: interval === "once" ? formatMoney(total, locale) : priceText(total) })}
             currentYear={Number(today.slice(0, 4))}
+            trialAvailable={!profile?.trial_started}
           />
         </div>
       </div>

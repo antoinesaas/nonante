@@ -67,8 +67,8 @@ export const faq = {
     items: [
       {
         id: "payant",
-        q: "Pourquoi ce n'est pas gratuit ?",
-        a: "Parce qu'un arc gratuit se lâche au premier soir difficile. Mettre de l'argent sur la table, c'est déjà un engagement : tu as une raison de plus de tenir. Et c'est ce qui permet de faire grandir l'app, sans aucune publicité.",
+        q: "Il y a un essai gratuit ?",
+        a: "Oui : 7 jours offerts, sans carte bancaire, avec tout l'Arc 90 jours (6 principes, toutes les preuves, le classement). À la fin, tu choisis ton plan pour continuer ; sinon ton arc se met en pause, rien n'est prélevé.",
       },
       {
         id: "choisir",

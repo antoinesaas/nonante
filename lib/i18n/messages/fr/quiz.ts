@@ -175,6 +175,7 @@ export const quiz = {
     backToQuestions: "Revenir aux questions",
   },
   result: {
+    trialNote: "7 jours d'essai gratuit, sans carte bancaire. Tu paies seulement si tu continues.",
     hello: "{name},",
     helloAnon: "Voilà,",
     title: "ton arc est",
@@ -195,7 +196,7 @@ export const quiz = {
     statsHand: "à toi de les maxer",
     oneStep: "plus qu'une étape",
     launchTitle: "Lance ton arc.",
-    launchText: "Ton arc est construit. Payer, c'est le premier engagement : un arc gratuit se lâche au premier soir difficile.",
+    launchText: "Ton arc est construit. Lance-le gratuitement pendant 7 jours : si tu tiens, tu choisis ton plan pour continuer.",
     invited: "invité par {name}",
     invitedText: " : −20 % sur ton premier paiement, appliqués automatiquement.",
     secure: "Paiement sécurisé par Stripe. Nonante ne voit jamais ta carte.",
@@ -225,6 +226,9 @@ export const quiz = {
     thanks: "Ta réponse est bien arrivée. Ton arc reste prêt si tu changes d'avis.",
   },
   suite: {
+    trial: "Commencer mes 7 jours gratuits",
+    trialHint: "Sans carte bancaire, sans engagement. À la fin de l'essai, tu choisis ton plan pour continuer.",
+    orPay: "Ou payer maintenant",
     title: "Dernière étape",
     hand: "presque fini",
     heading: "Dernière étape.",

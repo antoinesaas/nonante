@@ -79,7 +79,7 @@ export const landing: typeof fr = {
   },
   price: {
     title: "Pagar ya es comprometerse.",
-    text: "Sin versión gratuita: un arco gratis se abandona la primera noche difícil. Construyes tu arco gratis, ves tus principios y luego lo lanzas.",
+    text: "7 días de prueba gratis, sin tarjeta. Construye tu arco, empiézalo y paga solo si continúas.",
     perDay: "O sea {price} al día. Sin suscripción, nada se renueva solo.",
     more: "Ver también Pro y Fundador",
   },

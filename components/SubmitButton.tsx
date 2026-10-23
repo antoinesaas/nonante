@@ -7,15 +7,20 @@ export function SubmitButton({
   pendingLabel,
   className,
   disabled = false,
+  name,
+  value,
 }: {
   children: React.ReactNode;
   pendingLabel?: string;
   className: string;
   disabled?: boolean;
+  /** Bouton qui envoie une valeur (ex. trial=1) : plusieurs choix dans un même formulaire. */
+  name?: string;
+  value?: string;
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending || disabled} className={className}>
+    <button type="submit" name={name} value={value} disabled={pending || disabled} className={className}>
       {pending && pendingLabel ? pendingLabel : children}
     </button>
   );

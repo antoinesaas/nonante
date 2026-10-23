@@ -68,8 +68,8 @@ export const faq: typeof fr = {
       items: [
         {
           id: "payant",
-          q: "¿Por qué no es gratis?",
-          a: "Porque un arco gratis se abandona la primera noche difícil. Poner dinero sobre la mesa ya es un compromiso: una razón más para aguantar. Y es lo que permite que la app crezca, sin ninguna publicidad.",
+          q: "¿Hay prueba gratis?",
+          a: "Sí: 7 días gratis, sin tarjeta, con el Arco de 90 días completo (6 principios, todas las pruebas, la clasificación). Al final, eliges tu plan para seguir; si no, tu arco se pausa y no se cobra nada.",
         },
         {
           id: "choisir",

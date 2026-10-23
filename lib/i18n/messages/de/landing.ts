@@ -79,7 +79,7 @@ export const landing: typeof fr = {
   },
   price: {
     title: "Wer zahlt, verpflichtet sich.",
-    text: "Keine Gratisversion: Ein kostenloser Arc wird am ersten harten Abend aufgegeben. Du baust deinen Arc kostenlos, siehst deine Prinzipien und startest ihn dann.",
+    text: "7 Tage kostenlos testen, ohne Kreditkarte. Bau deinen Arc, starte ihn und zahl nur, wenn du weitermachst.",
     perDay: "Also {price} pro Tag. Kein Abo, nichts verlängert sich von selbst.",
     more: "Siehe auch Pro und Gründer",
   },

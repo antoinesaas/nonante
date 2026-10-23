@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { todayParis } from "@/lib/dates";
+import { TrialButton } from "@/components/TrialButton";
 import { redirect } from "next/navigation";
 import { JokerButton, StartTodayButton } from "@/app/app/(main)/DayActions";
 import { ReferralRow } from "@/app/app/(main)/ReferralRow";
@@ -87,6 +89,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
   const e = d.enrollment;
   const stats = d.stats!;
   const plan = d.plan!;
+  // Jours d'essai restants, aujourd'hui compris (dernier jour : 1).
+  const trialLeft = plan.trial_until ? Math.max(1, Math.round((Date.parse(plan.trial_until) - Date.parse(todayParis())) / 86_400_000) + 1) : 0;
   const principles = d.principles ?? [];
   const week = (weekData as WeekDay[] | null) ?? [];
   const remaining = principles.filter((p) => !p.validation);
@@ -267,6 +271,22 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
             </Link>
           </section>
 
+          {params.essai === "1" && plan.trial ? (
+            <div role="status" className="glow-violet mt-4 animate-in rounded-[1.75rem] p-5">
+              <p className="font-display text-[22px]">{m.app.trial.welcomeTitle}</p>
+              <p className="mt-1 text-sm text-paper/85">{m.app.trial.welcome}</p>
+            </div>
+          ) : plan.trial && plan.trial_until ? (
+            <div className="card mt-4 p-4">
+              <p className="text-[12px] font-semibold tracking-wide text-[#b79bff] uppercase">{m.app.trial.badge}</p>
+              <p className="mt-1 font-display text-[19px] leading-tight">{fmt(m.app.trial.left, { n: trialLeft })}</p>
+              <p className="mt-1 text-sm text-mute">{fmt(m.app.trial.leftText, { date: day(plan.trial_until, true) })}</p>
+              <Link href="/abonnement" className={`${btnSmall} mt-3`}>
+                {m.app.trial.choose}
+              </Link>
+            </div>
+          ) : null}
+
           {params.paid === "1" && plan.plan ? (
             <div role="status" className="glow-violet mt-4 animate-in rounded-[1.75rem] p-5">
               <p className="font-display text-[22px]">{t.paidHand}</p>
@@ -286,7 +306,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
 
           {d.state === "locked" ? (
             <div className="card mt-4 p-4">
-              <p className="text-sm">{t.locked}</p>
+              <p className="text-sm">{!plan.trial_available && plan.trial_until && !plan.paid_plan ? m.app.trial.ended : t.locked}</p>
               <Link href="/abonnement" className={`${btnSmall} mt-3`}>
                 {t.reactivate}
               </Link>
@@ -317,10 +337,24 @@ export default async function DashboardPage({ searchParams }: PageProps<"/app">)
           {d.state === "draft" ? (
             <section className="glow-violet mt-4 rounded-[1.75rem] p-5">
               <p className="font-display text-[22px] leading-tight">{t.draftTitle}</p>
-              <p className="mt-2 text-sm text-paper/85">{fmt(t.draftText, { date: day(e.start_date, true), price: formatMoney(1999, locale) })}</p>
-              <Link href="/abonnement" className={`${btnPrimary} mt-5`}>
-                {t.launch}
-              </Link>
+              {plan.trial_available ? (
+                <>
+                  <p className="mt-2 text-sm text-paper/85">{fmt(m.app.trial.draftTrial, { date: day(e.start_date, true) })}</p>
+                  <div className="mt-5">
+                    <TrialButton />
+                  </div>
+                  <Link href="/abonnement" className="mt-3 block text-center text-sm text-mute underline underline-offset-4">
+                    {m.quiz.suite.orPay}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-paper/85">{fmt(t.draftText, { date: day(e.start_date, true), price: formatMoney(1999, locale) })}</p>
+                  <Link href="/abonnement" className={`${btnPrimary} mt-5`}>
+                    {t.launch}
+                  </Link>
+                </>
+              )}
             </section>
           ) : null}
 

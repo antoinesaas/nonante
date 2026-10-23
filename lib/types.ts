@@ -138,6 +138,10 @@ export type PlanState = {
   loyalty_pending: boolean;
   /** Parrainage : remises de −20 % gagnées, pour les prochains Arcs 90 jours. */
   referral_rewards: number;
+  /** Essai gratuit de 7 jours en cours (v19), sa date de fin, et s'il reste à utiliser. */
+  trial: boolean;
+  trial_until: string | null;
+  trial_available: boolean;
   limits: Limits;
 };
 

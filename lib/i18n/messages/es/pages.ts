@@ -7,7 +7,7 @@ export const pages: typeof fr = {
     label: "Planes",
     title: "Pagar ya es comprometerse.",
     cancelled: "Pago cancelado, no se ha cobrado nada. Tu arco está guardado: te espera.",
-    intro: "Un arco gratis se abandona. Un arco pagado se cumple. El Arco 90 días es",
+    intro: "Pruébalo 7 días gratis, sin tarjeta. Después, el Arco de 90 días cuesta",
     introHand: "un solo pago",
     introEnd: "por 90 días de pruebas, sin suscripción oculta.",
     first: "Primero,",

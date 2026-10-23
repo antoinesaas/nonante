@@ -6,7 +6,7 @@ export const pages = {
     label: "Plans",
     title: "Payer, c'est déjà s'engager.",
     cancelled: "Paiement annulé, rien n'a été prélevé. Ton arc est enregistré : il t'attend.",
-    intro: "Un arc gratuit, on le lâche. Un arc payé, on le tient. L'Arc 90 jours, c'est",
+    intro: "Essaie 7 jours gratuitement, sans carte bancaire. Ensuite, l'Arc 90 jours, c'est",
     introHand: "un seul paiement",
     introEnd: "pour 90 jours de preuves, sans abonnement caché.",
     first: "D'abord,",

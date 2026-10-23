@@ -102,7 +102,7 @@ export const de: LegalSet = {
 
   cgv: {
     title: "Verkaufsbedingungen",
-    updated: "Gültig ab 8. Oktober 2026.",
+    updated: "Gültig ab 23. Oktober 2026.",
     blocks: [
       { h2: "1. Verkäufer" },
       { p: "{name}, {address}. Kontakt: {email}." },
@@ -124,6 +124,7 @@ export const de: LegalSet = {
       {
         p: "Der 90-Tage-Arc deckt den Arc ab, für den er bezahlt wurde, bis zu seinem 90. Tag oder bis er nach den Spielregeln abgebrochen ist (7 leere Tage in Folge). Wird er ohne Arc im Aufbau bezahlt, wird er als Guthaben für deinen nächsten Arc aufbewahrt.",
       },
+      { p: "Kostenloser Test: Jedes Konto kann einen Arc einmalig 7 Tage kostenlos starten, ohne Zahlungsmittel und ohne automatische Verlängerung. Am Ende des Tests wird der Arc ohne Kauf pausiert, es ist nichts geschuldet." },
       { h2: "4. Bestellung und Zahlung" },
       {
         p: "Die Zahlung wird von Stripe abgewickelt. Nonante hat nie Zugriff auf deine Kartennummern. Das monatliche oder jährliche Pro-Abo verlängert sich am Ende jedes Zeitraums automatisch zum geltenden Preis, bis es gekündigt wird. Der 90-Tage-Arc und der Gründer-Plan verlängern sich nie. Für jede Zahlung steht eine Rechnung in deinem Zahlungsbereich bereit (Profil, dann „Meine Rechnungen“ oder „Abo verwalten“).",

@@ -7,7 +7,7 @@ export const pages: typeof fr = {
     label: "Pläne",
     title: "Wer zahlt, verpflichtet sich.",
     cancelled: "Zahlung abgebrochen, nichts wurde abgebucht. Dein Arc ist gespeichert: Er wartet auf dich.",
-    intro: "Einen kostenlosen Arc gibt man auf. Einen bezahlten hält man. Der 90-Tage-Arc ist",
+    intro: "Teste 7 Tage kostenlos, ohne Kreditkarte. Danach kostet der 90-Tage-Arc",
     introHand: "eine einzige Zahlung",
     introEnd: "für 90 Tage Nachweise, ohne verstecktes Abo.",
     first: "Zuerst",

@@ -892,5 +892,27 @@ check("raisons comptées (prix 2, essai 1)", exits.reasons.map((r) => `${r.reaso
 check("message nettoyé, vide gardé nul, pseudo du joueur connecté", exits.latest.some((x) => x.message === "Trop cher pour un étudiant" && x.pseudo === null)
   && exits.latest.some((x) => x.place === "suite" && x.reason === "prix" && x.message === null && x.pseudo), JSON.stringify(exits.latest));
 
+console.log("\nEssai gratuit de 7 jours (v19)");
+const T = "eeeeeeee-0000-4000-8000-eeeeeeeeeeee";
+await q("insert into auth.users (id, email) values ($1, 'essai@exemple.fr')", [T]);
+await profile(T, { p_pseudo: "joueur_essai" });
+await arc(T);
+check("sans plan : arc en construction, rien d'actif", (await val("select public._plan($1)", [T])) === null
+  && (await val("select status from public.enrollments where user_id = $1", [T])) === "draft");
+const trialBefore = await as(T, () => rpc("my_plan"));
+check("essai disponible avant de commencer", trialBefore.trial_available === true && trialBefore.trial === false, JSON.stringify(trialBefore));
+await as(T, () => rpc("start_trial"));
+const during = await as(T, () => rpc("my_plan"));
+check("essai lancé : droits de l'Arc 90 jours pendant 7 jours", during.plan === "arc" && during.trial === true && during.trial_available === false
+  && during.trial_until === (await val("select (public.paris_today() + 6)::text")), JSON.stringify(during));
+check("l'arc démarre tout de suite", (await val("select status from public.enrollments where user_id = $1", [T])) === "active");
+check("relancer pendant l'essai ne change rien", (await as(T, () => rpc("start_trial"))) === true
+  && (await val("select trial_until::text from public.profiles where id = $1", [T])) === during.trial_until);
+await q("update public.profiles set trial_until = public.paris_today() - 1 where id = $1", [T]);
+check("essai terminé : plus de plan", (await val("select public._plan($1)", [T])) === null && (await as(T, () => rpc("my_plan"))).trial === false);
+await rejects("un seul essai par compte", () => as(T, () => rpc("start_trial")), "déjà utilisé");
+await arcPass(T);
+check("payé après l'essai : Arc 90 jours, plus d'essai affiché", (await as(T, () => rpc("my_plan"))).plan === "arc" && (await as(T, () => rpc("my_plan"))).trial === false);
+
 console.log(`\n${passed} réussis, ${failed} échoués.`);
 process.exit(failed ? 1 : 0);

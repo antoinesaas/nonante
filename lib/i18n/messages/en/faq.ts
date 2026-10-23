@@ -68,8 +68,8 @@ export const faq: typeof fr = {
       items: [
         {
           id: "payant",
-          q: "Why isn't it free?",
-          a: "Because a free arc gets dropped on the first tough evening. Putting money on the table is already a commitment: one more reason to hold on. And it's what lets the app grow, with no ads at all.",
+          q: "Is there a free trial?",
+          a: "Yes: 7 days free, no card needed, with the full 90-day Arc (6 principles, every proof, the leaderboard). At the end, you choose your plan to keep going; otherwise your arc is paused and nothing is charged.",
         },
         {
           id: "choisir",
